@@ -1,0 +1,39 @@
+services:
+  mysql:
+    image: mysql:latest
+    ports:
+      - '${FORWARD_DB_PORT:-3306}:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: '${DB_DATABASE}'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+            test:
+                - CMD
+                - mysqladmin
+                - ping
+                - '-p${DB_PASSWORD}'
+            retries: 3
+            timeout: 5s
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    ports:
+      - '8080:80'
+    environment:
+        MYSQL_USERNAME: '${DB_USERNAME}'
+        MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+        PMA_HOST: mysql
+        UPLOAD_LIMIT: 100M
+    depends_on:
+      - mysql
+
+  redis:
+    image: redis:latest
+    restart: always
+
+volumes:
+  mysql_data:
