@@ -6,6 +6,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ApiProperty } from '@nestjs/swagger';
@@ -44,6 +45,10 @@ export class User extends BaseEntity {
   @ApiProperty({ description: 'When user was updated' })
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ApiProperty({ description: 'When user was deleted' })
+  @DeleteDateColumn()
+  deletedAt?: Date;
 
   @BeforeInsert()
   async setPassword(password: string) {

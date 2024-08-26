@@ -13,6 +13,12 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { ApiTokenCheckMiddleware } from './common/middleware/api-token-check.middleware';
+import { SystemModule } from './modules/system/system.module';
+import { SubsystemModule } from './modules/subsystem/subsystem.module';
+import { ModuleModule } from './modules/module/module.module';
+import { ActionModule } from './modules/action/action.module';
+import { RoleModule } from './modules/role/role.module';
+import { PermissionModule } from './modules/permission/permission.module';
 
 @Module({
   imports: [
@@ -21,6 +27,12 @@ import { ApiTokenCheckMiddleware } from './common/middleware/api-token-check.mid
     EventEmitterModule.forRoot(),
     AuthModule,
     UserModule,
+    SystemModule,
+    SubsystemModule,
+    ModuleModule,
+    ActionModule,
+    RoleModule,
+    PermissionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

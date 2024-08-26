@@ -13,11 +13,11 @@ export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
       host: process.env.DB_HOST,
       port: parseInt(process.env.DB_PORT, 10),
       username: process.env.DB_USERNAME,
-      database: process.env.DB_NAME,
+      database: process.env.DB_DATABASE,
       password: process.env.DB_PASSWORD,
       entities: [__dirname + '/../**/*.entity.{js,ts}'],
       migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
-      autoLoadEntities: true,
+      migrationsTableName: 'custom_migration_table',
       // cli: {
       //   migrationsDir: __dirname + '/../database/migrations',
       // },
@@ -35,16 +35,13 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT, 10),
   username: process.env.DB_USERNAME,
-  database: process.env.DB_NAME,
+  database: process.env.DB_DATABASE,
   password: process.env.DB_PASSWORD,
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
-  // cli: {
-  //   migrationsDir: __dirname + '/../database/migrations',
-  // },
   extra: {
     charset: 'utf8mb4_unicode_ci',
   },
-  synchronize: false,
+  synchronize: Boolean(process.env.DB_SYNCHRONIZE),
   logging: true,
 };
