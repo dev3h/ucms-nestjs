@@ -4,12 +4,16 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { BullModule } from '@nestjs/bull';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmAsyncConfig } from './config/typeorm.config';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { ApiTokenCheckMiddleware } from './common/middleware/api-token-check.middleware';
@@ -19,9 +23,24 @@ import { ModuleModule } from './modules/module/module.module';
 import { ActionModule } from './modules/action/action.module';
 import { RoleModule } from './modules/role/role.module';
 import { PermissionModule } from './modules/permission/permission.module';
+import LogsMiddleware from './utils/logs.middleware';
 
 @Module({
   imports: [
+    // setting Queue for BullModule
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('REDIS_HOST'),
+          port: Number(configService.get('REDIS_PORT')),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    // setting Schedule
+    ScheduleModule.forRoot(),
+
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
     EventEmitterModule.forRoot(),
@@ -39,6 +58,7 @@ import { PermissionModule } from './modules/permission/permission.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LogsMiddleware).forRoutes('*');
     consumer
       .apply(ApiTokenCheckMiddleware)
       .forRoutes({ path: '/', method: RequestMethod.ALL });

@@ -7,10 +7,15 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ApiProperty } from '@nestjs/swagger';
+
 import { UserRoles } from './enums/user.enum';
+import { Role } from '../role/entities/role.entity';
+import { Permission } from '../permission/entities/permission.entity';
 
 @Entity({ name: 'users' })
 export class User extends BaseEntity {
@@ -38,6 +43,38 @@ export class User extends BaseEntity {
   @Column({ type: 'enum', enum: UserRoles, default: UserRoles.MEMBER })
   role: UserRoles;
 
+  @ApiProperty({ description: 'User status' })
+  @Column()
+  status: number;
+
+  @ApiProperty({ description: 'token when change password first time' })
+  @Column({ nullable: true })
+  token_first_time: string;
+
+  @ApiProperty({ description: 'Two factor secret' })
+  @Column({ nullable: true })
+  two_factor_secret: string;
+
+  @ApiProperty({ description: 'Two factor recovery code' })
+  @Column({ nullable: true })
+  two_factor_recovery_code: string;
+
+  @ApiProperty({ description: 'Two factor enable' })
+  @Column({ default: false })
+  two_factor_enable: boolean;
+
+  @ApiProperty({ description: 'Two factor confirmed at' })
+  @Column({ nullable: true })
+  two_factor_confirmed_at: Date;
+
+  @ApiProperty({ description: 'Access token' })
+  @Column({ nullable: true })
+  access_token: string;
+
+  @ApiProperty({ description: 'Refresh token' })
+  @Column({ nullable: true })
+  refresh_token: string;
+
   @ApiProperty({ description: 'When user was created' })
   @CreateDateColumn()
   createdAt: Date;
@@ -49,6 +86,36 @@ export class User extends BaseEntity {
   @ApiProperty({ description: 'When user was deleted' })
   @DeleteDateColumn()
   deletedAt?: Date;
+
+  @ManyToMany(() => Role, (role) => role.users, { cascade: true })
+  @JoinTable({
+    name: 'user_has_role',
+    joinColumn: {
+      name: 'user_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'role_id',
+      referencedColumnName: 'id',
+    },
+  })
+  roles: Role[];
+
+  @ManyToMany(() => Permission, (permission) => permission.users, {
+    cascade: true,
+  })
+  @JoinTable({
+    name: 'user_has_permission',
+    joinColumn: {
+      name: 'user_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'permission_id',
+      referencedColumnName: 'id',
+    },
+  })
+  permissions: Permission[];
 
   @BeforeInsert()
   async setPassword(password: string) {
