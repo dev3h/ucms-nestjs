@@ -40,11 +40,19 @@ export class User extends BaseEntity {
   @Column()
   password: string;
 
+  @ApiProperty({ description: 'check user change password first time' })
+  @Column({ default: false })
+  isChangePasswordFirst: boolean;
+
   @Column({ type: 'enum', enum: UserRoles, default: UserRoles.MEMBER })
   role: UserRoles;
 
   @ApiProperty({ description: 'User status' })
-  @Column()
+  @Column({
+    type: 'tinyint',
+    default: 1,
+    comment: '1: Active, 2: Suspend, 3: DeActive',
+  })
   status: number;
 
   @ApiProperty({ description: 'token when change password first time' })

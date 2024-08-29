@@ -23,6 +23,7 @@ import { ModuleModule } from './modules/module/module.module';
 import { ActionModule } from './modules/action/action.module';
 import { RoleModule } from './modules/role/role.module';
 import { PermissionModule } from './modules/permission/permission.module';
+import { PasswordResetTokenModule } from './modules/password-reset-token/password-reset-token.module';
 import LogsMiddleware from './utils/logs.middleware';
 
 @Module({
@@ -52,6 +53,7 @@ import LogsMiddleware from './utils/logs.middleware';
     ActionModule,
     RoleModule,
     PermissionModule,
+    PasswordResetTokenModule,
   ],
   controllers: [AppController],
   providers: [AppService],
