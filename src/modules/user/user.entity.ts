@@ -13,7 +13,6 @@ import {
 import * as bcrypt from 'bcrypt';
 import { ApiProperty } from '@nestjs/swagger';
 
-import { UserRoles } from './enums/user.enum';
 import { Role } from '../role/entities/role.entity';
 import { Permission } from '../permission/entities/permission.entity';
 
@@ -43,9 +42,6 @@ export class User extends BaseEntity {
   @ApiProperty({ description: 'check user change password first time' })
   @Column({ default: false })
   isChangePasswordFirst: boolean;
-
-  @Column({ type: 'enum', enum: UserRoles, default: UserRoles.MEMBER })
-  role: UserRoles;
 
   @ApiProperty({ description: 'User status' })
   @Column({
@@ -97,7 +93,7 @@ export class User extends BaseEntity {
 
   @ManyToMany(() => Role, (role) => role.users, { cascade: true })
   @JoinTable({
-    name: 'user_has_role',
+    name: 'user_has_roles',
     joinColumn: {
       name: 'user_id',
       referencedColumnName: 'id',
@@ -113,7 +109,7 @@ export class User extends BaseEntity {
     cascade: true,
   })
   @JoinTable({
-    name: 'user_has_permission',
+    name: 'user_has_permissions',
     joinColumn: {
       name: 'user_id',
       referencedColumnName: 'id',

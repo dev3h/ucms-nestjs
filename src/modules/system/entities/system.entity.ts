@@ -5,6 +5,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Subsystem } from '../../subsystem/entities/subsystem.entity';
@@ -19,12 +20,9 @@ export class System {
   @Column()
   name: string;
 
-  @ApiProperty({
-    description: 'Description of the system',
-    example: 'This is the main system.',
-  })
-  @Column({ nullable: true })
-  description: string;
+  @ApiProperty({ description: 'System code', example: 'SYS_001' })
+  @Column()
+  code: string;
 
   @OneToMany(() => Subsystem, (subsystem) => subsystem.system)
   subsystems: Subsystem[];
@@ -36,4 +34,8 @@ export class System {
   @ApiProperty({ description: 'When system was updated' })
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ApiProperty({ description: 'When system was deleted' })
+  @DeleteDateColumn()
+  deletedAt?: Date;
 }

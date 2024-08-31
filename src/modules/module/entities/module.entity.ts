@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinTable,
+  DeleteDateColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Subsystem } from '../../subsystem/entities/subsystem.entity';
@@ -21,12 +22,9 @@ export class Module {
   @Column()
   name: string;
 
-  @ApiProperty({
-    description: 'Description of the module',
-    example: 'This is a module.',
-  })
-  @Column({ nullable: true })
-  description: string;
+  @ApiProperty({ description: 'Module code', example: 'MOD_001' })
+  @Column()
+  code: string;
 
   @ManyToMany(() => Subsystem, (subsystem) => subsystem.modules)
   subsystems: Subsystem[];
@@ -44,4 +42,8 @@ export class Module {
   @ApiProperty({ description: 'When module was updated' })
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ApiProperty({ description: 'When module was deleted' })
+  @DeleteDateColumn()
+  deletedAt?: Date;
 }

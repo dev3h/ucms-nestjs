@@ -23,11 +23,14 @@
     "migration:create": "npm run typeorm -- migration:create",
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm:cli -- migration:revert",
-    "seed:config": "ts-node ./node_modules/typeorm-seeding/dist/cli.js config -n src/config/typeorm.config-migrations.ts",
-    "seed:run": "ts-node ./node_modules/typeorm-seeding/dist/cli.js seed -n src/config/typeorm.config-migrations.ts",
+    "db:create": "ts-node ./node_modules/typeorm-extension/bin/cli.cjs db:create",
+    "db:drop": "ts-node ./node_modules/typeorm-extension/bin/cli.cjs db:drop",
+    "seed:run": "ts-node -r tsconfig-paths/register src/database/seed.ts",
+    "seed:create": "ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:create",
     "db:refresh": "npm run typeorm:cli schema:drop && npm run migration:run && npm run seed:run"
   },
   "dependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@nestjs/bull": "^10.2.1",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.3",
@@ -51,7 +54,8 @@
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "typeorm-extension": "^3.6.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

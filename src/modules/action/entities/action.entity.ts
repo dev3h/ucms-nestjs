@@ -5,6 +5,7 @@ import {
   ManyToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Module } from '../../module/entities/module.entity';
@@ -19,12 +20,9 @@ export class Action {
   @Column()
   name: string;
 
-  @ApiProperty({
-    description: 'Description of the action',
-    example: 'This action allows creating records.',
-  })
-  @Column({ nullable: true })
-  description: string;
+  @ApiProperty({ description: 'Action code', example: 'ACT_001' })
+  @Column()
+  code: string;
 
   @ManyToMany(() => Module, (module) => module.actions)
   modules: Module[];
@@ -36,4 +34,8 @@ export class Action {
   @ApiProperty({ description: 'When action was updated' })
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ApiProperty({ description: 'When action was deleted' })
+  @DeleteDateColumn()
+  deletedAt?: Date;
 }

@@ -8,11 +8,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
-import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { typeOrmAsyncConfig } from './config/typeorm.config';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
@@ -25,6 +23,9 @@ import { RoleModule } from './modules/role/role.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { PasswordResetTokenModule } from './modules/password-reset-token/password-reset-token.module';
 import LogsMiddleware from './utils/logs.middleware';
+// import { SeederService } from './database/seeder.service';
+import { SeederModule } from './database/seeder.module';
+import { DatabaseConfigModule } from './database/database-config.module';
 
 @Module({
   imports: [
@@ -41,9 +42,7 @@ import LogsMiddleware from './utils/logs.middleware';
     }),
     // setting Schedule
     ScheduleModule.forRoot(),
-
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
+    DatabaseConfigModule,
     EventEmitterModule.forRoot(),
     AuthModule,
     UserModule,
@@ -54,11 +53,17 @@ import LogsMiddleware from './utils/logs.middleware';
     RoleModule,
     PermissionModule,
     PasswordResetTokenModule,
+    SeederModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {
+  // constructor(private readonly seederService: SeederService) {}
+
+  // async onModuleInit() {
+  //   await this.seederService.runDatabaseSeeder();
+  // }
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LogsMiddleware).forRoutes('*');
     consumer

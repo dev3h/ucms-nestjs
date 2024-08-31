@@ -25,7 +25,7 @@ export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
         charset: 'utf8mb4_unicode_ci',
       },
       synchronize: Boolean(process.env.DB_SYNCHRONIZE),
-      logging: true,
+      // logging: true,
     };
   },
 };
@@ -42,6 +42,6 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   extra: {
     charset: 'utf8mb4_unicode_ci',
   },
-  synchronize: Boolean(process.env.DB_SYNCHRONIZE),
+  synchronize: Boolean(process.env.DB_SYNCHRONIZE), // do not set true in production!
   logging: true,
 };
