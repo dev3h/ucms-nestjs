@@ -17,14 +17,10 @@ export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
       password: process.env.DB_PASSWORD,
       entities: [__dirname + '/../**/*.entity.{js,ts}'],
       migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
-      migrationsTableName: 'custom_migration_table',
-      // cli: {
-      //   migrationsDir: __dirname + '/../database/migrations',
-      // },
       extra: {
         charset: 'utf8mb4_unicode_ci',
       },
-      synchronize: Boolean(process.env.DB_SYNCHRONIZE),
+      synchronize: true,
       // logging: true,
     };
   },
@@ -42,6 +38,5 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   extra: {
     charset: 'utf8mb4_unicode_ci',
   },
-  synchronize: Boolean(process.env.DB_SYNCHRONIZE), // do not set true in production!
-  logging: true,
+  synchronize: false,
 };

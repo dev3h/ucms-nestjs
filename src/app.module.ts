@@ -35,7 +35,9 @@ import { DatabaseConfigModule } from './database/database-config.module';
       useFactory: async (configService: ConfigService) => ({
         redis: {
           host: configService.get('REDIS_HOST'),
+          username: configService.get('REDIS_USERNAME'),
           port: Number(configService.get('REDIS_PORT')),
+          password: configService.get('REDIS_PASSWORD'),
         },
       }),
       inject: [ConfigService],
