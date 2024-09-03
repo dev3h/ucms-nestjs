@@ -15,6 +15,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { Role } from '../role/entities/role.entity';
 import { Permission } from '../permission/entities/permission.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity({ name: 'users' })
 export class User extends BaseEntity {
@@ -37,6 +38,7 @@ export class User extends BaseEntity {
 
   @ApiProperty({ description: 'Hashed user password' })
   @Column()
+  @Exclude()
   password: string;
 
   @ApiProperty({ description: 'check user change password first time' })
@@ -57,10 +59,12 @@ export class User extends BaseEntity {
 
   @ApiProperty({ description: 'Two factor secret' })
   @Column({ nullable: true })
+  @Exclude()
   two_factor_secret: string;
 
   @ApiProperty({ description: 'Two factor recovery code' })
   @Column({ nullable: true })
+  @Exclude()
   two_factor_recovery_code: string;
 
   @ApiProperty({ description: 'Two factor enable' })
@@ -73,7 +77,7 @@ export class User extends BaseEntity {
 
   @ApiProperty({ description: 'Access token' })
   @Column({ nullable: true })
-  access_token: string;
+  access_token?: string;
 
   @ApiProperty({ description: 'Refresh token' })
   @Column({ nullable: true })

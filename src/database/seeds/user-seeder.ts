@@ -13,14 +13,14 @@ export class UserSeeder implements Seeder {
       {
         name: 'nam nd',
         email: 'namnd@yopmail.com',
-        password: await bcrypt.hash('a12345678X', 10),
+        password: 'a12345678X',
         isChangePasswordFirst: true,
       },
       {
         name: 'cuongdd',
         email: 'cuongdd@yopmail.com',
-        password: await bcrypt.hash('a12345678X', 10),
-        isChangePasswordFirst: true,
+        password: 'a12345678X',
+        isChangePasswordFirst: false,
       },
     ];
 

@@ -8,11 +8,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
+import * as path from 'path';
+import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
-import { AuthModule } from './modules/auth/auth.module';
+import { AuthModule } from './modules/auth/login/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { ApiTokenCheckMiddleware } from './common/middleware/api-token-check.middleware';
 import { SystemModule } from './modules/system/system.module';
@@ -26,9 +28,24 @@ import LogsMiddleware from './utils/logs.middleware';
 // import { SeederService } from './database/seeder.service';
 import { SeederModule } from './database/seeder.module';
 import { DatabaseConfigModule } from './database/database-config.module';
+import { ResetPasswordModule } from './modules/auth/reset-password/reset-password.module';
+import { MailModule } from './mail/reset-password-mail/mail.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),
+    // setup multi language
+    I18nModule.forRoot({
+      fallbackLanguage: 'vi',
+      loaderOptions: {
+        path: path.join(__dirname, 'i18n'),
+        watch: true,
+      },
+      resolvers: [
+        { use: QueryResolver, options: ['lang'] },
+        AcceptLanguageResolver,
+      ],
+    }),
     // setting Queue for BullModule
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -56,6 +73,7 @@ import { DatabaseConfigModule } from './database/database-config.module';
     PermissionModule,
     PasswordResetTokenModule,
     SeederModule,
+    ResetPasswordModule,
   ],
   controllers: [AppController],
   providers: [AppService],

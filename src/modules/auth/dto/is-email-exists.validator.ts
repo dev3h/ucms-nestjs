@@ -16,14 +16,12 @@ export class IsEmailExistsConstraint implements ValidatorConstraintInterface {
   ) {}
 
   async validate(email: string): Promise<boolean> {
-    const user = await this.userRepository?.findOne({
-      where: { email, deletedAt: null },
-    });
+    const user = await User.findOne({ where: { email } });
     return !!user;
   }
 
   defaultMessage(): string {
-    return 'Email does not exist or is deleted.';
+    return 'Email does not exist.';
   }
 }
 
