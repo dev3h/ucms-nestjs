@@ -9,7 +9,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import * as path from 'path';
-import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
+import { AcceptLanguageResolver, QueryResolver, I18nModule, HeaderResolver } from 'nestjs-i18n';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -30,6 +30,7 @@ import { SeederModule } from './database/seeder.module';
 import { DatabaseConfigModule } from './database/database-config.module';
 import { ResetPasswordModule } from './modules/auth/reset-password/reset-password.module';
 import { MailModule } from './mail/reset-password-mail/mail.module';
+import { LanguageCheckMiddleware } from './common/middleware/language-check.middleware';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { MailModule } from './mail/reset-password-mail/mail.module';
       resolvers: [
         { use: QueryResolver, options: ['lang'] },
         AcceptLanguageResolver,
+        new HeaderResolver(['x-lang']),
       ],
     }),
     // setting Queue for BullModule
@@ -84,8 +86,10 @@ export class AppModule implements NestModule {
   // async onModuleInit() {
   //   await this.seederService.runDatabaseSeeder();
   // }
+
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LogsMiddleware).forRoutes('*');
+    consumer.apply(LanguageCheckMiddleware).forRoutes('*');
     consumer
       .apply(ApiTokenCheckMiddleware)
       .forRoutes({ path: '/', method: RequestMethod.ALL });

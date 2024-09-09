@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Request,
+  Response,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -19,8 +20,13 @@ export class AuthController {
 
   // @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Request() req, @Body() data: LoginRequestDto): Promise<any> {
-    return this.authService.login(data);
+  async login(
+    @Request() req,
+    @Response() res,
+    @Body() data: LoginRequestDto,
+  ): Promise<any> {
+    const token = this.authService.login(data);
+    return res.status(200).json(token);
   }
 
   @ApiBearerAuth()

@@ -13,7 +13,7 @@ export class LoginRequestDto {
     description: 'Email address of the user',
     example: 'reachme@amitavroy.com',
   })
-  @IsEmailExists({ message: 'Email does not exist' })
+  // @IsEmailExists()
   @Matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
   @IsEmail()
   @IsNotEmpty()

@@ -7,11 +7,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '@/modules/user/user.entity';
+import { I18nContext, I18nService } from 'nestjs-i18n';
 
 @ValidatorConstraint({ async: true })
 export class IsEmailExistsConstraint implements ValidatorConstraintInterface {
   constructor(
     @InjectRepository(User)
+    private readonly i18n: I18nService,
     private readonly userRepository: Repository<User>,
   ) {}
 
@@ -21,7 +23,10 @@ export class IsEmailExistsConstraint implements ValidatorConstraintInterface {
   }
 
   defaultMessage(): string {
-    return 'Email does not exist.';
+    console.log(this.i18n);
+    return this.i18n.t('message.email.not-found', {
+      lang: I18nContext.current().lang,
+    });
   }
 }
 

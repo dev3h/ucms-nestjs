@@ -6,21 +6,30 @@ import {
 import { UserService } from '../../user/user.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { I18nContext, I18nService } from 'nestjs-i18n';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly i18n: I18nService,
     private userService: UserService,
     private jwtService: JwtService,
   ) {}
 
   async validateUserCreds(email: string, password: string): Promise<any> {
     const user = await this.userService.getUserByEmail(email);
-
     if (!user) {
       throw new UnprocessableEntityException({
-        errors: { email: ['User not found'] },
-        message: 'User not found',
+        errors: {
+          email: [
+            this.i18n.t('message.email.not-found', {
+              lang: 'vi',
+            }),
+          ],
+        },
+        message: this.i18n.t('message.email.not-found', {
+          lang: 'vi',
+        }),
         error: 'Unprocessable Entity',
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       });
@@ -28,8 +37,16 @@ export class AuthService {
 
     if (!(await bcrypt.compare(password, user.password))) {
       throw new UnprocessableEntityException({
-        errors: { password: ['Invalid credentials'] },
-        message: 'Invalid credentials',
+        errors: {
+          password: [
+            this.i18n.t('auth.password', {
+              lang: 'vi',
+            }),
+          ],
+        },
+        message: this.i18n.t('auth.password', {
+          lang: 'vi',
+        }),
         error: 'Unprocessable Entity',
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       });

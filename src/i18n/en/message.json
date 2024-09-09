@@ -26,5 +26,6 @@
     "email.create-account.content.line5": "Password:",
     "email.create-account.content.line6": "Create at:",
     "email.create-account.content.line7": "To access your account, please click on the link below to finish the registration process",
-    "email.create-account.content.line8": "If you have any questions, please contact the administrator"
+    "email.create-account.content.line8": "If you have any questions, please contact the administrator",
+    "email.not-found": "Email not found"
 }
