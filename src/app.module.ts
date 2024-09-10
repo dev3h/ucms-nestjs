@@ -31,6 +31,7 @@ import { DatabaseConfigModule } from './database/database-config.module';
 import { ResetPasswordModule } from './modules/auth/reset-password/reset-password.module';
 import { MailModule } from './mail/reset-password-mail/mail.module';
 import { LanguageCheckMiddleware } from './common/middleware/language-check.middleware';
+import { SystemTokenModule } from './modules/system-token/system-token.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { LanguageCheckMiddleware } from './common/middleware/language-check.midd
     PasswordResetTokenModule,
     SeederModule,
     ResetPasswordModule,
+    SystemTokenModule,
   ],
   controllers: [AppController],
   providers: [AppService],

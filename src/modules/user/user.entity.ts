@@ -9,6 +9,7 @@ import {
   DeleteDateColumn,
   ManyToMany,
   JoinTable,
+  OneToMany,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ApiProperty } from '@nestjs/swagger';
@@ -16,6 +17,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '../role/entities/role.entity';
 import { Permission } from '../permission/entities/permission.entity';
 import { Exclude } from 'class-transformer';
+import { SystemToken } from '../system-token/entities/system-token.entity';
 
 @Entity({ name: 'users' })
 export class User extends BaseEntity {
@@ -124,6 +126,9 @@ export class User extends BaseEntity {
     },
   })
   permissions: Permission[];
+
+  @OneToMany(() => SystemToken, (systemToken) => systemToken.user)
+  systemTokens: SystemToken[];
 
   @BeforeInsert()
   async setPassword(password: string) {
