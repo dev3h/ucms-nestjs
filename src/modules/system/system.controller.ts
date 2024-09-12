@@ -6,10 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  Req,
 } from '@nestjs/common';
 import { SystemService } from './system.service';
 import { CreateSystemDto } from './dto/create-system.dto';
 import { UpdateSystemDto } from './dto/update-system.dto';
+import { Request } from 'express';
 
 @Controller('system')
 export class SystemController {
@@ -21,8 +23,8 @@ export class SystemController {
   }
 
   @Get()
-  findAll() {
-    return this.systemService.findAll();
+  findAll(@Req() request: Request) {
+    return this.systemService.findAll(request);
   }
 
   @Get(':id')

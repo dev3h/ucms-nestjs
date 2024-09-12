@@ -9,7 +9,7 @@ export class ResponseUtil {
     return {
       status_code: code,
       message: message,
-      data: data,
+      ...data,
     };
   }
 

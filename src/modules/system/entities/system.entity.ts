@@ -44,15 +44,15 @@ export class System {
 
   @ApiProperty({ description: 'When system was created' })
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty({ description: 'When system was updated' })
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 
   @ApiProperty({ description: 'When system was deleted' })
   @DeleteDateColumn()
-  deletedAt?: Date;
+  deleted_at?: Date;
 
   @OneToMany(() => SystemToken, (systemToken) => systemToken.system)
   systemTokens: SystemToken[];
