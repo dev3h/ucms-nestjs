@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { HttpException, HttpStatus, ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
+import { useContainer } from 'class-validator';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -56,6 +57,8 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   const port = configService.get('PORT') ?? 3000;
+  // useContainer to use custom validation decorators like @IsUnique
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
   await app.listen(port);
 }
 bootstrap();

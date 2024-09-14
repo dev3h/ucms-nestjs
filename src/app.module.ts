@@ -32,6 +32,8 @@ import { ResetPasswordModule } from './modules/auth/reset-password/reset-passwor
 import { MailModule } from './mail/reset-password-mail/mail.module';
 import { LanguageCheckMiddleware } from './common/middleware/language-check.middleware';
 import { SystemTokenModule } from './modules/system-token/system-token.module';
+import { IsUniqueConstraint } from './share/validation/unique/is-unique-constraint';
+import { IsExistsConstraint } from './share/validation/exist/is-exists-constraint';
 
 @Module({
   imports: [
@@ -80,7 +82,7 @@ import { SystemTokenModule } from './modules/system-token/system-token.module';
     SystemTokenModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, IsUniqueConstraint, IsExistsConstraint],
 })
 export class AppModule implements NestModule {
   // constructor(private readonly seederService: SeederService) {}

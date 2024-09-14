@@ -20,10 +20,10 @@ export class IsExistsConstraint implements ValidatorConstraintInterface {
     const { tableName, column }: IsExistsConstraintInput = args.constraints[0];
 
     const exists = await this.entityManager
-      .getRepository(tableName)
-      .createQueryBuilder(tableName)
-      .where({ [column]: value })
-      .getExists();
+      ?.getRepository(tableName)
+      ?.createQueryBuilder(tableName)
+      ?.where({ [column]: value })
+      ?.getExists();
 
     return exists;
   }
