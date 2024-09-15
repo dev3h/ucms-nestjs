@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -38,5 +39,14 @@ export class RoleController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.roleService.remove(+id);
+  }
+
+  @Get(':id/rest-permission')
+  async restPermission(@Param('id', ParseIntPipe) id: number) {
+    const data = await this.roleService.restPermission(id);
+    return {
+      success: true,
+      data,
+    };
   }
 }

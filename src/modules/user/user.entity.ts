@@ -18,6 +18,7 @@ import { Role } from '../role/entities/role.entity';
 import { Permission } from '../permission/entities/permission.entity';
 import { Exclude } from 'class-transformer';
 import { SystemToken } from '../system-token/entities/system-token.entity';
+import { UserHasPermission } from './user-has-permission.entity';
 
 @Entity({ name: 'users' })
 export class User extends BaseEntity {
@@ -45,7 +46,7 @@ export class User extends BaseEntity {
 
   @ApiProperty({ description: 'check user change password first time' })
   @Column({ default: false })
-  isChangePasswordFirst: boolean;
+  is_change_password_first: boolean;
 
   @ApiProperty({ description: 'User status' })
   @Column({
@@ -87,15 +88,15 @@ export class User extends BaseEntity {
 
   @ApiProperty({ description: 'When user was created' })
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty({ description: 'When user was updated' })
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 
   @ApiProperty({ description: 'When user was deleted' })
   @DeleteDateColumn()
-  deletedAt?: Date;
+  deleted_at?: Date;
 
   @ManyToMany(() => Role, (role) => role.users, { cascade: true })
   @JoinTable({
@@ -111,21 +112,11 @@ export class User extends BaseEntity {
   })
   roles: Role[];
 
-  @ManyToMany(() => Permission, (permission) => permission.users, {
-    cascade: true,
-  })
-  @JoinTable({
-    name: 'user_has_permissions',
-    joinColumn: {
-      name: 'user_id',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'permission_id',
-      referencedColumnName: 'id',
-    },
-  })
-  permissions: Permission[];
+  @OneToMany(
+    () => UserHasPermission,
+    (userHasPermission) => userHasPermission.user,
+  )
+  userHasPermissions: UserHasPermission[];
 
   @OneToMany(() => SystemToken, (systemToken) => systemToken.user)
   systemTokens: SystemToken[];

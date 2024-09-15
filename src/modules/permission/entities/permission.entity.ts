@@ -7,11 +7,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
 
 import { Role } from '@/modules/role/entities/role.entity';
 import { User } from '@/modules/user/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { UserHasPermission } from '@/modules/user/user-has-permission.entity';
 
 @Entity('permissions')
 export class Permission {
@@ -27,19 +29,22 @@ export class Permission {
 
   @ApiProperty({ description: 'When permission was created' })
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty({ description: 'When permission was updated' })
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 
   @ApiProperty({ description: 'When permission was deleted' })
   @DeleteDateColumn()
-  deletedAt?: Date;
+  deleted_at?: Date;
 
   @ManyToMany(() => Role, (role) => role.permissions)
   roles: Role[];
 
-  @ManyToMany(() => User, (user) => user.permissions)
-  users: User[];
+  @OneToMany(
+    () => UserHasPermission,
+    (userHasPermission) => userHasPermission.permission,
+  )
+  userHasPermissions: UserHasPermission[];
 }

@@ -63,7 +63,8 @@ export class RolePermissionSeeder implements Seeder {
       relations: ['permissions'],
     });
     if (userRole) {
-      userRole.permissions = allPermissions;
+      const specificPermissions = allPermissions.slice(0, 3);
+      userRole.permissions = specificPermissions;
       await roleRepository.save(userRole);
     }
   }

@@ -25,15 +25,15 @@ export class Role {
 
   @ApiProperty({ description: 'When role was created' })
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty({ description: 'When role was updated' })
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 
   @ApiProperty({ description: 'When role was deleted' })
   @DeleteDateColumn()
-  deletedAt?: Date;
+  deleted_at?: Date;
 
   @ManyToMany(() => Permission, (permission) => permission.roles)
   @JoinTable({

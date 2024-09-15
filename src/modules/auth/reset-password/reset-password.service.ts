@@ -69,7 +69,7 @@ export class ResetPasswordService {
     }
 
     user.password = await bcrypt.hash(password, 10);
-    user.isChangePasswordFirst = true; // Adjust based on your enum logic
+    user.is_change_password_first = true; // Adjust based on your enum logic
     await User.save(user);
 
     await PasswordResetToken.delete({ email: resetToken.email });

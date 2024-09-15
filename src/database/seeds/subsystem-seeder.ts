@@ -10,7 +10,7 @@ export class SubSystemSeeder implements Seeder {
 
     const systems = await systemRepository.find();
 
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 2; i++) {
       const subsystem = subsystemRepository.create({
         name: `Hệ thống con ${i}`,
         code: `SUBSYS${i}`,

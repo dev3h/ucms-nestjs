@@ -8,7 +8,7 @@ export class ActionSeeder implements Seeder {
     const actionRepository = dataSource.getRepository(Action);
     const moduleRepository = dataSource.getRepository(Module);
 
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 2; i++) {
       const action = actionRepository.create({
         name: `Action ${i}`,
         code: `ACT${i}`,
