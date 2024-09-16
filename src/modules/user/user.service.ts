@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UserRegisterRequestDto } from './dto/user-register.req.dto';
 import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { Request } from 'express';
 import { UserFilter } from './filters/user.filter';
 import { ResponseUtil } from '@/utils/response-util';
@@ -13,15 +13,17 @@ import { UserPermissionDto } from './dto/user-permission.dto';
 import { Permission } from '../permission/entities/permission.entity';
 import { UserHasPermission } from './user-has-permission.entity';
 import { Role } from '../role/entities/role.entity';
+import { UserPermissionStatusEnum } from './enums/user-permission-status.enum';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    private readonly userRepository: Repository<User>,
     @InjectRepository(Permission)
     private readonly permissionsRepository: Repository<Permission>,
     @InjectRepository(UserHasPermission)
+    private readonly userPermission: Repository<UserHasPermission>,
     @InjectRepository(Role)
     private readonly userPermissionFilter: UserPermissionFilter,
     private readonly userFilter: UserFilter,
@@ -48,9 +50,9 @@ export class UserService {
 
   async create(body) {
     try {
-      const system = this.usersRepository.create(body);
+      const system = this.userRepository.create(body);
 
-      await this.usersRepository.save(system);
+      await this.userRepository.save(system);
       return ResponseUtil.sendSuccessResponse(null, 'Created successfully');
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
@@ -62,7 +64,7 @@ export class UserService {
 
   async findAll(request: Request) {
     try {
-      const query = this.usersRepository
+      const query = this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.roles', 'role');
 
@@ -89,7 +91,7 @@ export class UserService {
   async getAllPermissionsOfUser(userId: number, request: Request) {
     try {
       // Fetch user with roles and permissions
-      const user = await this.usersRepository
+      const user = await this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.roles', 'role')
         .leftJoinAndSelect('role.permissions', 'rolePermission')
@@ -111,10 +113,13 @@ export class UserService {
         .filter((userHasPermission) => userHasPermission.is_direct)
         .map((userHasPermission) => userHasPermission.permission);
 
-      // const ignoredPermissions = user.userHasPermissions
-      //   .filter((userHasPermission) => !userHasPermission.is_direct)
-      //   .map((userHasPermission) => userHasPermission.permission);
-      const ignoredPermissions = [];
+      const ignoredPermissions = user.userHasPermissions
+        .filter(
+          (userHasPermission) =>
+            !userHasPermission.is_direct &&
+            userHasPermission.status === UserPermissionStatusEnum.IGNORED,
+        )
+        .map((userHasPermission) => userHasPermission.permission);
 
       // Calculate final permissions
       const allPermissions = [...rolePermissions, ...directPermissions];
@@ -172,6 +177,49 @@ export class UserService {
         error.message,
       );
     }
+  }
+
+  async getAvailablePermissionsForUser(userId: number): Promise<Permission[]> {
+    // 1. Lấy tất cả các role của user
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['roles', 'roles.permissions'], // Load các roles và permissions của roles
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // 2. Lấy danh sách quyền từ tất cả các role của user
+    const rolePermissions = user.roles.flatMap((role) => role.permissions);
+
+    // 3. Lấy danh sách quyền được gán trực tiếp và bị ignore của user
+    const userPermissions = await this.userPermission.find({
+      where: { user: { id: userId } },
+      relations: ['permission'],
+    });
+
+    const directPermissions = userPermissions
+      .filter((userPermission) => userPermission.is_direct)
+      .map((userPermission) => userPermission.permission);
+
+    const ignoredPermissions = userPermissions
+      .filter((userPermission) => userPermission.status === 0) // 0 là ignore
+      .map((userPermission) => userPermission.permission);
+
+    // 4. Tổng hợp danh sách quyền đã có (bao gồm từ roles, quyền trực tiếp, và bị ignore)
+    const existingPermissionIds = new Set([
+      ...rolePermissions.map((perm) => perm.id),
+      ...directPermissions.map((perm) => perm.id),
+      ...ignoredPermissions.map((perm) => perm.id),
+    ]);
+
+    // 5. Lấy danh sách quyền chưa có (không nằm trong existingPermissionIds)
+    const availablePermissions = await this.permissionsRepository.find({
+      where: { id: Not(In([...existingPermissionIds])) },
+    });
+
+    return availablePermissions;
   }
 
   findOne(id: number) {

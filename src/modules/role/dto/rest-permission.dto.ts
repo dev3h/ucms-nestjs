@@ -1,7 +1,7 @@
-import { System } from "@/modules/system/entities/system.entity";
-import { DataSource } from "typeorm";
+import { System } from '@/modules/system/entities/system.entity';
+import { Repository } from 'typeorm';
 
-export class UserPermissionDto {
+export class RestPermissionDto {
   id: number;
   name: string;
   code: string;
@@ -12,13 +12,9 @@ export class UserPermissionDto {
     this.code = permission.code;
   }
 
-  static mapFromEntities(entities: any[]): UserPermissionDto[] {
-    return entities.map((entity) => new UserPermissionDto(entity));
-  }
-
   static async toArray(
-    permissions: any[],
-    dataSource: DataSource,
+    permissions: any[],  
+    systemRepository: Repository<System>,
   ): Promise<any[]> {
     // Get all system codes from permissions
     const systemCodes = [
@@ -28,8 +24,7 @@ export class UserPermissionDto {
     ];
 
     // Get all systems with these codes
-    const systems = await dataSource
-      .getRepository(System)
+    const systems = await systemRepository
       .createQueryBuilder('system')
       .where('system.code IN (:...systemCodes)', { systemCodes })
       .getMany();

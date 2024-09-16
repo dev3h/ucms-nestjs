@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 import { Permission } from '../permission/entities/permission.entity';
 import { ApiProperty } from '@nestjs/swagger';
@@ -16,7 +22,15 @@ export class UserHasPermission {
   @JoinColumn({ name: 'permission_id' })
   permission: Permission;
 
-  @ApiProperty({ description: 'Quyền được gán trực tiếp cho user' })
+  @ApiProperty({ description: 'Permissions are assigned directly to users' })
   @Column({ type: 'boolean', default: false })
-  is_direct: boolean; // true: quyền được gán trực tiếp cho user, false: quyền từ role
+  is_direct: boolean;
+
+  @ApiProperty({ description: 'Status perrmission' })
+  @Column({
+    type: 'tinyint',
+    nullable: true,
+    comment: '1 = added, 2 = ignored, NULL = inherited from role',
+  })
+  status: number | null;
 }

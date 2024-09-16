@@ -7,9 +7,12 @@ import { UserFilter } from './filters/user.filter';
 import { UserPermissionFilter } from './filters/user-permission.filter';
 import { Permission } from '../permission/entities/permission.entity';
 import { UserHasPermission } from './user-has-permission.entity';
+import { Role } from '../role/entities/role.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Permission, UserHasPermission])],
+  imports: [
+    TypeOrmModule.forFeature([User, Permission, UserHasPermission, Role]),
+  ],
   controllers: [UserController],
   providers: [
     UserService,

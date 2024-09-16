@@ -43,10 +43,6 @@ export class RoleController {
 
   @Get(':id/rest-permission')
   async restPermission(@Param('id', ParseIntPipe) id: number) {
-    const data = await this.roleService.restPermission(id);
-    return {
-      success: true,
-      data,
-    };
+    return this.roleService.restPermission(id);
   }
 }
