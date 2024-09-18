@@ -23,9 +23,9 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Permission)
-    private readonly permissionsRepository: Repository<Permission>,
+    private readonly permissionRepository: Repository<Permission>,
     @InjectRepository(UserHasPermission)
-    private readonly userPermission: Repository<UserHasPermission>,
+    private readonly userPermissionRepository: Repository<UserHasPermission>,
     @InjectRepository(Role)
     private readonly userPermissionFilter: UserPermissionFilter,
     private readonly userFilter: UserFilter,
@@ -149,7 +149,7 @@ export class UserService {
       }
 
       // Apply filters using UserPermissionFilter
-      const permissionsQuery = this.permissionsRepository
+      const permissionsQuery = this.permissionRepository
         .createQueryBuilder('permission')
         .where('permission.id IN (:...permissionIds)', {
           permissionIds: finalPermissions.map((permission) => permission.id),
@@ -183,76 +183,190 @@ export class UserService {
     }
   }
 
-  async getAvailablePermissionsForUser(userId: number): Promise<Permission[]> {
-    // 1. Lấy tất cả các role của user
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ['roles', 'roles.permissions'], // Load các roles và permissions của roles
-    });
+  async getAvailablePermissionsForUser(userId: number) {
+    try {
+      // 1. Lấy tất cả các role của user
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['roles', 'roles.permissions'], // Load các roles và permissions của roles
+      });
 
-    if (!user) {
-      throw new Error('User not found');
+      if (!user) {
+        return ResponseUtil.sendErrorResponse('User not found');
+      }
+
+      // 2. Lấy danh sách quyền từ tất cả các role của user
+      const rolePermissions = user.roles.flatMap((role) => role.permissions);
+
+      // 3. Lấy danh sách quyền được gán trực tiếp và bị ignore của user
+      const userPermissions = await this.userPermissionRepository.find({
+        where: { user: { id: userId } },
+        relations: ['permission'],
+      });
+
+      const directPermissions = userPermissions
+        .filter((userPermission) => userPermission.is_direct)
+        .map((userPermission) => userPermission.permission);
+
+      const ignoredPermissions = userPermissions
+        .filter(
+          (userPermission) =>
+            userPermission.status === UserPermissionStatusEnum.IGNORED,
+        )
+        .map((userPermission) => userPermission.permission);
+
+      // 4. Tổng hợp danh sách quyền đã có (bao gồm từ roles, quyền trực tiếp, và bị ignore)
+      const existingPermissionIds = new Set([
+        ...rolePermissions.map((perm) => perm.id),
+        ...directPermissions.map((perm) => perm.id),
+        ...ignoredPermissions.map((perm) => perm.id),
+      ]);
+
+      // 5. Lấy danh sách quyền chưa có (không nằm trong existingPermissionIds)
+      const availablePermissions = await this.permissionRepository.find({
+        where: { id: Not(In([...existingPermissionIds])) },
+      });
+      const formattedData =
+        availablePermissions?.length > 0
+          ? await RestPermissionDto.toArray(
+              availablePermissions,
+              this.systemRepository,
+            )
+          : [];
+
+      return ResponseUtil.sendSuccessResponse({ data: formattedData });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        error.message,
+      );
     }
-
-    // 2. Lấy danh sách quyền từ tất cả các role của user
-    const rolePermissions = user.roles.flatMap((role) => role.permissions);
-
-    // 3. Lấy danh sách quyền được gán trực tiếp và bị ignore của user
-    const userPermissions = await this.userPermission.find({
-      where: { user: { id: userId } },
-      relations: ['permission'],
-    });
-
-    const directPermissions = userPermissions
-      .filter((userPermission) => userPermission.is_direct)
-      .map((userPermission) => userPermission.permission);
-
-    const ignoredPermissions = userPermissions
-      .filter((userPermission) => userPermission.status === 0) // 0 là ignore
-      .map((userPermission) => userPermission.permission);
-
-    // 4. Tổng hợp danh sách quyền đã có (bao gồm từ roles, quyền trực tiếp, và bị ignore)
-    const existingPermissionIds = new Set([
-      ...rolePermissions.map((perm) => perm.id),
-      ...directPermissions.map((perm) => perm.id),
-      ...ignoredPermissions.map((perm) => perm.id),
-    ]);
-
-    // 5. Lấy danh sách quyền chưa có (không nằm trong existingPermissionIds)
-    const availablePermissions = await this.permissionsRepository.find({
-      where: { id: Not(In([...existingPermissionIds])) },
-    });
-    const formattedData =
-      availablePermissions?.length > 0
-        ? await RestPermissionDto.toArray(
-            availablePermissions,
-            this.systemRepository,
-          )
-        : [];
-
-    return ResponseUtil.sendSuccessResponse({ data: formattedData });
   }
 
-  async getPermissionsFromUserRoles(userId: number): Promise<Permission[]> {
-    // Get the user with their roles and the permissions of those roles
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ['roles', 'roles.permissions'],
-    });
+  async getPermissionsFromUserRoles(userId: number) {
+    try {
+      // Get the user with their roles and the permissions of those roles
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['roles', 'roles.permissions'],
+      });
 
-    if (!user) {
-      throw new Error('User not found');
+      if (!user) {
+        return ResponseUtil.sendErrorResponse('User not found');
+      }
+
+      // Collect permissions from the roles assigned to the user
+      const permissions = user.roles.flatMap((role) => role.permissions);
+
+      // Remove duplicates by using a Set
+      const uniquePermissions = Array.from(
+        new Set(permissions.map((p) => p.id)),
+      ).map((id) => permissions.find((p) => p.id === id));
+
+      return ResponseUtil.sendSuccessResponse({ data: uniquePermissions });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        error.message,
+      );
     }
+  }
 
-    // Collect permissions from the roles assigned to the user
-    const permissions = user.roles.flatMap((role) => role.permissions);
+  async addPermissionsToUser(userId: number, permissionIds: number[]) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['userHasPermissions'],
+      });
 
-    // Remove duplicates by using a Set
-    const uniquePermissions = Array.from(
-      new Set(permissions.map((p) => p.id)),
-    ).map((id) => permissions.find((p) => p.id === id));
+      if (!user) {
+        return ResponseUtil.sendErrorResponse('User not found');
+      }
 
-    return ResponseUtil.sendSuccessResponse({ data: uniquePermissions });
+      // Get the permissions to be added based on the provided IDs
+      const permissionsToAdd = await this.permissionRepository.find({
+        where: { id: In(permissionIds) },
+      });
+
+      for (const permission of permissionsToAdd) {
+        // Check if the permission is already associated with the user
+        const existingUserPermission = user.userHasPermissions.find((up) => {
+          return up.id === permission.id;
+        });
+        console.log(!existingUserPermission);
+
+        if (!existingUserPermission) {
+          await this.userPermissionRepository.save({
+            user,
+            permission,
+            is_direct: true,
+            status: UserPermissionStatusEnum.ADDED,
+          });
+        }
+      }
+      return ResponseUtil.sendSuccessResponse(null, 'Permissions added');
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        error.message,
+      );
+    }
+  }
+
+  async ignorePermissions(
+    userId: number,
+    permissionIds: number[],
+    removePermissionIgnoreIds: number[],
+  ) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['userHasPermissions'],
+      });
+
+      if (!user) {
+        return ResponseUtil.sendErrorResponse('User not found');
+      }
+
+      if (permissionIds.length > 0) {
+        const userPermissions = await this.userPermissionRepository.find({
+          where: {
+            user: { id: userId },
+            permission: { id: In(permissionIds) },
+          },
+        });
+
+        for (const userPermission of userPermissions) {
+          userPermission.status = UserPermissionStatusEnum.IGNORED; // Mark as ignored
+          await this.userPermissionRepository.save(userPermission);
+        }
+      }
+
+      // Remove ignore status (set is_direct to 0)
+      if (removePermissionIgnoreIds.length > 0) {
+        const userPermissions = await this.userPermissionRepository.find({
+          where: {
+            user: { id: userId },
+            permission: { id: In(removePermissionIgnoreIds) },
+          },
+        });
+
+        for (const userPermission of userPermissions) {
+          userPermission.status = null;
+          await this.userPermissionRepository.save(userPermission);
+        }
+      }
+
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        'Permissions ignore successfully',
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        error.message,
+      );
+    }
   }
 
   findOne(id: number) {

@@ -81,4 +81,23 @@ export class UserController {
   async getPermissionsFromUserRoles(@Param('id') id: string) {
     return await this.userService.getPermissionsFromUserRoles(+id);
   }
+
+  @Post(':id/add-permissions')
+  @HttpCode(200)
+  async addPermissionsToUser(@Param('id') userId: number, @Body() body) {
+    const permissionIds = body.permissionIds;
+    return await this.userService.addPermissionsToUser(userId, permissionIds);
+  }
+
+  @Post(':id/ignore-permissions')
+  @HttpCode(200)
+  async ignorePermissions(@Param('id') userId: number, @Body() body) {
+    const permissionIds = body.permissionIds;
+    const removePermissionIgnoreIds = body.removePermissionIgnoreIds;
+    return await this.userService.ignorePermissions(
+      userId,
+      permissionIds,
+      removePermissionIgnoreIds,
+    );
+  }
 }
