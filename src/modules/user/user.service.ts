@@ -14,6 +14,8 @@ import { Permission } from '../permission/entities/permission.entity';
 import { UserHasPermission } from './user-has-permission.entity';
 import { Role } from '../role/entities/role.entity';
 import { UserPermissionStatusEnum } from './enums/user-permission-status.enum';
+import { RestPermissionDto } from '../role/dto/rest-permission.dto';
+import { System } from '../system/entities/system.entity';
 
 @Injectable()
 export class UserService {
@@ -27,6 +29,8 @@ export class UserService {
     @InjectRepository(Role)
     private readonly userPermissionFilter: UserPermissionFilter,
     private readonly userFilter: UserFilter,
+    @InjectRepository(System)
+    private readonly systemRepository: Repository<System>,
   ) {}
 
   async doUserRegistration(
@@ -218,8 +222,37 @@ export class UserService {
     const availablePermissions = await this.permissionsRepository.find({
       where: { id: Not(In([...existingPermissionIds])) },
     });
+    const formattedData =
+      availablePermissions?.length > 0
+        ? await RestPermissionDto.toArray(
+            availablePermissions,
+            this.systemRepository,
+          )
+        : [];
 
-    return availablePermissions;
+    return ResponseUtil.sendSuccessResponse({ data: formattedData });
+  }
+
+  async getPermissionsFromUserRoles(userId: number): Promise<Permission[]> {
+    // Get the user with their roles and the permissions of those roles
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['roles', 'roles.permissions'],
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Collect permissions from the roles assigned to the user
+    const permissions = user.roles.flatMap((role) => role.permissions);
+
+    // Remove duplicates by using a Set
+    const uniquePermissions = Array.from(
+      new Set(permissions.map((p) => p.id)),
+    ).map((id) => permissions.find((p) => p.id === id));
+
+    return ResponseUtil.sendSuccessResponse({ data: uniquePermissions });
   }
 
   findOne(id: number) {

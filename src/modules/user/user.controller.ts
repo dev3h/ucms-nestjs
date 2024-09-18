@@ -76,4 +76,9 @@ export class UserController {
   getRestPermissions(@Param('id') id: string, @Req() request: Request) {
     return this.userService.getAvailablePermissionsForUser(+id);
   }
+
+  @Get(':id/role-permissions')
+  async getPermissionsFromUserRoles(@Param('id') id: string) {
+    return await this.userService.getPermissionsFromUserRoles(+id);
+  }
 }
