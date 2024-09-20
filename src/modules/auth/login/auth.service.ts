@@ -64,18 +64,20 @@ export class AuthService {
     return user;
   }
 
-  generateToken(user: any) {
+  async generateToken(user: any) {
+    const payload = { username: user.email, sub: user.id };
     return {
-      access_token: this.jwtService.sign({
-        name: user.name,
-        sub: user.id,
-      }),
+      access_token: this.jwtService.sign(payload),
     };
   }
 
-  async login(data: any) {
-    const user = await this.validateUserCreds(data.email, data.password);
-    return this.generateToken(user);
+  async login(user: any) {
+    // const user = await this.validateUserCreds(data.username, data.password);
+    // return await this.generateToken(user);
+    const payload = { username: user.username, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 
   async loginRedirectUCSM(data: any) {

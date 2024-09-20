@@ -11,17 +11,17 @@ import { IsEmailExists } from './is-email-exists.validator';
 export class LoginRequestDto {
   @ApiProperty({
     description: 'Email address of the user',
-    example: 'reachme@amitavroy.com',
+    example: 'namnd@yopmail.com',
   })
   // @IsEmailExists()
   @Matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
   @IsEmail()
   @IsNotEmpty()
-  readonly email: string;
+  readonly username: string;
 
   @ApiProperty({
     description: 'Password in plain text',
-    example: 'Password@123',
+    example: 'a12345678X',
   })
   @Matches(/^[0-9a-zA-Z!"#$%&'()-^\\@\[;:\],.\/=~|`{+*}<>?_]+$/)
   @Length(8, 16)

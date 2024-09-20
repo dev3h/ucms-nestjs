@@ -9,7 +9,12 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import * as path from 'path';
-import { AcceptLanguageResolver, QueryResolver, I18nModule, HeaderResolver } from 'nestjs-i18n';
+import {
+  AcceptLanguageResolver,
+  QueryResolver,
+  I18nModule,
+  HeaderResolver,
+} from 'nestjs-i18n';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';

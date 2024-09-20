@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Post,
   Request,
   Response,
@@ -20,12 +21,16 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(
-    @Request() req,
-    @Response() res,
-    @Body() data: LoginRequestDto,
-  ): Promise<any> {
-    const token = this.authService.login(data);
+  @HttpCode(200)
+  async login(@Request() req, @Response() res, @Body() data: LoginRequestDto) {
+    const token = await this.authService.login(req.user);
+    return res.status(200).json(token);
+  }
+
+  @Post('login-ucms')
+  @HttpCode(200)
+  async loginUcms(@Request() req, @Response() res, @Body() data: LoginRequestDto) {
+    const token = await this.authService.loginRedirectUCSM(data);
     return res.status(200).json(token);
   }
 
