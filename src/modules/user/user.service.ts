@@ -4,6 +4,7 @@ import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Request } from 'express';
+import * as bcrypt from 'bcrypt';
 import { UserFilter } from './filters/user.filter';
 import { ResponseUtil } from '@/utils/response-util';
 import { paginate } from '@/utils/pagination.util';
@@ -379,5 +380,37 @@ export class UserService {
 
   remove(id: number) {
     return `This action removes a #${id} system`;
+  }
+
+  async setTwoFactorAuthenticationSecret(secret: string, userId: number) {
+    return this.userRepository.update(userId, {
+      two_factor_secret: secret,
+    });
+  }
+
+  async turnOnTwoFactorAuthentication(userId: number) {
+    return this.userRepository.update(userId, {
+      two_factor_enable: true,
+    });
+  }
+
+  async setCurrentRefreshToken(refreshToken: string, userId: number) {
+    const currentHashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    await this.userRepository.update(userId, {
+      refresh_token: currentHashedRefreshToken,
+    });
+  }
+
+  async getUserIfRefreshTokenMatches(refreshToken: string, userId: number) {
+    const user = await this.getUserById(userId);
+
+    const isRefreshTokenMatching = await bcrypt.compare(
+      refreshToken,
+      user.refresh_token,
+    );
+
+    if (isRefreshTokenMatching) {
+      return user;
+    }
   }
 }

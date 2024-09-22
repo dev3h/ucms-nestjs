@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   Post,
+  Req,
   Request,
   Response,
   UseGuards,
@@ -15,11 +16,17 @@ import { JwtAuthGuard } from '../jwt-auth.guard';
 import { LocalAuthGuard } from '../local-auth.guard';
 import { EmailRequestDto } from '../dto/email.dto';
 import { LoginSSOUCMSRequestDto } from '../dto/login-sso-ucms.dto';
+import RequestWithUser from '../requestWithUser.interface';
+import { UserService } from '@/modules/user/user.service';
+import { ResponseUtil } from '@/utils/response-util';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private readonly userService: UserService,
+  ) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
@@ -29,15 +36,45 @@ export class AuthController {
     return res.status(200).json(token);
   }
 
+  @UseGuards(LocalAuthGuard)
   @Post('login-ucms')
   @HttpCode(200)
   async loginUcms(
-    @Request() req,
+    @Req() request: RequestWithUser,
     @Response() res,
     @Body() data: LoginSSOUCMSRequestDto,
   ) {
-    const token = await this.authService.loginWithUCSM(data);
-    return res.status(200).json(token);
+    try {
+      const { user } = request;
+      const accessTokenCookie = this.authService.getCookieWithJwtAccessToken(
+        user.id,
+      );
+      const { cookie: refreshTokenCookie, token: refreshToken } =
+        this.authService.getCookieWithJwtRefreshToken(user.id);
+
+      await this.userService.setCurrentRefreshToken(refreshToken, user.id);
+
+      request.res.setHeader('Set-Cookie', [
+        accessTokenCookie,
+        refreshTokenCookie,
+      ]);
+
+      if (user.two_factor_enable) {
+        const data = {
+          twoFactor: true,
+        };
+        return res.status(200).json({ data });
+      }
+
+      return user;
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        error.message,
+      );
+    }
+    // const token = await this.authService.loginWithUCSM(data);
+    // return res.status(200).json(token);
   }
 
   @Post('check-email-exist')

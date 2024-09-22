@@ -17,7 +17,7 @@ export class LoginSSOUCMSRequestDto {
   @Matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
   @IsEmail()
   @IsNotEmpty()
-  readonly email: string;
+  readonly username: string;
 
   @ApiProperty({
     description: 'Password in plain text',

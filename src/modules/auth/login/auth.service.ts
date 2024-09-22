@@ -12,6 +12,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { System } from '@/modules/system/entities/system.entity';
 import { Repository } from 'typeorm';
 import { SystemToken } from '@/modules/system-token/entities/system-token.entity';
+import { User } from '@/modules/user/user.entity';
+import { ConfigService } from '@nestjs/config';
+import TokenPayload from '../tokenPayload.interface';
 
 @Injectable()
 export class AuthService {
@@ -20,9 +23,12 @@ export class AuthService {
     private userService: UserService,
     @InjectRepository(System)
     private readonly systemRepository: Repository<System>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     @InjectRepository(SystemToken)
     private readonly systemTokenRepository: Repository<SystemToken>,
     private jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   // Tạo session với JWT
@@ -238,5 +244,34 @@ export class AuthService {
         error.message,
       );
     }
+  }
+
+  public getCookieWithJwtAccessToken(
+    userId: number,
+    isSecondFactorAuthenticated = false,
+  ) {
+    const payload: TokenPayload = { userId, isSecondFactorAuthenticated };
+    const token = this.jwtService.sign(payload, {
+      secret: this.configService.get('JWT_ACCESS_TOKEN_SECRET'),
+      expiresIn: this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_TIME'),
+    });
+    return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get(
+      'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
+    )}`;
+  }
+
+  public getCookieWithJwtRefreshToken(userId: number) {
+    const payload: TokenPayload = { userId };
+    const token = this.jwtService.sign(payload, {
+      secret: this.configService.get('JWT_REFRESH_TOKEN_SECRET'),
+      expiresIn: this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION_TIME'),
+    });
+    const cookie = `Refresh=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get(
+      'JWT_REFRESH_TOKEN_EXPIRATION_TIME',
+    )}`;
+    return {
+      cookie,
+      token,
+    };
   }
 }

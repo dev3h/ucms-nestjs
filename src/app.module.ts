@@ -39,6 +39,7 @@ import { LanguageCheckMiddleware } from './common/middleware/language-check.midd
 import { SystemTokenModule } from './modules/system-token/system-token.module';
 import { IsUniqueConstraint } from './share/validation/unique/is-unique-constraint';
 import { IsExistsConstraint } from './share/validation/exist/is-exists-constraint';
+import { TwoFactorAuthenticationModule } from './modules/auth/twoFactor/two-factor-authentication.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { IsExistsConstraint } from './share/validation/exist/is-exists-constrain
     SeederModule,
     ResetPasswordModule,
     SystemTokenModule,
+    TwoFactorAuthenticationModule,
   ],
   controllers: [AppController],
   providers: [AppService, IsUniqueConstraint, IsExistsConstraint],
