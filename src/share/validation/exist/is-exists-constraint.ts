@@ -29,6 +29,8 @@ export class IsExistsConstraint implements ValidatorConstraintInterface {
   }
 
   defaultMessage?(validationArguments?: ValidationArguments): string {
-    return 'The record does not exist';
+    const { column }: IsExistsConstraintInput =
+      validationArguments?.constraints[0];
+    return `${column} does not exist`;
   }
 }

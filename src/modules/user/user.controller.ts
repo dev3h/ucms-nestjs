@@ -23,7 +23,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Request } from 'express';
 
-@ApiTags('User')
+@ApiTags('User Management')
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}

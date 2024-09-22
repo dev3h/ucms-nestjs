@@ -13,7 +13,9 @@ import { SystemService } from './system.service';
 import { CreateSystemDto } from './dto/create-system.dto';
 import { UpdateSystemDto } from './dto/update-system.dto';
 import { Request } from 'express';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('System Management')
 @Controller('system')
 export class SystemController {
   constructor(private readonly systemService: SystemService) {}

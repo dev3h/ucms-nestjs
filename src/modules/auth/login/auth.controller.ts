@@ -13,6 +13,8 @@ import { AuthService } from './auth.service';
 import { LoginRequestDto } from '../dto/login.dto';
 import { JwtAuthGuard } from '../jwt-auth.guard';
 import { LocalAuthGuard } from '../local-auth.guard';
+import { EmailRequestDto } from '../dto/email.dto';
+import { LoginSSOUCMSRequestDto } from '../dto/login-sso-ucms.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -29,9 +31,19 @@ export class AuthController {
 
   @Post('login-ucms')
   @HttpCode(200)
-  async loginUcms(@Request() req, @Response() res, @Body() data: LoginRequestDto) {
-    const token = await this.authService.loginRedirectUCSM(data);
+  async loginUcms(
+    @Request() req,
+    @Response() res,
+    @Body() data: LoginSSOUCMSRequestDto,
+  ) {
+    const token = await this.authService.loginWithUCSM(data);
     return res.status(200).json(token);
+  }
+
+  @Post('check-email-exist')
+  @HttpCode(200)
+  async checkEmailExist(@Body() data: EmailRequestDto) {
+    return this.authService.checkEmailExist(data.email);
   }
 
   @ApiBearerAuth()
