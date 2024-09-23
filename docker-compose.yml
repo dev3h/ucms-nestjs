@@ -35,5 +35,29 @@ services:
     image: redis:latest
     restart: always
 
+  epu_ucms_backend:
+    image: epu_ucms_backend:v1.0
+    container_name: epu_ucms_backend
+    env_file:
+      - ./.env
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "5000:5000"
+    tty: true
+    restart: always
+
+  epu_ucms_frontend:
+    image: node:latest
+    container_name: epu_ucms_frontend
+    working_dir: /app
+    volumes:
+      - ../ucms-frontend:/app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
 volumes:
   mysql_data:
