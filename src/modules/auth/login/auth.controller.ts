@@ -33,7 +33,8 @@ export class AuthController {
   @HttpCode(200)
   async login(@Request() req, @Response() res, @Body() data: LoginRequestDto) {
     const token = await this.authService.login(req.user);
-    return res.status(200).json(token);
+    const response = ResponseUtil.sendSuccessResponse({ data: token });
+    return res.status(200).json(response);
   }
 
   @UseGuards(LocalAuthGuard)

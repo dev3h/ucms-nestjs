@@ -9,6 +9,7 @@ import {
   Body,
   UnauthorizedException,
   HttpCode,
+  Request,
 } from '@nestjs/common';
 import { TwoFactorAuthenticationService } from './twoFactorAuthentication.service';
 import { Response } from 'express';
@@ -17,7 +18,9 @@ import { TwoFactorAuthenticationCodeDto } from './dto/twoFactorAuthenticationCod
 import { UserService } from '@/modules/user/user.service';
 import { AuthService } from '../login/auth.service';
 import RequestWithUser from '../requestWithUser.interface';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../jwt-auth.guard';
+import { ResponseUtil } from '@/utils/response-util';
 
 @ApiTags('Auth')
 @Controller('2fa')
@@ -29,17 +32,20 @@ export class TwoFactorAuthenticationController {
     private readonly authenticationService: AuthService,
   ) {}
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post('generate')
-  @UseGuards(JwtAuthenticationGuard)
-  async register(@Res() response: Response, @Req() request: RequestWithUser) {
-    const { otpauthUrl } =
+  @HttpCode(200)
+  // @UseGuards(JwtAuthGuard)
+  async register(@Res() response: Response, @Request() request) {
+    const data =
       await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(
         request.user,
       );
 
     return this.twoFactorAuthenticationService.pipeQrCodeStream(
       response,
-      otpauthUrl,
+      data?.data?.otpauthUrl,
     );
   }
 

@@ -26,7 +26,7 @@ export class UserHasPermission {
   @Column({ type: 'boolean', default: false })
   is_direct: boolean;
 
-  @ApiProperty({ description: 'Status perrmission' })
+  @ApiProperty({ description: 'Status permission' })
   @Column({
     type: 'tinyint',
     nullable: true,

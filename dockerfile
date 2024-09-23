@@ -27,6 +27,9 @@ RUN npm install --frozen-lockfile --production
 # Copy built files from the builder stage
 COPY --from=builder /app/dist ./dist
 
+# Copy tsconfig.json for migration generation
+COPY tsconfig.json ./
+
 # Copy any other necessary files (e.g., public assets)
 # COPY --from=builder /app/public ./public
 
