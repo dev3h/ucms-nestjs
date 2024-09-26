@@ -21,7 +21,7 @@ import RequestWithUser from '../requestWithUser.interface';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../guard/jwt-auth.guard';
 import { ResponseUtil } from '@/utils/response-util';
-import { UserGuard } from '../guard/user-auth.guard';
+import { JwtUserGuard } from '../guard/jwt-user.guard';
 
 @ApiTags('MFA')
 @Controller('2fa')
@@ -47,7 +47,7 @@ export class TwoFactorAuthenticationController {
   // @UseGuards(JwtUserGuard)
   @Post('generate')
   @HttpCode(200)
-  @UseGuards(UserGuard)
+  @UseGuards(JwtUserGuard)
   async register(@Res() response: Response, @Request() request) {
     const data =
       await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(

@@ -12,7 +12,7 @@ import { System } from '@/modules/system/entities/system.entity';
 import { SystemToken } from '@/modules/system-token/entities/system-token.entity';
 import { User } from '@/modules/user/user.entity';
 import { RedisModule } from '@/modules/redis/redis.module';
-import { UserStrategy } from '../strategy/user.strategy';
+import { JwtUserStrategy } from '../strategy/jwt-user.strategy';
 
 @Module({
   imports: [
@@ -20,18 +20,18 @@ import { UserStrategy } from '../strategy/user.strategy';
     PassportModule,
     RedisModule,
     JwtModule.registerAsync(jwtConfig),
-    JwtModule.register({
-      secret: process.env.JWT_USER_SECRET || 'userSecret', // JWT for users
-      signOptions: { expiresIn: '1h' },
-    }),
-    JwtModule.register({
-      secret: process.env.JWT_ADMIN_SECRET || 'adminSecret', // JWT for admins
-      signOptions: { expiresIn: '1h' },
-    }),
+    // JwtModule.register({
+    //   secret: process.env.JWT_USER_SECRET || 'userSecret', // JWT for users
+    //   signOptions: { expiresIn: '1h' },
+    // }),
+    // JwtModule.register({
+    //   secret: process.env.JWT_ADMIN_SECRET || 'adminSecret', // JWT for admins
+    //   signOptions: { expiresIn: '1h' },
+    // }),
     TypeOrmModule.forFeature([System, SystemToken, User]),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy, UserStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, JwtUserStrategy],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, JwtUserStrategy],
 })
 export class AuthModule {}

@@ -28,6 +28,7 @@ import { LoginSSOUCMSRequestDto } from '../dto/login-sso-ucms.dto';
 import RequestWithUser from '../requestWithUser.interface';
 import { UserService } from '@/modules/user/user.service';
 import { ResponseUtil } from '@/utils/response-util';
+import { JwtAdminGuard } from '../guard/jwt-admin.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -90,7 +91,7 @@ export class AuthController {
 
   @ApiTags('Auth')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAdminGuard)
   @Get('user')
   async user(@Request() req): Promise<any> {
     return req.user;

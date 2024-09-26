@@ -36,7 +36,7 @@ export class AuthService {
 
   // Tạo admin token
   async createAdminToken(admin: any) {
-    const payload = { email: admin.email, sub: admin.id, role: 'admin' };
+    const payload = { email: admin.email, id: admin.id, role: 'admin' };
     const token = this.jwtService.sign(payload, {
       expiresIn: '1h',
     });
@@ -51,7 +51,7 @@ export class AuthService {
 
   // Tạo user token
   async createUserToken(user: any) {
-    const payload = { email: user.email, sub: user.id, role: 'user' };
+    const payload = { email: user.email, id: user.id, role: 'user' };
     const token = this.jwtService.sign(payload, {
       expiresIn: '1h',
     });
@@ -66,9 +66,9 @@ export class AuthService {
     if (isBlacklisted) {
       throw new UnauthorizedException('Token is blacklisted');
     }
-
     try {
-      return this.jwtService.verify(token);
+      const payload = this.jwtService.verify(token);
+      return payload;
     } catch (e) {
       throw new UnauthorizedException('Invalid token');
     }

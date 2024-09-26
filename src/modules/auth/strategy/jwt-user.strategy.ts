@@ -5,7 +5,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from '../login/auth.service';
 
 @Injectable()
-export class UserStrategy extends PassportStrategy(Strategy, 'user') {
+export class JwtUserStrategy extends PassportStrategy(Strategy, 'jwt-user') {
   constructor(private authService: AuthService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -14,16 +14,11 @@ export class UserStrategy extends PassportStrategy(Strategy, 'user') {
   }
 
   async validate(payload: any) {
-    const isTokenBlacklisted = await this.authService.verifyToken(payload.jti);
-    if (isTokenBlacklisted) {
+    const data = await this.authService.verifyToken(payload);
+    if (!data) {
       throw new UnauthorizedException('Token is blacklisted');
     }
 
-    // Xác thực user
-    if (payload.role !== 'user') {
-      throw new UnauthorizedException('User privileges required');
-    }
-
-    return payload;
+    return data;
   }
 }

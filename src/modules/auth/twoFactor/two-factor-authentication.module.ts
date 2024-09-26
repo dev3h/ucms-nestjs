@@ -10,6 +10,7 @@ import { JwtStrategy } from '../strategy/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConfig } from '@/config/jwt.config';
+import { AuthService } from '../login/auth.service';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { jwtConfig } from '@/config/jwt.config';
   controllers: [TwoFactorAuthenticationController],
   providers: [
     TwoFactorAuthenticationService,
+    // AuthService,
     // LocalStrategy,
     // JwtStrategy,
     // JwtUserStrategy,
