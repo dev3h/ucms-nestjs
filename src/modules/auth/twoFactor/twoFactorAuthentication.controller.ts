@@ -13,15 +13,15 @@ import {
 } from '@nestjs/common';
 import { TwoFactorAuthenticationService } from './twoFactorAuthentication.service';
 import { Response } from 'express';
-import JwtAuthenticationGuard from '../jwt-authentication.guard';
+import JwtAuthenticationGuard from '../guard/jwt-authentication.guard';
 import { TwoFactorAuthenticationCodeDto } from './dto/twoFactorAuthenticationCode.dto';
 import { UserService } from '@/modules/user/user.service';
 import { AuthService } from '../login/auth.service';
 import RequestWithUser from '../requestWithUser.interface';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../jwt-auth.guard';
+import { JwtAuthGuard } from '../guard/jwt-auth.guard';
 import { ResponseUtil } from '@/utils/response-util';
-import { UserGuard } from '../user.guard';
+import { UserGuard } from '../guard/user-auth.guard';
 
 @ApiTags('MFA')
 @Controller('2fa')
@@ -44,10 +44,10 @@ export class TwoFactorAuthenticationController {
     description: 'Redirect URI khi login thành công',
     example: 'http://localhost:3000',
   })
-  @UseGuards(UserGuard)
+  // @UseGuards(JwtUserGuard)
   @Post('generate')
   @HttpCode(200)
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(UserGuard)
   async register(@Res() response: Response, @Request() request) {
     const data =
       await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(

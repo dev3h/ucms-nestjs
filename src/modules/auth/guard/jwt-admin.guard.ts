@@ -3,4 +3,4 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
-export class AdminGuard extends AuthGuard('jwt-admin') {}
+export class JwtAdminGuard extends AuthGuard('jwt-admin') {}

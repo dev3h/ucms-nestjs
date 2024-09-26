@@ -21,8 +21,8 @@ import {
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginRequestDto } from '../dto/login.dto';
-import { JwtAuthGuard } from '../jwt-auth.guard';
-import { LocalAuthGuard } from '../local-auth.guard';
+import { JwtAuthGuard } from '../guard/jwt-auth.guard';
+import { LocalAuthGuard } from '../guard/local-auth.guard';
 import { EmailRequestDto } from '../dto/email.dto';
 import { LoginSSOUCMSRequestDto } from '../dto/login-sso-ucms.dto';
 import RequestWithUser from '../requestWithUser.interface';

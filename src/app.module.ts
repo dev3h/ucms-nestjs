@@ -40,8 +40,6 @@ import { IsUniqueConstraint } from './share/validation/unique/is-unique-constrai
 import { IsExistsConstraint } from './share/validation/exist/is-exists-constraint';
 import { TwoFactorAuthenticationModule } from './modules/auth/twoFactor/two-factor-authentication.module';
 import { RedisModule } from './modules/redis/redis.module';
-import { JwtUserStrategy } from './modules/auth/jwt-user.strategy';
-import { JwtAdminStrategy } from './modules/auth/ jwt-admin.strategy';
 
 @Module({
   imports: [
@@ -92,13 +90,7 @@ import { JwtAdminStrategy } from './modules/auth/ jwt-admin.strategy';
     RedisModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    IsUniqueConstraint,
-    IsExistsConstraint,
-    JwtUserStrategy,
-    JwtAdminStrategy,
-  ],
+  providers: [AppService, IsUniqueConstraint, IsExistsConstraint],
 })
 export class AppModule implements NestModule {
   // constructor(private readonly seederService: SeederService) {}

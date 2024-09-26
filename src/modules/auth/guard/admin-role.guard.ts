@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { UserRoles } from '../user/enums/user.enum';
-import { UserService } from '../user/user.service';
+import { UserRoles } from '../../user/enums/user.enum';
+import { UserService } from '../../user/user.service';
 
 @Injectable()
 export class AdminRoleGuard implements CanActivate {

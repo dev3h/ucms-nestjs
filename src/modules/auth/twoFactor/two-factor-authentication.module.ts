@@ -5,13 +5,11 @@ import { TwoFactorAuthenticationController } from './twoFactorAuthentication.con
 import { TwoFactorAuthenticationService } from './twoFactorAuthentication.service';
 import { UserModule } from '@/modules/user/user.module';
 import { AuthModule } from '../login/auth.module';
-import { LocalStrategy } from '../local.strategy';
-import { JwtStrategy } from '../jwt.strategy';
+import { LocalStrategy } from '../strategy/local.strategy';
+import { JwtStrategy } from '../strategy/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConfig } from '@/config/jwt.config';
-import { JwtUserStrategy } from '../jwt-user.strategy';
-import { JwtAdminStrategy } from '../ jwt-admin.strategy';
 
 @Module({
   imports: [
@@ -34,8 +32,8 @@ import { JwtAdminStrategy } from '../ jwt-admin.strategy';
     TwoFactorAuthenticationService,
     // LocalStrategy,
     // JwtStrategy,
+    // JwtUserStrategy,
     // JwtAdminStrategy,
-    JwtUserStrategy,
   ],
 })
 export class TwoFactorAuthenticationModule {}
