@@ -51,8 +51,14 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .addBearerAuth()
     .setTitle('UCMS API')
-    .setDescription('User Central Management System description')
+    .setDescription('Tất cả các API của hệ thống quản lý người dùng tập trung')
     .setVersion('1.0')
+    .addTag('Auth', 'Xử lý đăng nhập admin')
+    .addTag('Reset Password', 'Đặt lại mật khẩu')
+    .addTag('Auth Redirect UCMS', 'Xử lý đăng nhập redirect tới UCMS')
+    .addTag('MFA', 'Xử lý xác thực 2 bước')
+    .addTag('System Management', 'Quản lý hệ thống')
+    .addTag('User Management', 'Quản lý người dùng')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);

@@ -1,6 +1,7 @@
 import {
   HttpStatus,
   Injectable,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { UserService } from '../../user/user.service';
@@ -15,6 +16,7 @@ import { SystemToken } from '@/modules/system-token/entities/system-token.entity
 import { User } from '@/modules/user/user.entity';
 import { ConfigService } from '@nestjs/config';
 import TokenPayload from '../tokenPayload.interface';
+import { RedisService } from '@/modules/redis/redis.service';
 
 @Injectable()
 export class AuthService {
@@ -29,7 +31,53 @@ export class AuthService {
     private readonly systemTokenRepository: Repository<SystemToken>,
     private jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {}
+
+  // Tạo admin token
+  async createAdminToken(admin: any) {
+    const payload = { email: admin.email, sub: admin.id, role: 'admin' };
+    const token = this.jwtService.sign(payload, {
+      expiresIn: '1h',
+    });
+
+    await this.redisService.saveSession(
+      `admin-session:${admin.id}`,
+      token,
+      3600,
+    );
+    return token;
+  }
+
+  // Tạo user token
+  async createUserToken(user: any) {
+    const payload = { email: user.email, sub: user.id, role: 'user' };
+    const token = this.jwtService.sign(payload, {
+      expiresIn: '1h',
+    });
+
+    await this.redisService.saveSession(`user-session:${user.id}`, token, 3600);
+    return token;
+  }
+
+  // Xác thực token từ Redis, kiểm tra nếu bị blacklist
+  async verifyToken(token: string) {
+    const isBlacklisted = await this.redisService.isTokenBlacklisted(token);
+    if (isBlacklisted) {
+      throw new UnauthorizedException('Token is blacklisted');
+    }
+
+    try {
+      return this.jwtService.verify(token);
+    } catch (e) {
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  // Blacklist token khi user/admin logout
+  async logout(token: string) {
+    await this.redisService.blacklistToken(token);
+  }
 
   // Tạo session với JWT
   createSession(user: any): string {

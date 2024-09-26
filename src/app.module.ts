@@ -34,12 +34,14 @@ import LogsMiddleware from './utils/logs.middleware';
 import { SeederModule } from './database/seeder.module';
 import { DatabaseConfigModule } from './database/database-config.module';
 import { ResetPasswordModule } from './modules/auth/reset-password/reset-password.module';
-import { MailModule } from './mail/reset-password-mail/mail.module';
 import { LanguageCheckMiddleware } from './common/middleware/language-check.middleware';
 import { SystemTokenModule } from './modules/system-token/system-token.module';
 import { IsUniqueConstraint } from './share/validation/unique/is-unique-constraint';
 import { IsExistsConstraint } from './share/validation/exist/is-exists-constraint';
 import { TwoFactorAuthenticationModule } from './modules/auth/twoFactor/two-factor-authentication.module';
+import { RedisModule } from './modules/redis/redis.module';
+import { JwtUserStrategy } from './modules/auth/jwt-user.strategy';
+import { JwtAdminStrategy } from './modules/auth/ jwt-admin.strategy';
 
 @Module({
   imports: [
@@ -63,7 +65,7 @@ import { TwoFactorAuthenticationModule } from './modules/auth/twoFactor/two-fact
       useFactory: async (configService: ConfigService) => ({
         redis: {
           host: configService.get('REDIS_HOST'),
-          username: configService.get('REDIS_USERNAME'),
+          // username: configService.get('REDIS_USERNAME'),
           port: Number(configService.get('REDIS_PORT')),
           password: configService.get('REDIS_PASSWORD'),
         },
@@ -87,9 +89,16 @@ import { TwoFactorAuthenticationModule } from './modules/auth/twoFactor/two-fact
     ResetPasswordModule,
     SystemTokenModule,
     TwoFactorAuthenticationModule,
+    RedisModule,
   ],
   controllers: [AppController],
-  providers: [AppService, IsUniqueConstraint, IsExistsConstraint],
+  providers: [
+    AppService,
+    IsUniqueConstraint,
+    IsExistsConstraint,
+    JwtUserStrategy,
+    JwtAdminStrategy,
+  ],
 })
 export class AppModule implements NestModule {
   // constructor(private readonly seederService: SeederService) {}

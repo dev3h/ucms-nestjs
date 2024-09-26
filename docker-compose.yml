@@ -33,7 +33,17 @@ services:
 
   redis:
     image: redis:latest
-    restart: always
+    ports:
+      - '${FORWARD_REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+            test:
+                - CMD
+                - redis-cli
+                - ping
+            retries: 3
+            timeout: 5s
 
   # epu_ucms_backend:
   #   image: epu_ucms_backend:v1.0
@@ -61,3 +71,4 @@ services:
   #     - PORT=3000
 volumes:
   mysql_data:
+  redis_data:

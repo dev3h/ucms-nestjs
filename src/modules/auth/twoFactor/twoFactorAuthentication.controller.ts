@@ -18,11 +18,12 @@ import { TwoFactorAuthenticationCodeDto } from './dto/twoFactorAuthenticationCod
 import { UserService } from '@/modules/user/user.service';
 import { AuthService } from '../login/auth.service';
 import RequestWithUser from '../requestWithUser.interface';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../jwt-auth.guard';
 import { ResponseUtil } from '@/utils/response-util';
+import { UserGuard } from '../user.guard';
 
-@ApiTags('Auth')
+@ApiTags('MFA')
 @Controller('2fa')
 @UseInterceptors(ClassSerializerInterceptor)
 export class TwoFactorAuthenticationController {
@@ -33,7 +34,17 @@ export class TwoFactorAuthenticationController {
   ) {}
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @ApiQuery({
+    name: 'client_id',
+    description: 'Client ID của hệ thống',
+    example: '123',
+  })
+  @ApiQuery({
+    name: 'redirect_uri',
+    description: 'Redirect URI khi login thành công',
+    example: 'http://localhost:3000',
+  })
+  @UseGuards(UserGuard)
   @Post('generate')
   @HttpCode(200)
   // @UseGuards(JwtAuthGuard)
@@ -49,6 +60,16 @@ export class TwoFactorAuthenticationController {
     );
   }
 
+  @ApiQuery({
+    name: 'client_id',
+    description: 'Client ID của hệ thống',
+    example: '123',
+  })
+  @ApiQuery({
+    name: 'redirect_uri',
+    description: 'Redirect URI khi login thành công',
+    example: 'http://localhost:3000',
+  })
   @Post('turn-on')
   @HttpCode(200)
   @UseGuards(JwtAuthenticationGuard)
@@ -67,6 +88,16 @@ export class TwoFactorAuthenticationController {
     await this.userService.turnOnTwoFactorAuthentication(request.user.id);
   }
 
+  @ApiQuery({
+    name: 'client_id',
+    description: 'Client ID của hệ thống',
+    example: '123',
+  })
+  @ApiQuery({
+    name: 'redirect_uri',
+    description: 'Redirect URI khi login thành công',
+    example: 'http://localhost:3000',
+  })
   @Post('authenticate')
   @HttpCode(200)
   @UseGuards(JwtAuthenticationGuard)

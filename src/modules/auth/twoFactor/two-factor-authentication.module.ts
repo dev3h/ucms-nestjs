@@ -10,6 +10,8 @@ import { JwtStrategy } from '../jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConfig } from '@/config/jwt.config';
+import { JwtUserStrategy } from '../jwt-user.strategy';
+import { JwtAdminStrategy } from '../ jwt-admin.strategy';
 
 @Module({
   imports: [
@@ -17,9 +19,23 @@ import { jwtConfig } from '@/config/jwt.config';
     AuthModule,
     PassportModule,
     JwtModule.registerAsync(jwtConfig),
+    // JwtModule.register({
+    //   secret: process.env.JWT_USER_SECRET || 'userSecret', // JWT for users
+    //   signOptions: { expiresIn: '1h' },
+    // }),
+    // JwtModule.register({
+    //   secret: process.env.JWT_ADMIN_SECRET || 'adminSecret', // JWT for admins
+    //   signOptions: { expiresIn: '1h' },
+    // }),
     TypeOrmModule.forFeature([User]),
   ],
   controllers: [TwoFactorAuthenticationController],
-  providers: [TwoFactorAuthenticationService, LocalStrategy, JwtStrategy],
+  providers: [
+    TwoFactorAuthenticationService,
+    // LocalStrategy,
+    // JwtStrategy,
+    // JwtAdminStrategy,
+    JwtUserStrategy,
+  ],
 })
 export class TwoFactorAuthenticationModule {}
