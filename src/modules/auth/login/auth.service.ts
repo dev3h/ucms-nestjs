@@ -17,6 +17,7 @@ import { User } from '@/modules/user/user.entity';
 import { ConfigService } from '@nestjs/config';
 import TokenPayload from '../tokenPayload.interface';
 import { RedisService } from '@/modules/redis/redis.service';
+import { SystemService } from '../../system/system.service';
 
 @Injectable()
 export class AuthService {
@@ -29,6 +30,7 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(SystemToken)
     private readonly systemTokenRepository: Repository<SystemToken>,
+    private readonly systemService: SystemService,
     private jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
@@ -176,11 +178,25 @@ export class AuthService {
     };
   }
 
-  async checkEmailExist(email: string) {
+  async checkEmailExist(email: string, query: any) {
     try {
+      const system =
+        await this.systemService.checkClientIdAndRedirectUri(query);
+      if (system?.data === null) {
+        return ResponseUtil.sendErrorResponse(
+          'Invalid client_id or redirect_uri',
+          'INVALID_CLIENT_ID_OR_REDIRECT_URI',
+        );
+      }
       const user = await this.userService.getUserByEmail(email);
       const sessionToken = this.createSession(user);
-      return ResponseUtil.sendSuccessResponse({ data: sessionToken });
+      return ResponseUtil.sendSuccessResponse({
+        data: {
+          sessionToken,
+          email,
+          ...query,
+        },
+      });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         'Something went wrong',

@@ -17,5 +17,6 @@ import { REQUEST } from '@nestjs/core';
       scope: Scope.REQUEST,
     },
   ],
+  exports: [SystemService],
 })
 export class SystemModule {}

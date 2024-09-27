@@ -52,6 +52,25 @@ export class SystemService {
     }
   }
 
+  async checkClientIdAndRedirectUri(data: any) {
+    try {
+      const system = await this.systemsRepository.findOne({
+        where: { client_id: data.client_id, redirect_uris: data.redirect_uri },
+      });
+
+      if (!system) {
+        return ResponseUtil.sendSuccessResponse({ data: null });
+      }
+
+      return ResponseUtil.sendSuccessResponse({ data: system });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        error.message,
+      );
+    }
+  }
+
   async findAll(request: Request) {
     try {
       const query = this.systemsRepository.createQueryBuilder('system');

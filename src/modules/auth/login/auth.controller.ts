@@ -147,9 +147,15 @@ export class AuthController {
     @Body() data: EmailRequestDto,
     @Query('client_id') clientId: string,
     @Query('redirect_uri') redirectUri: string,
+    @Res() res,
   ) {
-    console.log({ clientId, redirectUri });
-    return this.authService.checkEmailExist(data.email);
+    const query = {
+      client_id: clientId,
+      redirect_uri: redirectUri,
+    };
+    const response = await this.authService.checkEmailExist(data.email, query);
+    const resData = ResponseUtil.sendSuccessResponse(response);
+    return res.status(200).json(resData);
   }
   @ApiTags('Auth Redirect UCMS')
   @Post('oauth/login')

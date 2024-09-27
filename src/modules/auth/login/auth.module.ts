@@ -13,12 +13,14 @@ import { SystemToken } from '@/modules/system-token/entities/system-token.entity
 import { User } from '@/modules/user/user.entity';
 import { RedisModule } from '@/modules/redis/redis.module';
 import { JwtUserStrategy } from '../strategy/jwt-user.strategy';
+import { SystemModule } from '@/modules/system/system.module';
 
 @Module({
   imports: [
     UserModule,
     PassportModule,
     RedisModule,
+    SystemModule,
     JwtModule.registerAsync(jwtConfig),
     // JwtModule.register({
     //   secret: process.env.JWT_USER_SECRET || 'userSecret', // JWT for users
