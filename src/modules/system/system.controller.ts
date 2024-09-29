@@ -26,6 +26,12 @@ export class SystemController {
     return this.systemService.create(body);
   }
 
+  @Post('check-data-system')
+  @HttpCode(200)
+  checkCorrectSystem(@Body() body) {
+    return this.systemService.checkClientIdAndRedirectUri(body);
+  }
+
   @Get()
   findAll(@Req() request: Request) {
     return this.systemService.findAll(request);

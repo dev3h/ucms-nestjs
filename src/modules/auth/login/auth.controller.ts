@@ -140,7 +140,6 @@ export class AuthController {
     description: 'Redirect URI khi login thành công',
     example: 'http://localhost:3000',
   })
-  @ApiTags('Auth Redirect UCMS')
   @Post('check-email-exist')
   @HttpCode(200)
   async checkEmailExist(
@@ -158,17 +157,32 @@ export class AuthController {
     return res.status(200).json(resData);
   }
   @ApiTags('Auth Redirect UCMS')
-  @Post('oauth/login')
+  @ApiQuery({
+    name: 'client_id',
+    description: 'Client ID của hệ thống',
+    example: '123',
+  })
+  @ApiQuery({
+    name: 'redirect_uri',
+    description: 'Redirect URI khi login thành công',
+    example: 'http://localhost:3000',
+  })
+  @Post('oauth-ucms/login')
   @HttpCode(200)
-  async oauthLogin(@Body() data: LoginRequestDto, @Response() res) {
-    const user = await this.authService.validateUserCreds(
-      data.email,
-      data.password,
-    );
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-    const token = await this.authService.createUserToken(user);
-    return res.json({ access_token: token });
+  async oauthLogin(
+    @Body() data: LoginRequestDto,
+    @Query('client_id') clientId: string,
+    @Query('redirect_uri') redirectUri: string,
+    @Query('session_token') sessionToken: string,
+    @Response() res,
+  ) {
+    const query = {
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      session_token: sessionToken,
+    };
+    const response = await this.authService.loginWithUCSM(data, query);
+    const dataRes = ResponseUtil.sendSuccessResponse(response);
+    return res.status(200).json(dataRes);
   }
 }

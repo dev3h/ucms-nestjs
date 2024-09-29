@@ -53,22 +53,29 @@ export class SystemService {
   }
 
   async checkClientIdAndRedirectUri(data: any) {
-    try {
-      const system = await this.systemsRepository.findOne({
-        where: { client_id: data.client_id, redirect_uris: data.redirect_uri },
-      });
+    // Check if the client_id is valid
+    const system = await this.systemsRepository.findOne({
+      where: { client_id: data.client_id },
+    });
 
-      if (!system) {
-        return ResponseUtil.sendSuccessResponse({ data: null });
-      }
+    if (!system) {
+      const errorMessage = Buffer.from('Invalid client_id').toString('base64');
+      return ResponseUtil.sendErrorResponse(errorMessage, 'INVALID_CLIENT_ID');
+    }
 
-      return ResponseUtil.sendSuccessResponse({ data: system });
-    } catch (error) {
+    // Check if the redirect_uri is valid
+    const isValidRedirectUri = system.redirect_uris.includes(data.redirect_uri);
+    if (!isValidRedirectUri) {
+      const errorMessage = Buffer.from('Invalid redirect_uri').toString(
+        'base64',
+      );
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
-        error.message,
+        errorMessage,
+        'INVALID_REDIRECT_URI',
       );
     }
+
+    return ResponseUtil.sendSuccessResponse({ data: system });
   }
 
   async findAll(request: Request) {

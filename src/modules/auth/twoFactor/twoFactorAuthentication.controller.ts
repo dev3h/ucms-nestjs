@@ -48,15 +48,20 @@ export class TwoFactorAuthenticationController {
   @Post('generate')
   @HttpCode(200)
   @UseGuards(JwtUserGuard)
-  async register(@Res() response: Response, @Request() request) {
-    const data =
+  async register(@Body() data, @Res() response: Response, @Request() request) {
+    const checkConsentToken =
+      await this.authenticationService.verifyConsentToken(data?.consent_token);
+    if (!checkConsentToken) {
+      throw new UnauthorizedException('Consent token is invalid');
+    }
+    const dataGenerate =
       await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(
         request.user,
       );
 
     return this.twoFactorAuthenticationService.pipeQrCodeStream(
       response,
-      data?.data?.otpauthUrl,
+      dataGenerate?.data?.otpauthUrl,
     );
   }
 

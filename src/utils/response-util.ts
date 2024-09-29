@@ -13,6 +13,18 @@ export class ResponseUtil {
     };
   }
 
+  static sendErrorResponseWithNoException(
+    message: string,
+    errors: any = null,
+    code: number = HttpStatus.INTERNAL_SERVER_ERROR,
+  ) {
+    return {
+      status_code: code,
+      message: message,
+      errors: errors,
+    };
+  }
+
   static sendErrorResponse(
     message: string,
     errors: any = null,

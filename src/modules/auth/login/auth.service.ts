@@ -160,13 +160,18 @@ export class AuthService {
   }
 
   // Tạo JWT cho hệ thống ngoài sau khi người dùng đồng ý quyền truy cập
-  createFinalToken(user: any): string {
+  async createFinalToken(user: any) {
     const payload = {
       email: user.email,
       sub: user.id,
       permissions: user.permissions,
     };
-    return this.jwtService.sign(payload, { expiresIn: '1h' });
+    const token = this.jwtService.sign(payload, {
+      expiresIn: '1h',
+    });
+
+    await this.redisService.saveSession(`user-session:${user.id}`, token, 3600);
+    return token;
   }
 
   async login(user: any) {
@@ -183,7 +188,7 @@ export class AuthService {
       const system =
         await this.systemService.checkClientIdAndRedirectUri(query);
       if (system?.data === null) {
-        return ResponseUtil.sendErrorResponse(
+        return ResponseUtil.sendErrorResponseWithNoException(
           'Invalid client_id or redirect_uri',
           'INVALID_CLIENT_ID_OR_REDIRECT_URI',
         );
@@ -205,41 +210,17 @@ export class AuthService {
     }
   }
 
-  async loginWithUCSM(data: any) {
+  async loginWithUCSM(data: any, query) {
     try {
-      const system_code = data.systemCode;
-      const redirect_uri = data.redirectUri;
-      const client_id = data.clientId;
-
-      const isSystemCodeExist = await this.systemRepository.findOne({
-        where: { code: system_code },
-      });
-      if (!isSystemCodeExist) {
-        return ResponseUtil.sendErrorResponse(
-          'System not found',
-          'SYS_CODE_NOT_FOUND',
+      const system =
+        await this.systemService.checkClientIdAndRedirectUri(query);
+      if (system?.data === null) {
+        return ResponseUtil.sendErrorResponseWithNoException(
+          'Invalid client_id or redirect_uri',
+          'INVALID_CLIENT_ID_OR_REDIRECT_URI',
         );
       }
-      const isRedirectUriExist = await this.systemRepository.findOne({
-        where: { redirect_uris: redirect_uri },
-      });
-      if (!isRedirectUriExist) {
-        return ResponseUtil.sendErrorResponse(
-          'Redirect uri not found',
-          'REDIRECT_URI_NOT_FOUND',
-        );
-      }
-      const isClientIdExist = await this.systemRepository.findOne({
-        where: { client_id },
-      });
-      if (!isClientIdExist) {
-        return ResponseUtil.sendErrorResponse(
-          'Client id not found',
-          'CLIENT_ID_NOT_FOUND',
-        );
-      }
-      const sessionToken = data.sessionToken;
-      const dataSession = this.verifySession(sessionToken);
+      const dataSession = this.verifySession(query?.session_token);
 
       const user = await this.validateUserCreds(
         dataSession.email,
@@ -255,7 +236,15 @@ export class AuthService {
       //   client_id,
       // });
       const consentToken = this.createConsentToken(user);
-      return ResponseUtil.sendSuccessResponse({ data: consentToken });
+      return ResponseUtil.sendSuccessResponse({
+        data: {
+          consentToken,
+          email: dataSession.email,
+          ...query,
+          two_factor_enable: user.two_factor_enable,
+          is_two_factor_secret: user.two_factor_secret ? true : false,
+        },
+      });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         'Something went wrong',

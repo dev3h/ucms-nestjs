@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { LocalStrategy } from '../strategy/local.strategy';
@@ -14,6 +14,7 @@ import { User } from '@/modules/user/user.entity';
 import { RedisModule } from '@/modules/redis/redis.module';
 import { JwtUserStrategy } from '../strategy/jwt-user.strategy';
 import { SystemModule } from '@/modules/system/system.module';
+import { CheckClientIdRedirectUriMiddleware } from '@/common/middleware/check-client-id-redirect-uri.middleware';
 
 @Module({
   imports: [
@@ -36,4 +37,10 @@ import { SystemModule } from '@/modules/system/system.module';
   controllers: [AuthController],
   exports: [AuthService, JwtUserStrategy],
 })
-export class AuthModule {}
+export class AuthModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(CheckClientIdRedirectUriMiddleware)
+      .forRoutes(AuthController);
+  }
+}
