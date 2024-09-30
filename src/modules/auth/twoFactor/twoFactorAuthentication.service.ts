@@ -14,7 +14,7 @@ export class TwoFactorAuthenticationService {
     private readonly configService: ConfigService,
   ) {}
 
-  public async generateTwoFactorAuthenticationSecret(user: User) {
+  public async generateTwoFactorAuthenticationSecret(user) {
     try {
       const secret = authenticator.generateSecret();
 

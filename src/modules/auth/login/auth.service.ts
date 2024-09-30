@@ -98,7 +98,7 @@ export class AuthService {
 
   // Tạo consent token sau khi người dùng nhập đúng mật khẩu
   createConsentToken(user: any): string {
-    const payload = { email: user.email, sub: user.id }; // payload chứa email và id người dùng
+    const payload = { email: user.email, id: user.id }; // payload chứa email và id người dùng
 
     // Tạo token JWT với thời gian hết hạn là 10 phút
     return this.jwtService.sign(payload, { expiresIn: '10m' });
@@ -108,8 +108,8 @@ export class AuthService {
   verifyConsentToken(token: string): any {
     try {
       return this.jwtService.verify(token); // xác thực token
-    } catch (e) {
-      throw new Error('Invalid consent token');
+    } catch (err) {
+      throw new Error(err);
     }
   }
 
@@ -241,8 +241,11 @@ export class AuthService {
           consentToken,
           email: dataSession.email,
           ...query,
-          two_factor_enable: user.two_factor_enable,
-          is_two_factor_secret: user.two_factor_secret ? true : false,
+          two_factor: {
+            enable: user.two_factor_enable,
+            is_secret_token: user.two_factor_secret ? true : false,
+            is_confirmed: user.two_factor_confirmed_at ? true : false,
+          },
         },
       });
     } catch (error) {

@@ -23,7 +23,6 @@ export class IsEmailExistsConstraint implements ValidatorConstraintInterface {
   }
 
   defaultMessage(): string {
-    console.log(this.i18n);
     return this.i18n.t('message.email.not-found', {
       lang: I18nContext.current().lang,
     });

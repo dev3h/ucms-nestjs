@@ -47,22 +47,31 @@ export class TwoFactorAuthenticationController {
   // @UseGuards(JwtUserGuard)
   @Post('generate')
   @HttpCode(200)
-  @UseGuards(JwtUserGuard)
+  // @UseGuards(JwtUserGuard)
   async register(@Body() data, @Res() response: Response, @Request() request) {
-    const checkConsentToken =
-      await this.authenticationService.verifyConsentToken(data?.consent_token);
-    if (!checkConsentToken) {
-      throw new UnauthorizedException('Consent token is invalid');
-    }
-    const dataGenerate =
-      await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(
-        request.user,
+    try {
+      const user = await this.authenticationService.verifyConsentToken(
+        data?.consent_token,
       );
+      if (!user) {
+        return ResponseUtil.sendErrorResponse(
+          'Invalid consent token',
+          'INVALID_CONSENT_TOKEN',
+        );
+      }
+      console.log(user);
+      const dataGenerate =
+        await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(
+          user,
+        );
 
-    return this.twoFactorAuthenticationService.pipeQrCodeStream(
-      response,
-      dataGenerate?.data?.otpauthUrl,
-    );
+      return this.twoFactorAuthenticationService.pipeQrCodeStream(
+        response,
+        dataGenerate?.data?.otpauthUrl,
+      );
+    } catch (err) {
+      return ResponseUtil.sendErrorResponse('Some thing wrong', err);
+    }
   }
 
   @ApiQuery({

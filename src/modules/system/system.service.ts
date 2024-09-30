@@ -102,8 +102,21 @@ export class SystemService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} system`;
+  async findOne(id: number) {
+    try {
+      const system = await this.systemsRepository.findOne({ where: { id } });
+      if (!system) {
+        return ResponseUtil.sendErrorResponse('System not found', 'NOT_FOUND');
+      } else {
+        const formattedData = new SystemDto(system);
+        return ResponseUtil.sendSuccessResponse({ data: formattedData });
+      }
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        error.message,
+      );
+    }
   }
 
   update(id: number, updateSystemDto: UpdateSystemDto) {
