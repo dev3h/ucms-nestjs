@@ -100,17 +100,13 @@ export class AuthService {
   createConsentToken(user: any): string {
     const payload = { email: user.email, id: user.id }; // payload chứa email và id người dùng
 
-    // Tạo token JWT với thời gian hết hạn là 10 phút
-    return this.jwtService.sign(payload, { expiresIn: '10m' });
+    // Tạo token JWT với thời gian hết hạn là 30 phút
+    return this.jwtService.sign(payload, { expiresIn: '30m' });
   }
 
   // Xác thực consent token khi người dùng đồng ý quyền
   verifyConsentToken(token: string): any {
-    try {
-      return this.jwtService.verify(token); // xác thực token
-    } catch (err) {
-      throw new Error(err);
-    }
+    return this.jwtService.verify(token); // xác thực token
   }
 
   async validateUserCreds(email: string, password: string): Promise<any> {

@@ -22,6 +22,7 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../guard/jwt-auth.guard';
 import { ResponseUtil } from '@/utils/response-util';
 import { JwtUserGuard } from '../guard/jwt-user.guard';
+import { I18nService } from 'nestjs-i18n';
 
 @ApiTags('MFA')
 @Controller('2fa')
@@ -31,6 +32,7 @@ export class TwoFactorAuthenticationController {
     private readonly twoFactorAuthenticationService: TwoFactorAuthenticationService,
     private readonly userService: UserService,
     private readonly authenticationService: AuthService,
+    private readonly i18n: I18nService,
   ) {}
 
   @ApiBearerAuth()
@@ -70,7 +72,12 @@ export class TwoFactorAuthenticationController {
         dataGenerate?.data?.otpauthUrl,
       );
     } catch (err) {
-      return ResponseUtil.sendErrorResponse('Some thing wrong', err);
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        err,
+      );
     }
   }
 
@@ -114,28 +121,41 @@ export class TwoFactorAuthenticationController {
   })
   @Post('authenticate')
   @HttpCode(200)
-  @UseGuards(JwtAuthenticationGuard)
-  async authenticate(
-    @Req() request: RequestWithUser,
-    @Body() { twoFactorAuthenticationCode }: TwoFactorAuthenticationCodeDto,
-  ) {
-    const isCodeValid =
-      this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
-        twoFactorAuthenticationCode,
-        request.user,
+  // @UseGuards(JwtAuthenticationGuard)
+  async authenticate(@Body() data, @Req() request: RequestWithUser) {
+    try {
+      const dataVerify = await this.authenticationService.verifyConsentToken(
+        data?.consent_token,
       );
-    if (!isCodeValid) {
-      throw new UnauthorizedException('Wrong authentication code');
+      if (!dataVerify) {
+        return ResponseUtil.sendErrorResponse(
+          'Invalid consent token',
+          'INVALID_CONSENT_TOKEN',
+        );
+      }
+      const user = await this.userService.getUserById(dataVerify?.id);
+      const isCodeValid =
+        this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
+          data?.totpCode,
+          user,
+        );
+      if (!isCodeValid) {
+        throw new UnauthorizedException('Wrong authentication code');
+      }
+
+      const accessTokenCookie =
+        this.authenticationService.getCookieWithJwtAccessToken(user?.id, true);
+
+      request.res.setHeader('Set-Cookie', [accessTokenCookie]);
+
+      return request.user;
+    } catch (err) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        err,
+      );
     }
-
-    const accessTokenCookie =
-      this.authenticationService.getCookieWithJwtAccessToken(
-        request.user.id,
-        true,
-      );
-
-    request.res.setHeader('Set-Cookie', [accessTokenCookie]);
-
-    return request.user;
   }
 }

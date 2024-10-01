@@ -6,10 +6,12 @@ import { ConfigService } from '@nestjs/config';
 import { User } from '@/modules/user/user.entity';
 import { ResponseUtil } from '@/utils/response-util';
 import { UserService } from '@/modules/user/user.service';
+import { I18nService } from 'nestjs-i18n';
 
 @Injectable()
 export class TwoFactorAuthenticationService {
   constructor(
+    private readonly i18n: I18nService,
     private readonly userService: UserService,
     private readonly configService: ConfigService,
   ) {}
