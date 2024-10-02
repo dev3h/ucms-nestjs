@@ -18,6 +18,7 @@ import { ConfigService } from '@nestjs/config';
 import TokenPayload from '../tokenPayload.interface';
 import { RedisService } from '@/modules/redis/redis.service';
 import { SystemService } from '../../system/system.service';
+import { UserPermissionStatusEnum } from '@/modules/user/enums/user-permission-status.enum';
 
 @Injectable()
 export class AuthService {
@@ -155,19 +156,30 @@ export class AuthService {
     };
   }
 
-  // Tạo JWT cho hệ thống ngoài sau khi người dùng đồng ý quyền truy cập
-  async createFinalToken(user: any) {
+  async createFinalToken(user: any, filteredPermissions) {
     const payload = {
-      email: user.email,
-      sub: user.id,
-      permissions: user.permissions,
+      email: user?.email,
+      id: user?.id,
+      permissions: filteredPermissions,
     };
     const token = this.jwtService.sign(payload, {
-      expiresIn: '1h',
+      expiresIn: '15h',
     });
 
     await this.redisService.saveSession(`user-session:${user.id}`, token, 3600);
     return token;
+  }
+
+  // Lấy thông tin user từ final token
+  verifyFinalToken(token: string) {
+    try {
+      return this.jwtService.verify(token);
+    } catch (err) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        err?.message,
+      );
+    }
   }
 
   async login(user: any) {
@@ -181,14 +193,7 @@ export class AuthService {
 
   async checkEmailExist(email: string, query: any) {
     try {
-      const system =
-        await this.systemService.checkClientIdAndRedirectUri(query);
-      if (system?.data === null) {
-        return ResponseUtil.sendErrorResponseWithNoException(
-          'Invalid client_id or redirect_uri',
-          'INVALID_CLIENT_ID_OR_REDIRECT_URI',
-        );
-      }
+      await this.systemService.checkClientIdAndRedirectUri(query);
       const user = await this.userService.getUserByEmail(email);
       const sessionToken = this.createSession(user);
       return ResponseUtil.sendSuccessResponse({
@@ -252,47 +257,63 @@ export class AuthService {
     }
   }
 
-  async confirmLoginWithUCSM(data: any) {
+  async confirmSSO_UCMS(data: any) {
     try {
-      const system_code = data.systemCode;
-      const client_id = data.clientId;
-      const refresh_token = data.refreshToken;
-
-      const isSystemCodeExist = await this.systemRepository.findOne({
-        where: { code: system_code },
+      const system = await this.systemRepository.findOne({
+        where: { client_id: data?.client_id },
       });
-      if (!isSystemCodeExist) {
-        return ResponseUtil.sendErrorResponse(
-          'System not found',
-          'SYS_CODE_NOT_FOUND',
-        );
-      }
-
-      const isClientIdExist = await this.systemRepository.findOne({
-        where: { client_id },
-      });
-      if (!isClientIdExist) {
+      if (!system) {
         return ResponseUtil.sendErrorResponse(
           'Client id not found',
           'CLIENT_ID_NOT_FOUND',
         );
       }
 
-      const isRefreshTokenExist = await this.systemTokenRepository.findOne({
-        where: { refresh_token },
-      });
-      if (!isRefreshTokenExist) {
-        return ResponseUtil.sendErrorResponse(
-          'Refresh token not found',
-          'REFRESH_TOKEN_NOT_FOUND',
-        );
-      }
-      const user = this.verifyConsentToken(data.consentToken);
-      const finalToken = this.createFinalToken(user);
+      const dataVerify = this.verifyConsentToken(data.consent_token);
+      const user = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.roles', 'role')
+        .leftJoinAndSelect('role.permissions', 'rolePermission')
+        .leftJoinAndSelect('user.userHasPermissions', 'userHasPermission')
+        .leftJoinAndSelect('userHasPermission.permission', 'directPermission')
+        .where('user.id = :userId', { userId: dataVerify.id })
+        .getOne();
+
+      const rolePermissions = user.roles.flatMap((role) => role.permissions);
+      const directPermissions = user.userHasPermissions
+        .filter((userHasPermission) => userHasPermission.is_direct)
+        .map((userHasPermission) => userHasPermission.permission);
+
+      const ignoredPermissions = new Set(
+        user.userHasPermissions
+          .filter(
+            (userHasPermission) =>
+              !userHasPermission.is_direct &&
+              userHasPermission.status === UserPermissionStatusEnum.IGNORED,
+          )
+          .map((userHasPermission) => userHasPermission.permission.id),
+      );
+
+      const finalPermissions = [
+        ...rolePermissions,
+        ...directPermissions,
+      ].filter((permission) => !ignoredPermissions.has(permission.id));
+
+      const systemCode = system.code;
+      const newFinalPermissions = finalPermissions
+        .filter((permission) => permission.code.startsWith(systemCode))
+        .map((permission) => ({
+          code: permission.code,
+          name: permission.name,
+        }));
+
+      const finalToken = await this.createFinalToken(user, newFinalPermissions);
       return ResponseUtil.sendSuccessResponse({ data: finalToken });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }

@@ -55,13 +55,6 @@ export class TwoFactorAuthenticationController {
       const user = await this.authenticationService.verifyConsentToken(
         data?.consent_token,
       );
-      if (!user) {
-        return ResponseUtil.sendErrorResponse(
-          'Invalid consent token',
-          'INVALID_CONSENT_TOKEN',
-        );
-      }
-      console.log(user);
       const dataGenerate =
         await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(
           user,
@@ -76,7 +69,7 @@ export class TwoFactorAuthenticationController {
         this.i18n.t('message.Something-went-wrong', {
           lang: 'vi',
         }),
-        err,
+        err?.message,
       );
     }
   }
@@ -134,27 +127,51 @@ export class TwoFactorAuthenticationController {
         );
       }
       const user = await this.userService.getUserById(dataVerify?.id);
-      const isCodeValid =
-        this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
-          data?.totpCode,
-          user,
-        );
-      if (!isCodeValid) {
-        throw new UnauthorizedException('Wrong authentication code');
-      }
+      this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
+        data?.totpCode,
+        user,
+      );
+      user.two_factor_confirmed_at = new Date();
+      user.save();
+      delete data?.totpCode;
+      return ResponseUtil.sendSuccessResponse({ data });
 
-      const accessTokenCookie =
-        this.authenticationService.getCookieWithJwtAccessToken(user?.id, true);
+      // const accessTokenCookie =
+      //   this.authenticationService.getCookieWithJwtAccessToken(user?.id, true);
 
-      request.res.setHeader('Set-Cookie', [accessTokenCookie]);
+      // request.res.setHeader('Set-Cookie', [accessTokenCookie]);
 
-      return request.user;
+      // return request.user;
     } catch (err) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {
           lang: 'vi',
         }),
         err,
+      );
+    }
+  }
+
+  @Post('challenge')
+  @HttpCode(200)
+  // @UseGuards(JwtAuthenticationGuard)
+  async challenge(@Body() data) {
+    try {
+      const dataVerify = await this.authenticationService.verifyConsentToken(
+        data?.consent_token,
+      );
+      const user = await this.userService.getUserById(dataVerify?.id);
+      this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
+        data?.totpCode,
+        user,
+      );
+      return await this.authenticationService.confirmSSO_UCMS(data);
+    } catch (err) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        err.message,
       );
     }
   }

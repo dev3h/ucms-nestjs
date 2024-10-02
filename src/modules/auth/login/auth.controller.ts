@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOkResponse,
   ApiParam,
   ApiQuery,
@@ -182,6 +183,15 @@ export class AuthController {
       session_token: sessionToken,
     };
     const response = await this.authService.loginWithUCSM(data, query);
+    const dataRes = ResponseUtil.sendSuccessResponse(response);
+    return res.status(200).json(dataRes);
+  }
+
+  @ApiTags('Auth Redirect UCMS')
+  @Post('sso-ucms/confirm')
+  @HttpCode(200)
+  async confirmSSO_UCMS(@Body() data, @Response() res) {
+    const response = await this.authService.confirmSSO_UCMS(data);
     const dataRes = ResponseUtil.sendSuccessResponse(response);
     return res.status(200).json(dataRes);
   }

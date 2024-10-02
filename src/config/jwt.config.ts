@@ -1,11 +1,12 @@
 import { JwtModuleAsyncOptions } from '@nestjs/jwt';
+import * as dotenv from 'dotenv';
 
-import appConfig from './app.config';
+dotenv.config();
 
 export const jwtConfig: JwtModuleAsyncOptions = {
   useFactory: () => {
     return {
-      secret: appConfig().appSecret,
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     };
   },
