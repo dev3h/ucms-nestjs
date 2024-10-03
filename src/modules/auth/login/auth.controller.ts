@@ -112,15 +112,28 @@ export class AuthController {
   @HttpCode(200)
   async adminLogin(@Body() data: LoginRequestDto, @Response() res) {
     const admin = await this.authService.validateUserCreds(
-      data.email,
-      data.password,
+      data?.email,
+      data?.password,
     );
-    if (!admin) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
     const token = await this.authService.createAdminToken(admin);
-    return res.json({ access_token: token });
+    const dataRes = ResponseUtil.sendSuccessResponse({
+      data: {
+        access_token: token,
+      },
+    });
+    return res.status(200).json(dataRes);
   }
+  @ApiTags('Auth')
+  @Get('/admin/me')
+  async getAdmin(@Req() req, @Response() res) {
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = await this.authService.verifyToken(token);
+    const dataRes = ResponseUtil.sendSuccessResponse({
+      data: decodedToken,
+    });
+    return res.status(200).json(dataRes);
+  }
+
   @ApiTags('Auth')
   @Post('logout')
   async logout(@Req() req, @Response() res) {
@@ -193,6 +206,17 @@ export class AuthController {
   async confirmSSO_UCMS(@Body() data, @Response() res) {
     const response = await this.authService.confirmSSO_UCMS(data);
     const dataRes = ResponseUtil.sendSuccessResponse(response);
+    return res.status(200).json(dataRes);
+  }
+
+  @ApiTags('Auth Redirect UCMS')
+  @Get('sso-ucms/me')
+  async meSSO_UCMS(@Req() req, @Response() res) {
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = await this.authService.verifyToken(token);
+    const dataRes = ResponseUtil.sendSuccessResponse({
+      data: decodedToken,
+    });
     return res.status(200).json(dataRes);
   }
 }

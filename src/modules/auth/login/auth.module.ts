@@ -1,4 +1,9 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { LocalStrategy } from '../strategy/local.strategy';
@@ -39,8 +44,16 @@ import { CheckClientIdRedirectUriMiddleware } from '@/common/middleware/check-cl
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(CheckClientIdRedirectUriMiddleware)
-      .forRoutes(AuthController);
+    consumer.apply(CheckClientIdRedirectUriMiddleware).forRoutes(
+      { path: 'auth/check-email-exist', method: RequestMethod.POST },
+      {
+        path: 'auth/oauth-ucms/login',
+        method: RequestMethod.POST,
+      },
+      {
+        path: 'auth/sso-ucms/confirm',
+        method: RequestMethod.POST,
+      },
+    );
   }
 }

@@ -7,6 +7,7 @@ export class SystemDto {
   client_id: string;
   client_secret: string;
   created_at: string;
+  redirect_uris: string;
 
   constructor(system: any) {
     this.id = system?.id;
@@ -15,6 +16,7 @@ export class SystemDto {
     this.created_at = Utils.formatDate(system?.created_at);
     this.client_id = system?.client_id;
     this.client_secret = system?.client_secret;
+    this.redirect_uris = system?.redirect_uris;
   }
 
   static mapFromEntities(entities: any[]): SystemDto[] {

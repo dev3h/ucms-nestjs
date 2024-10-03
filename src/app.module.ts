@@ -93,12 +93,6 @@ import { RedisModule } from './modules/redis/redis.module';
   providers: [AppService, IsUniqueConstraint, IsExistsConstraint],
 })
 export class AppModule implements NestModule {
-  // constructor(private readonly seederService: SeederService) {}
-
-  // async onModuleInit() {
-  //   await this.seederService.runDatabaseSeeder();
-  // }
-
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LogsMiddleware).forRoutes('*');
     consumer.apply(LanguageCheckMiddleware).forRoutes('*');
