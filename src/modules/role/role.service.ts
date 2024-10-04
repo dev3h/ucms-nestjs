@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Request } from 'express';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { ResponseUtil } from '@/utils/response-util';
@@ -8,6 +9,9 @@ import { Repository } from 'typeorm';
 import { Permission } from '../permission/entities/permission.entity';
 import { RestPermissionDto } from './dto/rest-permission.dto';
 import { System } from '../system/entities/system.entity';
+import { paginate } from '@/utils/pagination.util';
+import { RoleFilter } from '../user/filters/role.filter';
+import { RoleDto } from './dto/role.dto';
 
 @Injectable()
 export class RoleService {
@@ -18,14 +22,44 @@ export class RoleService {
     private readonly permissionRepository: Repository<Permission>,
     @InjectRepository(System)
     private readonly systemRepository: Repository<System>,
+    private readonly roleFilter: RoleFilter,
   ) {}
 
   create(createRoleDto: CreateRoleDto) {
     return 'This action adds a new role';
   }
 
-  findAll() {
-    return `This action returns all role`;
+  async findAll(request: Request) {
+    try {
+      const query = this.roleRepository.createQueryBuilder('role');
+
+      this.roleFilter.applyFilters(query);
+
+      let formattedData;
+      let meta = null;
+
+      if (!request.query.noPagination) {
+        const page = parseInt(request.query.page as string, 10) || 1;
+        const limit = parseInt(request.query.limit as string, 10) || 10;
+        const baseUrl = `${request.protocol}://${request.get('host')}${request.baseUrl}`;
+        const paginationResult = await paginate(query, page, limit, baseUrl);
+        formattedData = RoleDto.mapFromEntities(paginationResult.data);
+        meta = paginationResult.meta;
+      } else {
+        const data = await query.getMany();
+        formattedData = RoleDto.mapFromEntities(data);
+      }
+
+      return ResponseUtil.sendSuccessResponse({
+        data: formattedData,
+        meta: meta,
+      });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        error.message,
+      );
+    }
   }
 
   findOne(id: number) {

@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { UserRegisterRequestDto } from './dto/user-register.req.dto';
-import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Request } from 'express';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import * as nodemailer from 'nodemailer';
+
+import { User } from './user.entity';
 import { UserFilter } from './filters/user.filter';
 import { ResponseUtil } from '@/utils/response-util';
 import { paginate } from '@/utils/pagination.util';
@@ -28,6 +31,7 @@ export class UserService {
     @InjectRepository(UserHasPermission)
     private readonly userPermissionRepository: Repository<UserHasPermission>,
     @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
     private readonly userPermissionFilter: UserPermissionFilter,
     private readonly userFilter: UserFilter,
     @InjectRepository(System)
@@ -54,16 +58,54 @@ export class UserService {
   }
 
   async create(body) {
+    const queryRunner =
+      this.userRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-      const system = this.userRepository.create(body);
+      // Tạo và lưu tài khoản
+      const account = await this.userRepository.save(body);
+      await queryRunner.manager.save(account);
+      console.log(account);
 
-      await this.userRepository.save(system);
+      // Gán vai trò cho tài khoản
+      const role = await this.roleRepository.findOne({
+        where: { id: body.role_id },
+      });
+      if (role) {
+        account.roles = [role];
+        await queryRunner.manager.save(account);
+      }
+
+      // Gửi email
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'your-email@gmail.com',
+          pass: 'your-email-password',
+        },
+      });
+
+      const mailOptions = {
+        from: 'your-email@gmail.com',
+        to: body.email,
+        subject: 'Account Created',
+        text: `Your account has been created. Your password is ${body.password}`,
+      };
+
+      await transporter.sendMail(mailOptions);
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
       return ResponseUtil.sendSuccessResponse(null, 'Created successfully');
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       return ResponseUtil.sendErrorResponse(
         'Something went wrong',
         error.message,
       );
+    } finally {
+      await queryRunner.release();
     }
   }
 

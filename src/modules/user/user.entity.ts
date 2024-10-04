@@ -39,6 +39,14 @@ export class User extends BaseEntity {
   })
   email: string;
 
+  @ApiProperty({ description: 'Type of user', example: '1: admin' })
+  @Column()
+  @Column({
+    type: 'tinyint',
+    comment: '1: Admin, 2: User',
+  })
+  type: number;
+
   @ApiProperty({ description: 'Hashed user password' })
   @Column()
   @Exclude()

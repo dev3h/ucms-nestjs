@@ -20,7 +20,18 @@ export class CreateUserDto {
   @IsNotEmpty()
   readonly email: string;
 
+  @ApiProperty({ description: 'Password', example: '123456' })
+  @IsNotEmpty()
+  readonly password: string;
+
   @ApiProperty({ description: 'Role id', example: 1 })
   @IsNotEmpty()
   readonly role_id: number;
+
+  @ApiProperty({ description: 'Type of user', example: '1: admin' })
+  @IsNotEmpty()
+  readonly type: number;
+
+  @ApiProperty({ description: 'Two factor enable' })
+  readonly two_factor_enable: boolean;
 }
