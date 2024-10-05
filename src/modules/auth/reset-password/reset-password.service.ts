@@ -5,11 +5,10 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { User } from '@/modules/user/user.entity';
 import { PasswordResetToken } from '@/modules/password-reset-token/entities/password-reset-token.entity';
-import { MailService } from '@/mail/reset-password-mail/mail.service';
 
 @Injectable()
 export class ResetPasswordService {
-  constructor(private mailService: MailService) {}
+  // constructor(private mailService: MailService) {}
 
   async sendMailResetPassword(
     resetPasswordDto: ResetPasswordDto,
@@ -32,7 +31,7 @@ export class ResetPasswordService {
       { conflictPaths: ['email'] },
     );
 
-    await this.mailService.sendResetPasswordMail(user, token, 'reset-password');
+    // await this.mailService.sendResetPasswordMail(user, token, 'reset-password');
 
     return { message: 'A link has been sent to the email address you entered' };
   }

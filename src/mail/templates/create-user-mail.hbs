@@ -1,0 +1,14 @@
+<div>
+  <div>Xin chào {{name}},</div>
+  <div>Tài khoản của bạn đã được tạo thành công.</div>
+  <br>
+  <div><strong>Email:</strong> {{email}}</div>
+  <div><strong>Mật khẩu:</strong> {{password}}</div>
+  <div><strong>Ngày tạo:</strong> {{created_at}}</div>
+  <br>
+  {{#if loginUrl}}
+    <div>Bạn có thể đăng nhập bằng liên kết sau: <a href="{{loginUrl}}">{{loginUrl}}</a></div>
+    <br>
+  {{/if}}
+  <div>Cảm ơn bạn!</div>
+</div>

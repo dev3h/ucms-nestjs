@@ -17,6 +17,7 @@ export class UserSeeder implements Seeder {
         password: 'a12345678X',
         is_change_password_first: true,
         role: 'master_admin',
+        type: 1,
       },
       {
         name: 'cuongdd',
@@ -24,6 +25,7 @@ export class UserSeeder implements Seeder {
         password: 'a12345678X',
         is_change_password_first: false,
         role: 'user',
+        type: 2,
       },
     ];
 

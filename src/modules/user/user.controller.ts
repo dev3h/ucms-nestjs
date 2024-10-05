@@ -44,7 +44,7 @@ export class UserController {
   @Post()
   @HttpCode(200)
   create(@Body() body: CreateUserDto) {
-    return this.userService.create(body);
+    return this.userService.store(body);
   }
 
   @Get()

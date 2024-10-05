@@ -40,6 +40,7 @@ import { IsUniqueConstraint } from './share/validation/unique/is-unique-constrai
 import { IsExistsConstraint } from './share/validation/exist/is-exists-constraint';
 import { TwoFactorAuthenticationModule } from './modules/auth/twoFactor/two-factor-authentication.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { RedisModule } from './modules/redis/redis.module';
     SystemTokenModule,
     TwoFactorAuthenticationModule,
     RedisModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService, IsUniqueConstraint, IsExistsConstraint],

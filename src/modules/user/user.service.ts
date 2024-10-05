@@ -4,8 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Request } from 'express';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
-import * as nodemailer from 'nodemailer';
+import * as dotenv from 'dotenv';
 
 import { User } from './user.entity';
 import { UserFilter } from './filters/user.filter';
@@ -20,6 +19,11 @@ import { Role } from '../role/entities/role.entity';
 import { UserPermissionStatusEnum } from './enums/user-permission-status.enum';
 import { RestPermissionDto } from '../role/dto/rest-permission.dto';
 import { System } from '../system/entities/system.entity';
+import { MailService } from '@/mail/mail.service';
+import { UserTypeEnum } from './enums/user-type.enum';
+import { Utils } from '@/utils/utils';
+
+dotenv.config();
 
 @Injectable()
 export class UserService {
@@ -36,6 +40,7 @@ export class UserService {
     private readonly userFilter: UserFilter,
     @InjectRepository(System)
     private readonly systemRepository: Repository<System>,
+    private readonly mailService: MailService,
   ) {}
 
   async doUserRegistration(
@@ -57,56 +62,65 @@ export class UserService {
     return User.findOne({ where: { id } });
   }
 
-  async create(body) {
-    const queryRunner =
-      this.userRepository.manager.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  async store(body) {
+    // const queryRunner =
+    //   this.userRepository.manager.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
       // Tạo và lưu tài khoản
-      const account = await this.userRepository.save(body);
-      await queryRunner.manager.save(account);
-      console.log(account);
-
+      const { role_id, ...userData } = body;
+      const account = await this.userRepository.save(userData);
       // Gán vai trò cho tài khoản
       const role = await this.roleRepository.findOne({
-        where: { id: body.role_id },
+        where: { id: role_id },
       });
       if (role) {
         account.roles = [role];
-        await queryRunner.manager.save(account);
+        await this.userRepository.save(account);
+
+        // Lấy các quyền của vai trò và gán cho tài khoản
+        const permissions = await this.permissionRepository.find({
+          where: { roles: { id: role.id } },
+        });
+
+        const userHasPermissions = permissions.map((permission) => {
+          const userHasPermission = new UserHasPermission();
+          userHasPermission.user = account;
+          userHasPermission.permission = permission;
+          return userHasPermission;
+        });
+
+        await this.userPermissionRepository.save(userHasPermissions);
       }
-
-      // Gửi email
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: 'your-email@gmail.com',
-          pass: 'your-email-password',
-        },
-      });
-
-      const mailOptions = {
-        from: 'your-email@gmail.com',
-        to: body.email,
-        subject: 'Account Created',
-        text: `Your account has been created. Your password is ${body.password}`,
-      };
-
-      await transporter.sendMail(mailOptions);
-
       // Commit transaction
-      await queryRunner.commitTransaction();
+      // await queryRunner.commitTransaction();
+
+      const dataSend = {
+        name: account?.name,
+        email: account?.email,
+        created_at: Utils.formatDate(account?.created_at),
+        password: body?.password,
+      };
+      if (account.type === UserTypeEnum.ADMIN) {
+        const loginUrl = `${process.env.FRONTEND_URL}/admin/login`;
+        dataSend['loginUrl'] = loginUrl;
+        await this.mailService.addSendMailJob(dataSend);
+      } else {
+        await this.mailService.addSendMailJob(dataSend);
+      }
       return ResponseUtil.sendSuccessResponse(null, 'Created successfully');
     } catch (error) {
-      await queryRunner.rollbackTransaction();
+      console.log(error);
+      // await queryRunner.rollbackTransaction();
       return ResponseUtil.sendErrorResponse(
         'Something went wrong',
         error.message,
       );
-    } finally {
-      await queryRunner.release();
     }
+    // finally {
+    //   await queryRunner.release();
+    // }
   }
 
   async findAll(request: Request) {

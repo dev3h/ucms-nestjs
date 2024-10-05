@@ -9,9 +9,11 @@ import { Permission } from '../permission/entities/permission.entity';
 import { UserHasPermission } from './user-has-permission.entity';
 import { Role } from '../role/entities/role.entity';
 import { System } from '../system/entities/system.entity';
+import { MailModule } from '@/mail/mail.module';
 
 @Module({
   imports: [
+    MailModule,
     TypeOrmModule.forFeature([
       User,
       Permission,
