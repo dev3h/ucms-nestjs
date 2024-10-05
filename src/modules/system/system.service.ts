@@ -9,10 +9,12 @@ import { SystemFilter } from './filters/system.filter';
 import { Request } from 'express';
 import { paginate } from '@/utils/pagination.util';
 import { v4 as uuidv4 } from 'uuid';
+import { I18nService } from 'nestjs-i18n';
 
 @Injectable()
 export class SystemService {
   constructor(
+    private readonly i18n: I18nService,
     @InjectRepository(System)
     private systemsRepository: Repository<System>,
     private readonly systemFilter: SystemFilter,
@@ -43,10 +45,17 @@ export class SystemService {
       });
 
       await this.systemsRepository.save(system);
-      return ResponseUtil.sendSuccessResponse(null, 'Created successfully');
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Created-successfully', {
+          lang: 'vi',
+        }),
+      );
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
@@ -96,7 +105,9 @@ export class SystemService {
       });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
@@ -113,7 +124,9 @@ export class SystemService {
       }
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }

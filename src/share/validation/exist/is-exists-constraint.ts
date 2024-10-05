@@ -5,6 +5,7 @@ import {
 } from 'class-validator';
 import { EntityManager } from 'typeorm';
 import { Injectable } from '@nestjs/common';
+import { I18nContext } from 'nestjs-i18n';
 
 export type IsExistsConstraintInput = {
   tableName: string;
@@ -31,6 +32,7 @@ export class IsExistsConstraint implements ValidatorConstraintInterface {
   defaultMessage?(validationArguments?: ValidationArguments): string {
     const { column }: IsExistsConstraintInput =
       validationArguments?.constraints[0];
-    return `${column} does not exist`;
+    const i18n = I18nContext.current();
+    return i18n.t('validation.exists', { args: { column } });
   }
 }

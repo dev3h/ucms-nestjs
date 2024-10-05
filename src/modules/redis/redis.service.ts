@@ -23,4 +23,36 @@ export class RedisService {
   async blacklistToken(tokenId: string) {
     await this.client.set(`blacklist:${tokenId}`, '1', 'EX', 3600); // Blacklist trong 1 giờ
   }
+
+  async logAllKeys() {
+    const keys = await this.client.keys('*');
+    for (const key of keys) {
+      const type = await this.client.type(key);
+      let value;
+
+      switch (type) {
+        case 'string':
+          value = await this.client.get(key);
+          break;
+        case 'list':
+          value = await this.client.lRange(key, 0, -1);
+          break;
+        case 'set':
+          value = await this.client.sMembers(key);
+          break;
+        case 'hash':
+          value = await this.client.hGetAll(key);
+          break;
+        case 'zset':
+          value = await this.client.zRange(key, 0, -1);
+          break;
+        default:
+          value = `Unsupported type: ${type}`;
+      }
+
+      console.log(
+        `Key: ${key}, Type: ${type}, Value: ${JSON.stringify(value, null, 2)}`,
+      );
+    }
+  }
 }

@@ -22,12 +22,14 @@ import { System } from '../system/entities/system.entity';
 import { MailService } from '@/mail/mail.service';
 import { UserTypeEnum } from './enums/user-type.enum';
 import { Utils } from '@/utils/utils';
+import { I18nService } from 'nestjs-i18n';
 
 dotenv.config();
 
 @Injectable()
 export class UserService {
   constructor(
+    private readonly i18n: I18nService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Permission)
@@ -109,12 +111,19 @@ export class UserService {
       } else {
         await this.mailService.addSendMailJob(dataSend);
       }
-      return ResponseUtil.sendSuccessResponse(null, 'Created successfully');
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Created-successfully', {
+          lang: 'vi',
+        }),
+      );
     } catch (error) {
       console.log(error);
       // await queryRunner.rollbackTransaction();
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
@@ -131,6 +140,7 @@ export class UserService {
 
       this.userFilter.applyFilters(query);
 
+      query.orderBy('user.created_at', 'DESC');
       const page = parseInt(request.query.page as string, 10) || 1;
       const limit = parseInt(request.query.limit as string, 10) || 10;
       const baseUrl = `${request.protocol}://${request.get('host')}${request.baseUrl}`;
@@ -143,7 +153,9 @@ export class UserService {
       });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
@@ -234,7 +246,9 @@ export class UserService {
       });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
@@ -294,7 +308,9 @@ export class UserService {
       return ResponseUtil.sendSuccessResponse({ data: formattedData });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
@@ -323,7 +339,9 @@ export class UserService {
       return ResponseUtil.sendSuccessResponse({ data: uniquePermissions });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
@@ -364,7 +382,9 @@ export class UserService {
       return ResponseUtil.sendSuccessResponse(null, 'Permissions added');
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
@@ -420,14 +440,34 @@ export class UserService {
       );
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} system`;
+  async findOne(id: number) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id },
+        relations: ['roles'],
+      });
+      if (!user) {
+        return ResponseUtil.sendErrorResponse('User not found');
+      } else {
+        const formattedData = new UserDto(user);
+        return ResponseUtil.sendSuccessResponse({ data: formattedData });
+      }
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
   update(id: number, body) {

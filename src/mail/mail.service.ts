@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { ResponseUtil } from '@/utils/response-util';
 
 @Injectable()
 export class MailService {
@@ -36,7 +37,7 @@ export class MailService {
       this.logger.log(`Email sent to ${data.email}`);
     } catch (error) {
       this.logger.error(`Failed to send email to ${data.email}`, error.stack);
-      throw error; // Re-throw the error to ensure the job fails and can be retried
+      return ResponseUtil.sendErrorResponse('Failed to send email', error);
     }
   }
   async addSendMailJob(data) {

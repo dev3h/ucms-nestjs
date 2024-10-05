@@ -7,7 +7,7 @@ import {
 import { UserService } from '../../user/user.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { I18nContext, I18nService } from 'nestjs-i18n';
+import { I18nService } from 'nestjs-i18n';
 import { ResponseUtil } from '@/utils/response-util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { System } from '@/modules/system/entities/system.entity';
@@ -41,13 +41,13 @@ export class AuthService {
   async createAdminToken(admin: any) {
     const payload = { email: admin.email, id: admin.id, role: 'admin' };
     const token = this.jwtService.sign(payload, {
-      expiresIn: '1h',
+      expiresIn: '5h',
     });
 
     await this.redisService.saveSession(
       `admin-session:${admin.id}`,
       token,
-      3600,
+      18000,
     );
     return token;
   }
@@ -73,7 +73,12 @@ export class AuthService {
       const payload = this.jwtService.verify(token);
       return payload;
     } catch (e) {
-      throw new UnauthorizedException('Invalid token');
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        e.message,
+      );
     }
   }
 

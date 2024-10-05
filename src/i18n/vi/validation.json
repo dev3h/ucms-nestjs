@@ -1,0 +1,7 @@
+{
+  "email": "Email không hợp lệ",
+  "exists": "{column} không tồn tại",
+  "password": "Mật khẩu không hợp lệ",
+  "isNotEmpty": "Trường này không được để trống",
+  "length": "Độ dài phải từ {min} đến {max} ký tự"
+}

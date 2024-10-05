@@ -1,0 +1,7 @@
+{
+  "email": "Invalid email",
+  "exists": "Email does not exist",
+  "password": "Invalid password",
+  "isNotEmpty": "This field cannot be empty",
+  "length": "Length must be between {min} and {max} characters"
+}
