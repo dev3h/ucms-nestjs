@@ -27,5 +27,6 @@
     "email.create-account.content.line6": "Tạo lúc:",
     "email.create-account.content.line7": "Để truy cập vào tài khoản của bạn, vui lòng nhấp vào liên kết bên dưới để hoàn tất quá trình đăng ký",
     "email.create-account.content.line8": "Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với quản trị viên",
-    "email.not-found": "Email không tìm thấy"
+    "email.not-found": "Email không tìm thấy",
+    "not-admin-account": "Tài khoản không phải là admin"
 }

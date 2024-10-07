@@ -147,7 +147,7 @@ export class TwoFactorAuthenticationController {
         this.i18n.t('message.Something-went-wrong', {
           lang: 'vi',
         }),
-        err,
+        err.message,
       );
     }
   }
@@ -155,7 +155,7 @@ export class TwoFactorAuthenticationController {
   @Post('challenge')
   @HttpCode(200)
   // @UseGuards(JwtAuthenticationGuard)
-  async challenge(@Body() data) {
+  async challenge(@Body() data, @Res() res) {
     try {
       const dataVerify = await this.authenticationService.verifyConsentToken(
         data?.consent_token,
@@ -165,7 +165,9 @@ export class TwoFactorAuthenticationController {
         data?.totpCode,
         user,
       );
-      return await this.authenticationService.confirmSSO_UCMS(data);
+      const code = await this.authenticationService.createAuthTempCode(user);
+      const dataRes = ResponseUtil.sendSuccessResponse({ data: code });
+      return res.status(200).json(dataRes);
     } catch (err) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {

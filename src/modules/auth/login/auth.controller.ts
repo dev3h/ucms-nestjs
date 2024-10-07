@@ -13,15 +13,13 @@ import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginRequestDto } from '../dto/login.dto';
 import { EmailRequestDto } from '../dto/email.dto';
-import { UserService } from '@/modules/user/user.service';
 import { ResponseUtil } from '@/utils/response-util';
+import { UserTypeEnum } from '@/modules/user/enums/user-type.enum';
+import { I18n, I18nContext } from 'nestjs-i18n';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private readonly userService: UserService,
-  ) {}
+  constructor(private authService: AuthService) {}
 
   // @ApiTags('Auth')
   // @UseGuards(LocalAuthGuard)
@@ -95,11 +93,21 @@ export class AuthController {
   })
   @Post('admin/login')
   @HttpCode(200)
-  async adminLogin(@Body() data: LoginRequestDto, @Response() res) {
+  async adminLogin(
+    @Body() data: LoginRequestDto,
+    @Response() res,
+    @I18n() i18n: I18nContext,
+  ) {
     const admin = await this.authService.validateUserCreds(
       data?.email,
       data?.password,
     );
+    if (admin?.type !== UserTypeEnum.ADMIN) {
+      return ResponseUtil.sendErrorResponse(
+        i18n.t('message.not-admin-account'),
+        'NOT_ADMIN_ACCOUNT',
+      );
+    }
     const token = await this.authService.createAdminToken(admin);
     const dataRes = ResponseUtil.sendSuccessResponse({
       data: {
@@ -190,6 +198,15 @@ export class AuthController {
   @HttpCode(200)
   async confirmSSO_UCMS(@Body() data, @Response() res) {
     const response = await this.authService.confirmSSO_UCMS(data);
+    const dataRes = ResponseUtil.sendSuccessResponse(response);
+    return res.status(200).json(dataRes);
+  }
+
+  @ApiTags('Auth Redirect UCMS')
+  @Post('sso-ucms/get-token')
+  @HttpCode(200)
+  async getTokenSSO_UCMS(@Body() data, @Response() res) {
+    const response = await this.authService.getSSO_Token_UCMS(data);
     const dataRes = ResponseUtil.sendSuccessResponse(response);
     return res.status(200).json(dataRes);
   }

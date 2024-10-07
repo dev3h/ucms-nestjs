@@ -3,5 +3,7 @@
   "exists": "{column} không tồn tại",
   "password": "Mật khẩu không hợp lệ",
   "isNotEmpty": "Trường này không được để trống",
-  "length": "Độ dài phải từ {min} đến {max} ký tự"
+  "length": "Độ dài phải từ {min} đến {max} ký tự",
+  "unique": "{column} đã tồn tại",
+  "url": "URL không hợp lệ"
 }

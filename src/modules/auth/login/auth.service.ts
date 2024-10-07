@@ -161,6 +161,21 @@ export class AuthService {
     };
   }
 
+  async createAuthTempCode(user: User): Promise<string> {
+    const payload = { id: user?.id, email: user?.email };
+    const authTempCode = this.jwtService.sign(payload, { expiresIn: '10m' }); // Mã xác thực tạm thời có thời hạn 3 phút
+    return authTempCode;
+  }
+
+  async verifyAuthTempCode(authTempCode: string): Promise<any> {
+    try {
+      const decoded = this.jwtService.verify(authTempCode);
+      return decoded;
+    } catch (error) {
+      throw new Error('Invalid or expired auth code');
+    }
+  }
+
   async createFinalToken(user: any, filteredPermissions) {
     const payload = {
       email: user?.email,
@@ -259,11 +274,12 @@ export class AuthService {
       );
     }
   }
-
   async confirmSSO_UCMS(data: any) {
     try {
       const system = await this.systemRepository.findOne({
-        where: { client_id: data?.client_id },
+        where: {
+          client_id: data?.client_id,
+        },
       });
       if (!system) {
         return ResponseUtil.sendErrorResponse(
@@ -272,7 +288,41 @@ export class AuthService {
         );
       }
 
-      const dataVerify = this.verifyConsentToken(data.consent_token);
+      const dataVerify = await this.verifyConsentToken(data?.consent_token);
+      const user = await this.userService.getUserById(dataVerify?.id);
+      const authTempCode = await this.createAuthTempCode(user);
+      return ResponseUtil.sendSuccessResponse({ data: authTempCode });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getSSO_Token_UCMS(data: any) {
+    try {
+      const system = await this.systemRepository.findOne({
+        where: {
+          client_id: data?.client_id,
+        },
+      });
+      if (!system) {
+        return ResponseUtil.sendErrorResponse(
+          'Client id not found',
+          'CLIENT_ID_NOT_FOUND',
+        );
+      }
+      if (system.client_secret !== data?.client_secret) {
+        return ResponseUtil.sendErrorResponse(
+          'Invalid client secret',
+          'INVALID_CLIENT_SECRET',
+        );
+      }
+
+      const dataVerify = await this.verifyAuthTempCode(data.auth_code);
       const user = await this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.roles', 'role')
