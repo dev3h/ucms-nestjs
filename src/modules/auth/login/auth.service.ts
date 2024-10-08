@@ -19,6 +19,7 @@ import TokenPayload from '../tokenPayload.interface';
 import { RedisService } from '@/modules/redis/redis.service';
 import { SystemService } from '../../system/system.service';
 import { UserPermissionStatusEnum } from '@/modules/user/enums/user-permission-status.enum';
+import { UserLoginHistoryService } from '@/modules/user-login-history/user-login-history.service';
 
 @Injectable()
 export class AuthService {
@@ -35,6 +36,7 @@ export class AuthService {
     private jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
+    private readonly userLoginHistoryService: UserLoginHistoryService,
   ) {}
 
   // Tạo admin token
@@ -361,6 +363,11 @@ export class AuthService {
         }));
 
       const finalToken = await this.createFinalToken(user, newFinalPermissions);
+      // await this.userLoginHistoryService.recordLogin({
+      //   id: user.id,
+      //   device_id: data.device_id,
+      //   token: finalToken,
+      // });
       return ResponseUtil.sendSuccessResponse({ data: finalToken });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(

@@ -19,6 +19,7 @@ import { Permission } from '../permission/entities/permission.entity';
 import { Exclude } from 'class-transformer';
 import { SystemToken } from '../system-token/entities/system-token.entity';
 import { UserHasPermission } from './user-has-permission.entity';
+import { UserLoginHistory } from '../user-login-history/user-login-history.entity';
 
 @Entity({ name: 'users' })
 export class User extends BaseEntity {
@@ -128,6 +129,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => SystemToken, (systemToken) => systemToken.user)
   systemTokens: SystemToken[];
+
+  @OneToMany(() => UserLoginHistory, (loginHistory) => loginHistory.user)
+  loginHistory: UserLoginHistory[];
 
   @BeforeInsert()
   async setPassword(password: string) {

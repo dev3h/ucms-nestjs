@@ -20,6 +20,7 @@ import { RedisModule } from '@/modules/redis/redis.module';
 import { JwtUserStrategy } from '../strategy/jwt-user.strategy';
 import { SystemModule } from '@/modules/system/system.module';
 import { CheckClientIdRedirectUriMiddleware } from '@/common/middleware/check-client-id-redirect-uri.middleware';
+import { UserLoginHistoryModule } from '@/modules/user-login-history/user-login-history.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CheckClientIdRedirectUriMiddleware } from '@/common/middleware/check-cl
     PassportModule,
     RedisModule,
     SystemModule,
+    UserLoginHistoryModule,
     JwtModule.registerAsync(jwtConfig),
     // JwtModule.register({
     //   secret: process.env.JWT_USER_SECRET || 'userSecret', // JWT for users

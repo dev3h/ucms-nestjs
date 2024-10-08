@@ -41,6 +41,7 @@ import { IsExistsConstraint } from './share/validation/exist/is-exists-constrain
 import { TwoFactorAuthenticationModule } from './modules/auth/twoFactor/two-factor-authentication.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { MailModule } from './mail/mail.module';
+import { UserLoginHistoryModule } from './modules/user-login-history/user-login-history.module';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import { MailModule } from './mail/mail.module';
     TwoFactorAuthenticationModule,
     RedisModule,
     MailModule,
+    UserLoginHistoryModule,
   ],
   controllers: [AppController],
   providers: [AppService, IsUniqueConstraint, IsExistsConstraint],
