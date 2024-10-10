@@ -10,8 +10,8 @@ import { Permission } from '../permission/entities/permission.entity';
 import { RestPermissionDto } from './dto/rest-permission.dto';
 import { System } from '../system/entities/system.entity';
 import { paginate } from '@/utils/pagination.util';
-import { RoleFilter } from '../user/filters/role.filter';
 import { RoleDto } from './dto/role.dto';
+import { RoleFilter } from './filters/role.filter';
 
 @Injectable()
 export class RoleService {

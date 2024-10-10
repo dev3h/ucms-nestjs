@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Role } from './entities/role.entity';
 import { Permission } from '../permission/entities/permission.entity';
 import { System } from '../system/entities/system.entity';
-import { RoleFilter } from '../user/filters/role.filter';
+import { RoleFilter } from './filters/role.filter';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Role, Permission, System])],
@@ -18,5 +18,6 @@ import { RoleFilter } from '../user/filters/role.filter';
       scope: Scope.REQUEST,
     },
   ],
+  exports: [RoleService],
 })
 export class RoleModule {}

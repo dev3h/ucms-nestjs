@@ -29,13 +29,13 @@ export class Action {
 
   @ApiProperty({ description: 'When action was created' })
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty({ description: 'When action was updated' })
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 
   @ApiProperty({ description: 'When action was deleted' })
   @DeleteDateColumn()
-  deletedAt?: Date;
+  deleted_at?: Date;
 }

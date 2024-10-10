@@ -6,11 +6,15 @@ import {
   Patch,
   Param,
   Delete,
+  Req,
 } from '@nestjs/common';
 import { ActionService } from './action.service';
 import { CreateActionDto } from './dto/create-action.dto';
 import { UpdateActionDto } from './dto/update-action.dto';
+import { Request } from 'express';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Action Management')
 @Controller('action')
 export class ActionController {
   constructor(private readonly actionService: ActionService) {}
@@ -21,8 +25,8 @@ export class ActionController {
   }
 
   @Get()
-  findAll() {
-    return this.actionService.findAll();
+  findAll(@Req() request: Request) {
+    return this.actionService.findAll(request);
   }
 
   @Get(':id')

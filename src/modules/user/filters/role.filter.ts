@@ -11,7 +11,9 @@ export class RoleFilter {
     const { search } = this.request.query;
 
     if (search) {
-      query.andWhere('name LIKE :search', { search: `%${search}%` });
+      query.andWhere('role.name LIKE :search OR role.code LIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     return query;

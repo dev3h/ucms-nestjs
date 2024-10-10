@@ -4,7 +4,6 @@ import { SystemController } from './system.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { System } from './entities/system.entity';
 import { SystemFilter } from './filters/system.filter';
-import { REQUEST } from '@nestjs/core';
 
 @Module({
   imports: [TypeOrmModule.forFeature([System])],

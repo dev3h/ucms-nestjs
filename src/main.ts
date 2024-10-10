@@ -83,6 +83,11 @@ async function bootstrap() {
     .addTag('Auth Redirect UCMS', 'Xử lý đăng nhập redirect tới UCMS')
     .addTag('MFA', 'Xử lý xác thực 2 bước')
     .addTag('System Management', 'Quản lý hệ thống')
+    .addTag('SubSystem Management', 'Quản lý phân hệ')
+    .addTag('Module Management', 'Quản lý mô đun')
+    .addTag('Action Management', 'Quản lý thao tác')
+    .addTag('Role Management', 'Quản lý vai trò (nhóm quyền)')
+    .addTag('Permission Management', 'Quản lý quyền')
     .addTag('User Management', 'Quản lý người dùng')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
