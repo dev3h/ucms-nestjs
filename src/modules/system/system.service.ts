@@ -10,6 +10,7 @@ import { Request } from 'express';
 import { paginate } from '@/utils/pagination.util';
 import { v4 as uuidv4 } from 'uuid';
 import { I18nService } from 'nestjs-i18n';
+import { SystemDetailDto } from './dto/system-detail.dto';
 
 @Injectable()
 export class SystemService {
@@ -62,21 +63,25 @@ export class SystemService {
   }
 
   async checkClientIdAndRedirectUri(data: any) {
-    // Check if the client_id is valid
     const system = await this.systemsRepository.findOne({
       where: { client_id: data.client_id },
     });
 
     if (!system) {
-      const errorMessage = Buffer.from('Invalid client_id').toString('base64');
+      const errorMessage = encodeURIComponent(
+        this.i18n.t('message.Invalid-client_id', {
+          lang: 'vi',
+        }),
+      );
       return ResponseUtil.sendErrorResponse(errorMessage, 'INVALID_CLIENT_ID');
     }
 
-    // Check if the redirect_uri is valid
     const isValidRedirectUri = system.redirect_uris.includes(data.redirect_uri);
     if (!isValidRedirectUri) {
-      const errorMessage = Buffer.from('Invalid redirect_uri').toString(
-        'base64',
+      const errorMessage = encodeURIComponent(
+        this.i18n.t('message.Invalid-redirect_uri', {
+          lang: 'vi',
+        }),
       );
       return ResponseUtil.sendErrorResponse(
         errorMessage,
@@ -115,11 +120,18 @@ export class SystemService {
 
   async findOne(id: number) {
     try {
-      const system = await this.systemsRepository.findOne({ where: { id } });
+      const system = await this.systemsRepository.findOne({
+        where: { id },
+        relations: [
+          'subsystems',
+          'subsystems.modules',
+          'subsystems.modules.actions',
+        ],
+      });
       if (!system) {
         return ResponseUtil.sendErrorResponse('System not found', 'NOT_FOUND');
       } else {
-        const formattedData = new SystemDto(system);
+        const formattedData = new SystemDetailDto(system);
         return ResponseUtil.sendSuccessResponse({ data: formattedData });
       }
     } catch (error) {

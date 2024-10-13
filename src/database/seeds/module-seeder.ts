@@ -8,25 +8,39 @@ export class ModuleSeeder implements Seeder {
     const moduleRepository = dataSource.getRepository(Module);
     const subsystemRepository = dataSource.getRepository(Subsystem);
 
-    for (let i = 1; i <= 2; i++) {
-      const module = moduleRepository.create({
-        name: `Module ${i}`,
-        code: `MOD${i}`,
-      });
-
-      await moduleRepository.save(module);
-    }
-
-    const modules = await moduleRepository.find();
     const subsystems = await subsystemRepository.find();
 
-    for (const subsystem of subsystems) {
-      subsystem.modules = [];
-      const randomModules = modules
-        .sort(() => 0.5 - Math.random())
-        .slice(0, Math.floor(Math.random() * 5) + 1);
-      subsystem.modules.push(...randomModules);
-      await subsystemRepository.save(subsystem);
+    const modules = [
+      {
+        name: 'Đăng ký học phần',
+        code: 'MD01',
+        subsystems: [subsystems.find((subsystem) => subsystem.code === 'PH01')],
+      },
+      {
+        name: 'Kết quả học tập',
+        code: 'MD02',
+        subsystems: [subsystems.find((subsystem) => subsystem.code === 'PH02')],
+      },
+      {
+        name: 'Chấm công tháng',
+        code: 'MD03',
+        subsystems: [subsystems.find((subsystem) => subsystem.code === 'PH03')],
+      },
+      {
+        name: 'Tuyển dụng nhân sự',
+        code: 'MD04',
+        subsystems: [subsystems.find((subsystem) => subsystem.code === 'PH04')],
+      },
+      {
+        name: 'Đánh giá nhân sự',
+        code: 'MD05',
+        subsystems: [subsystems.find((subsystem) => subsystem.code === 'PH04')],
+      },
+    ];
+
+    for (const moduleData of modules) {
+      const module = moduleRepository.create(moduleData);
+      await moduleRepository.save(module);
     }
   }
 }

@@ -36,8 +36,8 @@ export class System {
   client_secret: string;
 
   @ApiProperty({ description: 'Redirect URI' })
-  @Column()
-  redirect_uris: string;
+  @Column('json')
+  redirect_uris: string[];
 
   @OneToMany(() => Subsystem, (subsystem) => subsystem.system)
   subsystems: Subsystem[];

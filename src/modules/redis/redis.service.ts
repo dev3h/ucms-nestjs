@@ -20,8 +20,12 @@ export class RedisService {
     return (await this.client.get(`blacklist:${tokenId}`)) !== null;
   }
 
-  async blacklistToken(tokenId: string) {
-    await this.client.set(`blacklist:${tokenId}`, '1', 'EX', 3600); // Blacklist trong 1 giờ
+  async blacklistToken(tokenId: string, expireInSeconds?: number) {
+    if (expireInSeconds) {
+      await this.client.set(`blacklist:${tokenId}`, '1', 'EX', expireInSeconds); // Blacklist for a specified duration
+    } else {
+      await this.client.set(`blacklist:${tokenId}`, '1'); // Blacklist indefinitely
+    }
   }
 
   async logAllKeys() {

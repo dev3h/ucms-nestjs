@@ -23,6 +23,9 @@ import { MailService } from '@/mail/mail.service';
 import { UserTypeEnum } from './enums/user-type.enum';
 import { Utils } from '@/utils/utils';
 import { I18nService } from 'nestjs-i18n';
+import { Subsystem } from '../subsystem/entities/subsystem.entity';
+import { Module } from '../module/entities/module.entity';
+import { Action } from '../action/entities/action.entity';
 
 dotenv.config();
 
@@ -42,6 +45,12 @@ export class UserService {
     private readonly userFilter: UserFilter,
     @InjectRepository(System)
     private readonly systemRepository: Repository<System>,
+    @InjectRepository(Subsystem)
+    private readonly subsystemRepository: Repository<Subsystem>,
+    @InjectRepository(Module)
+    private readonly moduleRepository: Repository<Module>,
+    @InjectRepository(Action)
+    private readonly actionRepository: Repository<Action>,
     private readonly mailService: MailService,
   ) {}
 
@@ -254,6 +263,68 @@ export class UserService {
     }
   }
 
+  // async getAvailablePermissionsForUser(userId: number) {
+  //   try {
+  //     // 1. Lấy tất cả các role của user
+  //     const user = await this.userRepository.findOne({
+  //       where: { id: userId },
+  //       relations: ['roles', 'roles.permissions'], // Load các roles và permissions của roles
+  //     });
+
+  //     if (!user) {
+  //       return ResponseUtil.sendErrorResponse('User not found');
+  //     }
+
+  //     // 2. Lấy danh sách quyền từ tất cả các role của user
+  //     const rolePermissions = user.roles.flatMap((role) => role.permissions);
+
+  //     // 3. Lấy danh sách quyền được gán trực tiếp và bị ignore của user
+  //     const userPermissions = await this.userPermissionRepository.find({
+  //       where: { user: { id: userId } },
+  //       relations: ['permission'],
+  //     });
+
+  //     const directPermissions = userPermissions
+  //       .filter((userPermission) => userPermission.is_direct)
+  //       .map((userPermission) => userPermission.permission);
+
+  //     const ignoredPermissions = userPermissions
+  //       .filter(
+  //         (userPermission) =>
+  //           userPermission.status === UserPermissionStatusEnum.IGNORED,
+  //       )
+  //       .map((userPermission) => userPermission.permission);
+
+  //     // 4. Tổng hợp danh sách quyền đã có (bao gồm từ roles, quyền trực tiếp, và bị ignore)
+  //     const existingPermissionIds = new Set([
+  //       ...rolePermissions.map((perm) => perm.id),
+  //       ...directPermissions.map((perm) => perm.id),
+  //       ...ignoredPermissions.map((perm) => perm.id),
+  //     ]);
+
+  //     // 5. Lấy danh sách quyền chưa có (không nằm trong existingPermissionIds)
+  //     const availablePermissions = await this.permissionRepository.find({
+  //       where: { id: Not(In([...existingPermissionIds])) },
+  //     });
+  //     const formattedData =
+  //       availablePermissions?.length > 0
+  //         ? await RestPermissionDto.toArray(
+  //             availablePermissions,
+  //             this.systemRepository,
+  //           )
+  //         : [];
+
+  //     return ResponseUtil.sendSuccessResponse({ data: formattedData });
+  //   } catch (error) {
+  //     return ResponseUtil.sendErrorResponse(
+  //       this.i18n.t('message.Something-went-wrong', {
+  //         lang: 'vi',
+  //       }),
+  //       error.message,
+  //     );
+  //   }
+  // }
+
   async getAvailablePermissionsForUser(userId: number) {
     try {
       // 1. Lấy tất cả các role của user
@@ -297,15 +368,11 @@ export class UserService {
       const availablePermissions = await this.permissionRepository.find({
         where: { id: Not(In([...existingPermissionIds])) },
       });
-      const formattedData =
-        availablePermissions?.length > 0
-          ? await RestPermissionDto.toArray(
-              availablePermissions,
-              this.systemRepository,
-            )
-          : [];
 
-      return ResponseUtil.sendSuccessResponse({ data: formattedData });
+      // 6. Chuyển đổi dữ liệu thành cấu trúc treeData
+      const treeData =
+        await this.transformPermissionsToTreeData(availablePermissions);
+      return ResponseUtil.sendSuccessResponse({ data: treeData });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {
@@ -314,6 +381,81 @@ export class UserService {
         error.message,
       );
     }
+  }
+
+  private async transformPermissionsToTreeData(
+    permissions: Permission[],
+  ): Promise<any[]> {
+    const treeData = [];
+
+    for (const permission of permissions) {
+      const [systemCode, subsystemCode, moduleCode, actionCode] =
+        permission.code.split('-');
+
+      // Fetch system details
+      let system = treeData.find((item) => item.code === systemCode);
+      if (!system) {
+        const systemDetails = await this.systemRepository.findOne({
+          where: { code: systemCode },
+        });
+        system = {
+          id: systemDetails?.id,
+          name: systemDetails?.name,
+          code: systemCode,
+          subsystems: [],
+        };
+        treeData.push(system);
+      }
+
+      // Fetch subsystem details
+      let subsystem = system.subsystems.find(
+        (item) => item.code === subsystemCode,
+      );
+      if (!subsystem) {
+        const subsystemDetails = await this.subsystemRepository.findOne({
+          where: { code: subsystemCode },
+        });
+        subsystem = {
+          id: subsystemDetails.id,
+          name: subsystemDetails.name,
+          code: subsystemCode,
+          modules: [],
+        };
+        system.subsystems.push(subsystem);
+      }
+
+      // Fetch module details
+      let module = subsystem.modules.find((item) => item.code === moduleCode);
+      if (!module) {
+        const moduleDetails = await this.moduleRepository.findOne({
+          where: { code: moduleCode },
+        });
+        module = {
+          id: moduleDetails.id,
+          name: moduleDetails.name,
+          code: moduleCode,
+          actions: [],
+        };
+        subsystem.modules.push(module);
+      }
+
+      // Fetch action details
+      let action = module.actions.find((item) => item.code === actionCode);
+      if (!action) {
+        const actionDetails = await this.actionRepository.findOne({
+          where: { code: actionCode },
+        });
+        action = {
+          id: actionDetails.id,
+          name: actionDetails.name,
+          code: actionCode,
+          granted: false,
+        };
+        module.actions.push(action);
+      }
+    }
+
+    return treeData;
   }
 
   async getPermissionsFromUserRoles(userId: number) {

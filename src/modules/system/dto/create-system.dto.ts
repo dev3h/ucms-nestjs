@@ -10,17 +10,23 @@ export class CreateSystemDto {
   })
   readonly name: string;
 
-  @ApiProperty({ description: 'System code', example: 'SYS_001' })
+  @ApiProperty({ description: 'System code', example: 'HT01' })
   @IsUnique({ tableName: 'systems', column: 'code' })
   @IsNotEmpty({
     message: (args) => I18nContext.current().t('validation.isNotEmpty'),
   })
   readonly code: string;
 
-  @ApiProperty({ description: 'Redirect URI' })
-  @IsUrl({}, { message: (args) => I18nContext.current().t('validation.url') })
+  @ApiProperty({ description: 'Redirect URIs', type: [String] })
+  @IsUrl(
+    {},
+    {
+      each: true,
+      message: (args) => I18nContext.current().t('validation.url'),
+    },
+  )
   @IsNotEmpty({
     message: (args) => I18nContext.current().t('validation.isNotEmpty'),
   })
-  readonly redirect_uris: string;
+  readonly redirect_uris: string[];
 }

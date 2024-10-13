@@ -10,13 +10,31 @@ export class SubSystemSeeder implements Seeder {
 
     const systems = await systemRepository.find();
 
-    for (let i = 1; i <= 2; i++) {
-      const subsystem = subsystemRepository.create({
-        name: `Hệ thống con ${i}`,
-        code: `SUBSYS${i}`,
-        system: systems[Math.floor(Math.random() * systems.length)], // Chọn ngẫu nhiên một System
-      });
+    const subsystems = [
+      {
+        name: 'Phân hệ đăng ký',
+        code: 'PH01',
+        system: systems.find((system) => system.code === 'HT01'),
+      },
+      {
+        name: 'Phân hệ học tập',
+        code: 'PH02',
+        system: systems.find((system) => system.code === 'HT01'),
+      },
+      {
+        name: 'Phân hệ chấm công',
+        code: 'PH03',
+        system: systems.find((system) => system.code === 'HT02'),
+      },
+      {
+        name: 'Phân hệ tuyển dụng',
+        code: 'PH04',
+        system: systems.find((system) => system.code === 'HT02'),
+      },
+    ];
 
+    for (const subsystemData of subsystems) {
+      const subsystem = subsystemRepository.create(subsystemData);
       await subsystemRepository.save(subsystem);
     }
   }

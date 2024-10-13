@@ -1,37 +1,62 @@
 import { Seeder } from 'typeorm-extension';
 import { DataSource } from 'typeorm';
-import { System } from '../../modules/system/entities/system.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { System } from '@/modules/system/entities/system.entity';
 
 export class SystemSeeder implements Seeder {
   async run(dataSource: DataSource): Promise<void> {
     const systemRepository = dataSource.getRepository(System);
 
-    for (let i = 1; i <= 2; i++) {
+    const systems = [
+      {
+        name: 'Hệ thống quản lý sinh viên',
+        code: 'HT01',
+        client_id: '',
+        client_secret: 'L49ijGoCUOAJucNAk8VZMRHIlxMbJdTM9N09ir3Ab7QR',
+        redirect_uris: ['http://localhost:3000', 'http://localhost:3001'],
+      },
+      {
+        name: 'Hệ thống quản lý nhân sự',
+        code: 'HT02',
+        client_id: '',
+        client_secret: '',
+        redirect_uris: ['http://localhost:3002', 'http://localhost:3003'],
+      },
+      {
+        name: 'Hệ thống quản lý tài chính',
+        code: 'HT03',
+        client_id: '',
+        client_secret: '',
+        redirect_uris: ['http://localhost:3004', 'http://localhost:3005'],
+      },
+    ];
+
+    for (const systemData of systems) {
       let client_id: string;
-      let client_secret: string;
+      let client_secret: string | null = null;
       let isUnique = false;
 
       while (!isUnique) {
         client_id = uuidv4();
-        client_secret = uuidv4();
+        if (systemData.code !== 'HT01') {
+          client_secret = uuidv4();
+        }
 
         const existingSystem = await systemRepository.findOne({
-          where: [{ client_id }, { client_secret }],
+          where: [{ client_id }, ...(client_secret ? [{ client_secret }] : [])],
         });
 
         if (!existingSystem) {
           isUnique = true;
         }
       }
-      const system = systemRepository.create({
-        name: `Hệ thống ${i}`,
-        code: `SYS${i}`,
-        client_id,
-        client_secret,
-        redirect_uris: 'http://localhost:3000',
-      });
 
+      systemData.client_id = client_id;
+      if (client_secret) {
+        systemData.client_secret = client_secret;
+      }
+
+      const system = systemRepository.create(systemData);
       await systemRepository.save(system);
     }
   }

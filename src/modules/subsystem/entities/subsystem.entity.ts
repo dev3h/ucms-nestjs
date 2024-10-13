@@ -8,6 +8,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { System } from '../../system/entities/system.entity';
@@ -28,6 +29,7 @@ export class Subsystem {
   code: string;
 
   @ManyToOne(() => System, (system) => system.subsystems)
+  @JoinColumn({ name: 'system_id' }) // Custom foreign key column name
   system: System;
 
   @ManyToMany(() => Module, (module) => module.subsystems)

@@ -28,5 +28,7 @@
     "email.create-account.content.line7": "Để truy cập vào tài khoản của bạn, vui lòng nhấp vào liên kết bên dưới để hoàn tất quá trình đăng ký",
     "email.create-account.content.line8": "Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với quản trị viên",
     "email.not-found": "Email không tìm thấy",
-    "not-admin-account": "Tài khoản không phải là admin"
+    "not-admin-account": "Tài khoản không phải là admin",
+    "Invalid-client_id": "client id không hợp lệ",
+    "Invalid-redirect_uri": "redirect uri không hợp lệ"
 }

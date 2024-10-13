@@ -17,14 +17,28 @@ async function bootstrap() {
       exceptionFactory: (validationErrors = []) => {
         const errors = validationErrors.reduce(
           (acc: { [key: string]: any; message?: string }, err) => {
-            // Lấy lỗi đầu tiên cho mỗi thuộc tính và gán vào một mảng
-            const firstConstraint = Object.values(err.constraints)[0];
+            // Check if the property is an array and handle accordingly
+            if (Array.isArray(err.children) && err.children.length > 0) {
+              err.children.forEach((child, index) => {
+                if (child.constraints) {
+                  const firstConstraint = Object.values(child.constraints)[0];
+                  acc[`${err.property}.${index}`] = [firstConstraint];
 
-            acc[err.property] = [firstConstraint];
+                  // Assign the first error message to "message"
+                  if (!acc.message) {
+                    acc.message = firstConstraint;
+                  }
+                }
+              });
+            } else {
+              // Handle non-array properties
+              const firstConstraint = Object.values(err.constraints)[0];
+              acc[err.property] = [firstConstraint];
 
-            // Gán lỗi đầu tiên vào "message"
-            if (!acc.message) {
-              acc.message = firstConstraint;
+              // Assign the first error message to "message"
+              if (!acc.message) {
+                acc.message = firstConstraint;
+              }
             }
             return acc;
           },
@@ -55,8 +69,10 @@ async function bootstrap() {
 
   // Lấy danh sách các redirect_uri từ cơ sở dữ liệu
   const systems = await systemRepository.find();
-  const allowedOrigins = systems.flatMap((system) => system.redirect_uris);
-
+  const allowedOrigins = Array.from(
+    // Sử dụng Set để loại bỏ các redirect_uri trùng lặp
+    new Set(systems.flatMap((system) => system.redirect_uris)),
+  );
   // Thêm FRONTEND_URL vào danh sách các nguồn gốc được phép
   if (frontendUrl) {
     allowedOrigins.push(frontendUrl);

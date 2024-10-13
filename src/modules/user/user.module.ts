@@ -10,6 +10,9 @@ import { UserHasPermission } from './user-has-permission.entity';
 import { Role } from '../role/entities/role.entity';
 import { System } from '../system/entities/system.entity';
 import { MailModule } from '@/mail/mail.module';
+import { Subsystem } from '../subsystem/entities/subsystem.entity';
+import { Action } from '../action/entities/action.entity';
+import { Module as ModuleEntity } from '../module/entities/module.entity';
 
 @Module({
   imports: [
@@ -20,6 +23,9 @@ import { MailModule } from '@/mail/mail.module';
       UserHasPermission,
       Role,
       System,
+      Subsystem,
+      ModuleEntity,
+      Action,
     ]),
   ],
   controllers: [UserController],
