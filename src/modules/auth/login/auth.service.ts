@@ -108,8 +108,8 @@ export class AuthService {
   createConsentToken(user: any): string {
     const payload = { email: user.email, id: user.id }; // payload chứa email và id người dùng
 
-    // Tạo token JWT với thời gian hết hạn là 30 phút
-    return this.jwtService.sign(payload, { expiresIn: '30m' });
+    // Tạo token JWT với thời gian hết hạn là 1h
+    return this.jwtService.sign(payload, { expiresIn: '1h' });
   }
 
   // Xác thực consent token khi người dùng đồng ý quyền
@@ -261,6 +261,7 @@ export class AuthService {
         data: {
           consentToken,
           email: dataSession.email,
+          system_name: system?.data?.name,
           ...query,
           two_factor: {
             enable: user.two_factor_enable,

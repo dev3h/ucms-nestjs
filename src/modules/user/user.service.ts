@@ -263,69 +263,124 @@ export class UserService {
     }
   }
 
-  // async getAvailablePermissionsForUser(userId: number) {
-  //   try {
-  //     // 1. Lấy tất cả các role của user
-  //     const user = await this.userRepository.findOne({
-  //       where: { id: userId },
-  //       relations: ['roles', 'roles.permissions'], // Load các roles và permissions của roles
-  //     });
+  async getPermissionsOfUser(userId: number, request: Request) {
+    try {
+      // Fetch user with roles and permissions
+      const user = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.roles', 'role')
+        .leftJoinAndSelect('role.permissions', 'rolePermission')
+        .leftJoinAndSelect('user.userHasPermissions', 'userHasPermission')
+        .leftJoinAndSelect('userHasPermission.permission', 'directPermission')
+        .where('user.id = :userId', { userId })
+        .getOne();
 
-  //     if (!user) {
-  //       return ResponseUtil.sendErrorResponse('User not found');
-  //     }
+      if (!user) {
+        return ResponseUtil.sendErrorResponse('User not found');
+      }
 
-  //     // 2. Lấy danh sách quyền từ tất cả các role của user
-  //     const rolePermissions = user.roles.flatMap((role) => role.permissions);
+      // Combine role permissions and direct permissions
+      const rolePermissions = user.roles.reduce((acc, role) => {
+        return [...acc, ...role.permissions];
+      }, []);
 
-  //     // 3. Lấy danh sách quyền được gán trực tiếp và bị ignore của user
-  //     const userPermissions = await this.userPermissionRepository.find({
-  //       where: { user: { id: userId } },
-  //       relations: ['permission'],
-  //     });
+      const directPermissions = user.userHasPermissions
+        .filter((userHasPermission) => userHasPermission.is_direct)
+        .map((userHasPermission) => userHasPermission.permission);
 
-  //     const directPermissions = userPermissions
-  //       .filter((userPermission) => userPermission.is_direct)
-  //       .map((userPermission) => userPermission.permission);
+      const ignoredPermissions = user.userHasPermissions
+        .filter(
+          (userHasPermission) =>
+            !userHasPermission.is_direct &&
+            userHasPermission.status === UserPermissionStatusEnum.IGNORED,
+        )
+        .map((userHasPermission) => userHasPermission.permission);
 
-  //     const ignoredPermissions = userPermissions
-  //       .filter(
-  //         (userPermission) =>
-  //           userPermission.status === UserPermissionStatusEnum.IGNORED,
-  //       )
-  //       .map((userPermission) => userPermission.permission);
+      // Calculate final permissions
+      const allPermissions = [...rolePermissions, ...directPermissions];
+      const finalPermissions = allPermissions.filter(
+        (permission) =>
+          !ignoredPermissions.some((ignored) => ignored.id === permission.id),
+      );
 
-  //     // 4. Tổng hợp danh sách quyền đã có (bao gồm từ roles, quyền trực tiếp, và bị ignore)
-  //     const existingPermissionIds = new Set([
-  //       ...rolePermissions.map((perm) => perm.id),
-  //       ...directPermissions.map((perm) => perm.id),
-  //       ...ignoredPermissions.map((perm) => perm.id),
-  //     ]);
-
-  //     // 5. Lấy danh sách quyền chưa có (không nằm trong existingPermissionIds)
-  //     const availablePermissions = await this.permissionRepository.find({
-  //       where: { id: Not(In([...existingPermissionIds])) },
-  //     });
-  //     const formattedData =
-  //       availablePermissions?.length > 0
-  //         ? await RestPermissionDto.toArray(
-  //             availablePermissions,
-  //             this.systemRepository,
-  //           )
-  //         : [];
-
-  //     return ResponseUtil.sendSuccessResponse({ data: formattedData });
-  //   } catch (error) {
-  //     return ResponseUtil.sendErrorResponse(
-  //       this.i18n.t('message.Something-went-wrong', {
-  //         lang: 'vi',
-  //       }),
-  //       error.message,
-  //     );
-  //   }
-  // }
+      // Format permissions using UserPermissionDto
+      const treeData =
+        await this.transformPermissionsToTreeData(finalPermissions);
+      return ResponseUtil.sendSuccessResponse({ data: treeData });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
 
   async getAvailablePermissionsForUser(userId: number) {
+    try {
+      // 1. Lấy tất cả các role của user
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['roles', 'roles.permissions'], // Load các roles và permissions của roles
+      });
+
+      if (!user) {
+        return ResponseUtil.sendErrorResponse('User not found');
+      }
+
+      // 2. Lấy danh sách quyền từ tất cả các role của user
+      const rolePermissions = user.roles.flatMap((role) => role.permissions);
+
+      // 3. Lấy danh sách quyền được gán trực tiếp và bị ignore của user
+      const userPermissions = await this.userPermissionRepository.find({
+        where: { user: { id: userId } },
+        relations: ['permission'],
+      });
+
+      const directPermissions = userPermissions
+        .filter((userPermission) => userPermission.is_direct)
+        .map((userPermission) => userPermission.permission);
+
+      const ignoredPermissions = userPermissions
+        .filter(
+          (userPermission) =>
+            userPermission.status === UserPermissionStatusEnum.IGNORED,
+        )
+        .map((userPermission) => userPermission.permission);
+
+      // 4. Tổng hợp danh sách quyền đã có (bao gồm từ roles, quyền trực tiếp, và bị ignore)
+      const existingPermissionIds = new Set([
+        ...rolePermissions.map((perm) => perm.id),
+        ...directPermissions.map((perm) => perm.id),
+        ...ignoredPermissions.map((perm) => perm.id),
+      ]);
+
+      // 5. Lấy danh sách quyền chưa có (không nằm trong existingPermissionIds)
+      const availablePermissions = await this.permissionRepository.find({
+        where: { id: Not(In([...existingPermissionIds])) },
+      });
+      const formattedData =
+        availablePermissions?.length > 0
+          ? await RestPermissionDto.toArray(
+              availablePermissions,
+              this.systemRepository,
+            )
+          : [];
+
+      return ResponseUtil.sendSuccessResponse({ data: formattedData });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  // TEST FUNCTION
+  async getPermissionsForUser(userId: number) {
     try {
       // 1. Lấy tất cả các role của user
       const user = await this.userRepository.findOne({

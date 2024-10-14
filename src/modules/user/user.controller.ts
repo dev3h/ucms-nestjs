@@ -72,9 +72,21 @@ export class UserController {
     return this.userService.getAllPermissionsOfUser(+id, request);
   }
 
+  @Get(':id/user-permissions')
+  getUserPermissions(@Param('id') id: string, @Req() request: Request) {
+    return this.userService.getPermissionsOfUser(+id, request);
+  }
+
   @Get(':id/rest-available-permissions')
-  getRestPermissions(@Param('id') id: string, @Req() request: Request) {
+  getRestAvailablePermissions(
+    @Param('id') id: string,
+    @Req() request: Request,
+  ) {
     return this.userService.getAvailablePermissionsForUser(+id);
+  }
+  @Get(':id/rest-permissions')
+  getRestPermissions(@Param('id') id: string, @Req() request: Request) {
+    return this.userService.getPermissionsForUser(+id);
   }
 
   @Get(':id/role-permissions')
