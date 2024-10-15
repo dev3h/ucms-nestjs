@@ -67,12 +67,21 @@ async function bootstrap() {
   // Lấy FRONTEND_URL từ configService
   const frontendUrl = configService.get('FRONTEND_URL');
 
-  // Lấy danh sách các redirect_uri từ cơ sở dữ liệu
-  const systems = await systemRepository.find();
-  const allowedOrigins = Array.from(
-    // Sử dụng Set để loại bỏ các redirect_uri trùng lặp
-    new Set(systems.flatMap((system) => system.redirect_uris)),
-  );
+  let allowedOrigins: string[] = [];
+
+  try {
+    // Lấy danh sách các redirect_uri từ cơ sở dữ liệu
+    const systems = await systemRepository.find();
+    allowedOrigins = Array.from(
+      // Sử dụng Set để loại bỏ các redirect_uri trùng lặp
+      new Set(systems.flatMap((system) => system.redirect_uris)),
+    );
+  } catch (error) {
+    console.error('Failed to fetch systems from the database:', error);
+    // You can set a default allowed origins or leave it empty
+    allowedOrigins = [];
+  }
+
   // Thêm FRONTEND_URL vào danh sách các nguồn gốc được phép
   if (frontendUrl) {
     allowedOrigins.push(frontendUrl);
