@@ -26,6 +26,8 @@ import { I18nService } from 'nestjs-i18n';
 import { Subsystem } from '../subsystem/entities/subsystem.entity';
 import { Module } from '../module/entities/module.entity';
 import { Action } from '../action/entities/action.entity';
+import { UserDetailDto } from './dto/user-detail.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 dotenv.config();
 
@@ -81,13 +83,16 @@ export class UserService {
     try {
       // Tạo và lưu tài khoản
       const { role_id, ...userData } = body;
-      const account = await this.userRepository.save(userData);
+      const account = await this.userRepository.save(
+        this.userRepository.create(userData),
+      );
+      const singleAccount = Array.isArray(account) ? account[0] : account;
       // Gán vai trò cho tài khoản
       const role = await this.roleRepository.findOne({
         where: { id: role_id },
       });
       if (role) {
-        account.roles = [role];
+        singleAccount.roles = [role];
         await this.userRepository.save(account);
 
         // Lấy các quyền của vai trò và gán cho tài khoản
@@ -96,10 +101,10 @@ export class UserService {
         });
 
         const userHasPermissions = permissions.map((permission) => {
-          const userHasPermission = new UserHasPermission();
-          userHasPermission.user = account;
-          userHasPermission.permission = permission;
-          return userHasPermission;
+          const userPermission = new UserHasPermission();
+          userPermission.user = Array.isArray(account) ? account[0] : account;
+          userPermission.permission = permission;
+          return userPermission;
         });
 
         await this.userPermissionRepository.save(userHasPermissions);
@@ -108,12 +113,12 @@ export class UserService {
       // await queryRunner.commitTransaction();
 
       const dataSend = {
-        name: account?.name,
-        email: account?.email,
-        created_at: Utils.formatDate(account?.created_at),
+        name: singleAccount?.name,
+        email: singleAccount?.email,
+        created_at: Utils.formatDate(singleAccount?.created_at?.toISOString()),
         password: body?.password,
       };
-      if (account.type === UserTypeEnum.ADMIN) {
+      if (singleAccount.type === UserTypeEnum.ADMIN) {
         const loginUrl = `${process.env.FRONTEND_URL}/admin/login`;
         dataSend['loginUrl'] = loginUrl;
         await this.mailService.addSendMailJob(dataSend);
@@ -379,65 +384,6 @@ export class UserService {
     }
   }
 
-  // TEST FUNCTION
-  async getPermissionsForUser(userId: number) {
-    try {
-      // 1. Lấy tất cả các role của user
-      const user = await this.userRepository.findOne({
-        where: { id: userId },
-        relations: ['roles', 'roles.permissions'], // Load các roles và permissions của roles
-      });
-
-      if (!user) {
-        return ResponseUtil.sendErrorResponse('User not found');
-      }
-
-      // 2. Lấy danh sách quyền từ tất cả các role của user
-      const rolePermissions = user.roles.flatMap((role) => role.permissions);
-
-      // 3. Lấy danh sách quyền được gán trực tiếp và bị ignore của user
-      const userPermissions = await this.userPermissionRepository.find({
-        where: { user: { id: userId } },
-        relations: ['permission'],
-      });
-
-      const directPermissions = userPermissions
-        .filter((userPermission) => userPermission.is_direct)
-        .map((userPermission) => userPermission.permission);
-
-      const ignoredPermissions = userPermissions
-        .filter(
-          (userPermission) =>
-            userPermission.status === UserPermissionStatusEnum.IGNORED,
-        )
-        .map((userPermission) => userPermission.permission);
-
-      // 4. Tổng hợp danh sách quyền đã có (bao gồm từ roles, quyền trực tiếp, và bị ignore)
-      const existingPermissionIds = new Set([
-        ...rolePermissions.map((perm) => perm.id),
-        ...directPermissions.map((perm) => perm.id),
-        ...ignoredPermissions.map((perm) => perm.id),
-      ]);
-
-      // 5. Lấy danh sách quyền chưa có (không nằm trong existingPermissionIds)
-      const availablePermissions = await this.permissionRepository.find({
-        where: { id: Not(In([...existingPermissionIds])) },
-      });
-
-      // 6. Chuyển đổi dữ liệu thành cấu trúc treeData
-      const treeData =
-        await this.transformPermissionsToTreeData(availablePermissions);
-      return ResponseUtil.sendSuccessResponse({ data: treeData });
-    } catch (error) {
-      return ResponseUtil.sendErrorResponse(
-        this.i18n.t('message.Something-went-wrong', {
-          lang: 'vi',
-        }),
-        error.message,
-      );
-    }
-  }
-
   private async transformPermissionsToTreeData(
     permissions: Permission[],
   ): Promise<any[]> {
@@ -507,6 +453,143 @@ export class UserService {
           granted: false,
         };
         module.actions.push(action);
+      }
+    }
+
+    return treeData;
+  }
+
+  // TEST FUNCTION
+  async getPermissionsForUser(userId: number) {
+    try {
+      // 1. Lấy tất cả các role của user
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['roles', 'roles.permissions'], // Load các roles và permissions của roles
+      });
+
+      if (!user) {
+        return ResponseUtil.sendErrorResponse('User not found');
+      }
+
+      // 2. Lấy danh sách quyền từ tất cả các role của user
+      const rolePermissions = user.roles.flatMap((role) => role.permissions);
+
+      // 3. Lấy danh sách quyền được gán trực tiếp và bị ignore của user
+      const userPermissions = await this.userPermissionRepository.find({
+        where: { user: { id: userId } },
+        relations: ['permission'],
+      });
+
+      const directPermissions = userPermissions
+        .filter((userPermission) => userPermission.is_direct)
+        .map((userPermission) => userPermission.permission);
+
+      const ignoredPermissions = userPermissions
+        .filter(
+          (userPermission) =>
+            userPermission.status === UserPermissionStatusEnum.IGNORED,
+        )
+        .map((userPermission) => userPermission.permission);
+
+      // 4. Tổng hợp danh sách quyền đã có (bao gồm từ roles, quyền trực tiếp, và bị ignore)
+      const existingPermissionIds = new Set([
+        ...rolePermissions.map((perm) => perm.id),
+        ...directPermissions.map((perm) => perm.id),
+        ...ignoredPermissions.map((perm) => perm.id),
+      ]);
+
+      // 5. Lấy danh sách quyền chưa có (không nằm trong existingPermissionIds)
+      const availablePermissions = await this.permissionRepository.find({
+        where: { id: Not(In([...existingPermissionIds])) },
+      });
+
+      // 6. Chuyển đổi dữ liệu thành cấu trúc treeData
+      const treeData = await this.transformPermissions(availablePermissions);
+      return ResponseUtil.sendSuccessResponse({ data: treeData });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  private async transformPermissions(
+    permissions: Permission[],
+  ): Promise<any[]> {
+    const treeData = [];
+
+    for (const permission of permissions) {
+      const [systemCode, subsystemCode, moduleCode, actionCode] =
+        permission.code.split('-');
+
+      // Fetch system details
+      let system = treeData.find((item) => item.code === systemCode);
+      if (!system) {
+        const systemDetails = await this.systemRepository.findOne({
+          where: { code: systemCode },
+        });
+        system = {
+          id: systemDetails?.id,
+          name: systemDetails?.name,
+          code: systemCode,
+          type: 'system',
+          children: [],
+        };
+        treeData.push(system);
+      }
+
+      // Fetch subsystem details
+      let subsystem = system.children.find(
+        (item) => item.code === subsystemCode,
+      );
+      if (!subsystem) {
+        const subsystemDetails = await this.subsystemRepository.findOne({
+          where: { code: subsystemCode },
+        });
+        subsystem = {
+          id: subsystemDetails.id,
+          name: subsystemDetails.name,
+          code: subsystemCode,
+          type: 'subsystem',
+          children: [],
+        };
+        system.children.push(subsystem);
+      }
+
+      // Fetch module details
+      let module = subsystem.children.find((item) => item.code === moduleCode);
+      if (!module) {
+        const moduleDetails = await this.moduleRepository.findOne({
+          where: { code: moduleCode },
+        });
+        module = {
+          id: moduleDetails.id,
+          name: moduleDetails.name,
+          code: moduleCode,
+          type: 'module',
+          permissions: [],
+        };
+        subsystem.children.push(module);
+      }
+
+      // Fetch action details
+      let action = module.permissions.find((item) => item.code === actionCode);
+      if (!action) {
+        const actionDetails = await this.actionRepository.findOne({
+          where: { code: actionCode },
+        });
+        action = {
+          id: actionDetails.id,
+          name: actionDetails.name,
+          code: permission.code,
+          type: 'action',
+          granted: false,
+        };
+        module.permissions.push(action);
       }
     }
 
@@ -652,9 +735,13 @@ export class UserService {
         relations: ['roles'],
       });
       if (!user) {
-        return ResponseUtil.sendErrorResponse('User not found');
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
       } else {
-        const formattedData = new UserDto(user);
+        const formattedData = new UserDetailDto(user);
         return ResponseUtil.sendSuccessResponse({ data: formattedData });
       }
     } catch (error) {
@@ -667,8 +754,36 @@ export class UserService {
     }
   }
 
-  update(id: number, body) {
-    return `This action updates a #${id} system`;
+  async update(id: number, body) {
+    try {
+      const { role_id, ...userData } = body;
+      const user = this.userRepository.findOne({ where: { id } });
+      if (!user) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      if (!userData?.two_factor_enable) {
+        userData.two_factor_secret = null;
+        userData.two_factor_confirmed_at = null;
+      }
+      await this.userRepository.update(id, userData);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
   remove(id: number) {

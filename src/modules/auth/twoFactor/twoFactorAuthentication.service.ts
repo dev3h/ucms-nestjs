@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { authenticator } from 'otplib';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import * as speakeasy from 'speakeasy';
 import { toFileStream } from 'qrcode';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
@@ -16,18 +16,23 @@ export class TwoFactorAuthenticationService {
     private readonly configService: ConfigService,
   ) {}
 
-  public async generateTwoFactorAuthenticationSecret(user) {
+  public async generateTwoFactorAuthenticationSecret(user: User) {
     try {
-      const secret = authenticator.generateSecret();
+      const secret = speakeasy.generateSecret({ length: 20 });
 
-      const otpauthUrl = authenticator.keyuri(
-        user?.email,
-        this.configService.get('APP_NAME'),
-        secret,
+      const otpauthUrl = speakeasy.otpauthURL({
+        secret: secret.base32,
+        label: `${this.configService.get('APP_NAME')}:${user.email}`,
+        issuer: this.configService.get('APP_NAME'),
+        encoding: 'base32',
+      });
+
+      await this.userService.setTwoFactorAuthenticationSecret(
+        secret.base32,
+        user.id,
       );
-      await this.userService.setTwoFactorAuthenticationSecret(secret, user.id);
       const data = {
-        secret,
+        secret: secret.base32,
         otpauthUrl,
       };
       return ResponseUtil.sendSuccessResponse({ data }, 'Created successfully');
@@ -43,10 +48,19 @@ export class TwoFactorAuthenticationService {
     twoFactorAuthenticationCode: string,
     user: User,
   ) {
-    return authenticator.verify({
-      token: twoFactorAuthenticationCode,
+    // Kiểm tra mã 2FA dựa trên secret của người dùng và tên ứng dụng
+    const isCodeValid = speakeasy.totp.verify({
       secret: user.two_factor_secret,
+      encoding: 'base32', // Speakeasy sử dụng base32 để mã hóa secret
+      token: twoFactorAuthenticationCode,
     });
+
+    // Nếu mã không hợp lệ hoặc không đúng ứng dụng, thông báo lỗi
+    if (!isCodeValid) {
+      throw new UnauthorizedException('Invalid or expired authentication code');
+    }
+
+    return isCodeValid;
   }
 
   public async pipeQrCodeStream(stream: Response, otpauthUrl: string) {

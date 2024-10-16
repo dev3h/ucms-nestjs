@@ -15,6 +15,17 @@ export class IsUniqueConstraint implements ValidatorConstraintInterface {
 
   async validate(value: any, args?: ValidationArguments): Promise<boolean> {
     const { tableName, column }: IsUniqueConstraintInput = args.constraints[0];
+    const entity = args.object as any;
+    // Check if the value is the same as the current value in the database
+    const currentEntity = await this.entityManager
+      .getRepository(tableName)
+      .createQueryBuilder(tableName)
+      .where('id = :id', { id: entity.id })
+      .getOne();
+
+    if (currentEntity && currentEntity[column] === value) {
+      return true; // Bypass uniqueness check if the value is the same
+    }
 
     const exists = await this.entityManager
       ?.getRepository(tableName)

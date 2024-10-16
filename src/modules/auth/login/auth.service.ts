@@ -318,6 +318,13 @@ export class AuthService {
           'CLIENT_ID_NOT_FOUND',
         );
       }
+      // cái redirect_uri nó mã hóa mấy cái ký tự đặc biệt nên không so sánh được
+      // if (system?.redirect_uris.indexOf(data?.redirect_uri) === -1) {
+      //   return ResponseUtil.sendErrorResponse(
+      //     'Invalid redirect uri',
+      //     'INVALID_REDIRECT_URI',
+      //   );
+      // }
       if (system.client_secret !== data?.client_secret) {
         return ResponseUtil.sendErrorResponse(
           'Invalid client secret',
