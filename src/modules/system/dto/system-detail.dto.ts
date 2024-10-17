@@ -4,15 +4,32 @@ export class ActionDto {
   id: number;
   name: string;
   code: string;
+  granted: boolean;
+  permission_code: string; // Add permission_code property
 
-  constructor(action: any) {
+  constructor(
+    action: any,
+    moduleCode: string,
+    subsystemCode: string,
+    systemCode: string,
+  ) {
     this.id = action?.id;
     this.name = action?.name;
     this.code = action?.code;
+    this.granted = false;
+    // Generate permission_code based on system, subsystem, module, and action codes
+    this.permission_code = `${systemCode}-${subsystemCode}-${moduleCode}-${action?.code}`;
   }
 
-  static mapFromEntities(entities: any[]): ActionDto[] {
-    return entities.map((entity) => new ActionDto(entity));
+  static mapFromEntities(
+    entities: any[],
+    moduleCode: string,
+    subsystemCode: string,
+    systemCode: string,
+  ): ActionDto[] {
+    return entities.map(
+      (entity) => new ActionDto(entity, moduleCode, subsystemCode, systemCode),
+    );
   }
 }
 
@@ -22,15 +39,27 @@ export class ModuleDto {
   code: string;
   actions: ActionDto[];
 
-  constructor(module: any) {
+  constructor(module: any, subsystemCode: string, systemCode: string) {
     this.id = module?.id;
     this.name = module?.name;
     this.code = module?.code;
-    this.actions = ActionDto.mapFromEntities(module?.actions || []);
+    // Pass subsystemCode and systemCode down to ActionDto
+    this.actions = ActionDto.mapFromEntities(
+      module?.actions || [],
+      this.code,
+      subsystemCode,
+      systemCode,
+    );
   }
 
-  static mapFromEntities(entities: any[]): ModuleDto[] {
-    return entities.map((entity) => new ModuleDto(entity));
+  static mapFromEntities(
+    entities: any[],
+    subsystemCode: string,
+    systemCode: string,
+  ): ModuleDto[] {
+    return entities.map(
+      (entity) => new ModuleDto(entity, subsystemCode, systemCode),
+    );
   }
 }
 
@@ -40,15 +69,20 @@ export class SubSystemDto {
   code: string;
   modules: ModuleDto[];
 
-  constructor(subSystem: any) {
+  constructor(subSystem: any, systemCode: string) {
     this.id = subSystem?.id;
     this.name = subSystem?.name;
     this.code = subSystem?.code;
-    this.modules = ModuleDto.mapFromEntities(subSystem?.modules || []);
+    // Pass systemCode down to ModuleDto
+    this.modules = ModuleDto.mapFromEntities(
+      subSystem?.modules || [],
+      this.code,
+      systemCode,
+    );
   }
 
-  static mapFromEntities(entities: any[]): SubSystemDto[] {
-    return entities.map((entity) => new SubSystemDto(entity));
+  static mapFromEntities(entities: any[], systemCode: string): SubSystemDto[] {
+    return entities.map((entity) => new SubSystemDto(entity, systemCode));
   }
 }
 
@@ -70,7 +104,10 @@ export class SystemDetailDto {
     this.client_id = system?.client_id;
     this.client_secret = system?.client_secret;
     this.redirect_uris = system?.redirect_uris;
-    this.subsystems = SubSystemDto.mapFromEntities(system?.subsystems || []);
+    this.subsystems = SubSystemDto.mapFromEntities(
+      system?.subsystems || [],
+      this.code,
+    );
   }
 
   static mapFromEntities(entities: any[]): SystemDetailDto[] {

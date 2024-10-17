@@ -6,11 +6,11 @@ export class ActionDto {
   code: string;
   created_at: string;
 
-  constructor(module: any) {
-    this.id = module?.id;
-    this.name = module?.name;
-    this.code = module?.code;
-    this.created_at = Utils.formatDate(module?.created_at);
+  constructor(action: any) {
+    this.id = action?.id;
+    this.name = action?.name;
+    this.code = action?.code;
+    this.created_at = Utils.formatDate(action?.created_at);
   }
 
   static mapFromEntities(entities: any[]): ActionDto[] {

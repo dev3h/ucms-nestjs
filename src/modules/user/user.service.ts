@@ -28,6 +28,7 @@ import { Module } from '../module/entities/module.entity';
 import { Action } from '../action/entities/action.entity';
 import { UserDetailDto } from './dto/user-detail.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { SystemDetailDto } from '../system/dto/system-detail.dto';
 
 dotenv.config();
 
@@ -465,48 +466,77 @@ export class UserService {
       // 1. Lấy tất cả các role của user
       const user = await this.userRepository.findOne({
         where: { id: userId },
-        relations: ['roles', 'roles.permissions'], // Load các roles và permissions của roles
+        relations: ['roles', 'roles.permissions'],
       });
 
       if (!user) {
         return ResponseUtil.sendErrorResponse('User not found');
       }
 
-      // 2. Lấy danh sách quyền từ tất cả các role của user
-      const rolePermissions = user.roles.flatMap((role) => role.permissions);
-
-      // 3. Lấy danh sách quyền được gán trực tiếp và bị ignore của user
+      // 2. Lấy danh sách quyền trực tiếp và bị ignore của user
       const userPermissions = await this.userPermissionRepository.find({
         where: { user: { id: userId } },
         relations: ['permission'],
       });
 
-      const directPermissions = userPermissions
-        .filter((userPermission) => userPermission.is_direct)
-        .map((userPermission) => userPermission.permission);
+      const directPermissionCodes = new Set(
+        userPermissions
+          .filter((userPermission) => userPermission.is_direct)
+          .map((userPermission) => userPermission.permission.code),
+      );
 
-      const ignoredPermissions = userPermissions
-        .filter(
-          (userPermission) =>
-            userPermission.status === UserPermissionStatusEnum.IGNORED,
-        )
-        .map((userPermission) => userPermission.permission);
+      const ignoredPermissionCodes = new Set(
+        userPermissions
+          .filter(
+            (userPermission) =>
+              userPermission.status === UserPermissionStatusEnum.IGNORED,
+          )
+          .map((userPermission) => userPermission.permission.code),
+      );
 
-      // 4. Tổng hợp danh sách quyền đã có (bao gồm từ roles, quyền trực tiếp, và bị ignore)
-      const existingPermissionIds = new Set([
-        ...rolePermissions.map((perm) => perm.id),
-        ...directPermissions.map((perm) => perm.id),
-        ...ignoredPermissions.map((perm) => perm.id),
-      ]);
-
-      // 5. Lấy danh sách quyền chưa có (không nằm trong existingPermissionIds)
-      const availablePermissions = await this.permissionRepository.find({
-        where: { id: Not(In([...existingPermissionIds])) },
+      // 3. Lấy tất cả cây permission từ system -> subsystem -> module -> action
+      const allSystems = await this.systemRepository.find({
+        relations: [
+          'subsystems',
+          'subsystems.modules',
+          'subsystems.modules.actions',
+        ],
       });
 
-      // 6. Chuyển đổi dữ liệu thành cấu trúc treeData
-      const treeData = await this.transformPermissions(availablePermissions);
-      return ResponseUtil.sendSuccessResponse({ data: treeData });
+      const permissionTree = SystemDetailDto.mapFromEntities(allSystems);
+
+      // 4. Kiểm tra và set grant cho mỗi permission dựa trên direct, ignored, và role permissions
+      const rolePermissions = new Set(
+        user.roles.flatMap((role) => role.permissions.map((perm) => perm.code)),
+      );
+
+      permissionTree.forEach((system) => {
+        system.subsystems.forEach((subsystem) => {
+          subsystem.modules.forEach((module) => {
+            module.actions.forEach((action) => {
+              // Logic kiểm tra grant cho action
+              const actionCode = action.code;
+
+              if (ignoredPermissionCodes.has(actionCode)) {
+                // Nếu permission bị ignore thì grant = false
+                action.granted = false;
+              } else if (directPermissionCodes.has(actionCode)) {
+                // Nếu là direct permission thì grant = true
+                action.granted = true;
+              } else if (rolePermissions.has(actionCode)) {
+                // Nếu có trong role permissions thì grant = true
+                action.granted = true;
+              } else {
+                // Nếu không có trong direct hoặc role, thì grant = false
+                action.granted = false;
+              }
+            });
+          });
+        });
+      });
+
+      // 5. Trả về tree permission với trạng thái granted
+      return ResponseUtil.sendSuccessResponse({ data: permissionTree });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {
@@ -515,85 +545,6 @@ export class UserService {
         error.message,
       );
     }
-  }
-
-  private async transformPermissions(
-    permissions: Permission[],
-  ): Promise<any[]> {
-    const treeData = [];
-
-    for (const permission of permissions) {
-      const [systemCode, subsystemCode, moduleCode, actionCode] =
-        permission.code.split('-');
-
-      // Fetch system details
-      let system = treeData.find((item) => item.code === systemCode);
-      if (!system) {
-        const systemDetails = await this.systemRepository.findOne({
-          where: { code: systemCode },
-        });
-        system = {
-          id: systemDetails?.id,
-          name: systemDetails?.name,
-          code: systemCode,
-          type: 'system',
-          children: [],
-        };
-        treeData.push(system);
-      }
-
-      // Fetch subsystem details
-      let subsystem = system.children.find(
-        (item) => item.code === subsystemCode,
-      );
-      if (!subsystem) {
-        const subsystemDetails = await this.subsystemRepository.findOne({
-          where: { code: subsystemCode },
-        });
-        subsystem = {
-          id: subsystemDetails.id,
-          name: subsystemDetails.name,
-          code: subsystemCode,
-          type: 'subsystem',
-          children: [],
-        };
-        system.children.push(subsystem);
-      }
-
-      // Fetch module details
-      let module = subsystem.children.find((item) => item.code === moduleCode);
-      if (!module) {
-        const moduleDetails = await this.moduleRepository.findOne({
-          where: { code: moduleCode },
-        });
-        module = {
-          id: moduleDetails.id,
-          name: moduleDetails.name,
-          code: moduleCode,
-          type: 'module',
-          permissions: [],
-        };
-        subsystem.children.push(module);
-      }
-
-      // Fetch action details
-      let action = module.permissions.find((item) => item.code === actionCode);
-      if (!action) {
-        const actionDetails = await this.actionRepository.findOne({
-          where: { code: actionCode },
-        });
-        action = {
-          id: actionDetails.id,
-          name: actionDetails.name,
-          code: permission.code,
-          type: 'action',
-          granted: false,
-        };
-        module.permissions.push(action);
-      }
-    }
-
-    return treeData;
   }
 
   async getPermissionsFromUserRoles(userId: number) {
