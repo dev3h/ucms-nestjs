@@ -5,5 +5,11 @@
   "isNotEmpty": "Trường này không được để trống",
   "length": "Độ dài phải từ {min} đến {max} ký tự",
   "unique": "{column} đã tồn tại",
-  "url": "URL không hợp lệ"
+  "url": "URL không hợp lệ",
+  "maxLength": "{column} không được vượt quá {max} ký tự",
+  "minLength": "{column} không hợp lệ. Vui lòng nhập ít nhất {min} ký tự",
+  "totpCode": "Mã code không hợp lệ",
+  "arrayMaxSize": "{column} không được nhiều hơn {max} mục",
+  "arrayUnique": "{column} không được trùng lặp",
+  "invalidFormat": "{column} không hợp lệ"
 }

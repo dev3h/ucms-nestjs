@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
 import * as speakeasy from 'speakeasy';
 import { toFileStream } from 'qrcode';
 import { Response } from 'express';
@@ -57,7 +57,20 @@ export class TwoFactorAuthenticationService {
 
     // Nếu mã không hợp lệ hoặc không đúng ứng dụng, thông báo lỗi
     if (!isCodeValid) {
-      throw new UnauthorizedException('Invalid or expired authentication code');
+      throw new UnprocessableEntityException({
+        errors: {
+          totpCode: [
+            this.i18n.t('validation.totpCode', {
+              lang: 'vi',
+            }),
+          ],
+        },
+        message: this.i18n.t('validation.totpCode', {
+          lang: 'vi',
+        }),
+        error: 'Unprocessable Entity',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
     }
 
     return isCodeValid;

@@ -6,6 +6,8 @@ import {
   IsString,
   Length,
   Matches,
+  MaxLength,
+  MinLength,
 } from 'class-validator';
 import { I18nContext } from 'nestjs-i18n';
 
@@ -15,6 +17,12 @@ export class LoginRequestDto {
     example: 'namnd@yopmail.com',
   })
   @IsExists({ tableName: 'users', column: 'email' })
+  @MaxLength(50, {
+    message: (args) =>
+      I18nContext.current().t('validation.maxLength', {
+        args: { column: 'Email', max: 50 },
+      }),
+  })
   @Matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
   @IsEmail(
     {},
@@ -30,10 +38,16 @@ export class LoginRequestDto {
     example: 'a12345678X',
   })
   @Matches(/^[0-9a-zA-Z!"#$%&'()-^\\@\[;:\],.\/=~|`{+*}<>?_]+$/)
-  @Length(8, 16, {
+  @MinLength(8, {
     message: (args) =>
-      I18nContext.current().t('validation.length', {
-        args: { min: 8, max: 16 },
+      I18nContext.current().t('validation.minLength', {
+        args: { column: 'Password', min: 8 },
+      }),
+  })
+  @MaxLength(20, {
+    message: (args) =>
+      I18nContext.current().t('validation.maxLength', {
+        args: { column: 'Password', max: 20 },
       }),
   })
   @IsString({

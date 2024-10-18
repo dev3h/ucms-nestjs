@@ -5,5 +5,9 @@
   "isNotEmpty": "This field cannot be empty",
   "length": "Length must be between {min} and {max} characters",
   "unique": "{column} already exists",
-  "url": "Invalid URL"
+  "url": "Invalid URL",
+  "totpCode": "Invalid TOTP code",
+  "arrayMaxSize": "{column} cannot have more than {max} items",
+  "arrayUnique": "{column} cannot have duplicate items",
+  "invalidFormat": "{column} is invalid format"
 }
