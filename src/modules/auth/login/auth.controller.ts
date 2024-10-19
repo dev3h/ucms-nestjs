@@ -212,13 +212,31 @@ export class AuthController {
   }
 
   @ApiTags('Auth Redirect UCMS')
-  @Get('sso-ucms/me')
-  async meSSO_UCMS(@Req() req, @Response() res) {
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = await this.authService.verifyToken(token);
-    const dataRes = ResponseUtil.sendSuccessResponse({
-      data: decodedToken,
-    });
-    return res.status(200).json(dataRes);
+  @Post('sso-ucms/me')
+  async meSSO_UCMS(@Body() body, @Req() req, @Res() res) {
+    try {
+      const token = req.headers.authorization.split(' ')[1];
+      const decodedToken = await this.authService.verifyToken(token);
+
+      // Fetch permissions for the system using client_id and client_secret
+      const permissions = await this.authService.getPermissionsForSystem(
+        decodedToken.id,
+        body.client_id,
+        body.client_secret,
+      );
+
+      const dataRes = ResponseUtil.sendSuccessResponse({
+        data: {
+          ...decodedToken,
+          permissions,
+        },
+      });
+      return res.status(200).json(dataRes);
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        error.message,
+      );
+    }
   }
 }

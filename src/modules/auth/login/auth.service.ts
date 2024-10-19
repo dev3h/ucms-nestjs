@@ -178,18 +178,25 @@ export class AuthService {
     }
   }
 
-  async createFinalToken(user: any, filteredPermissions) {
+  // async createFinalToken(user: any, filteredPermissions) {
+  //   const payload = {
+  //     email: user?.email,
+  //     id: user?.id,
+  //     permissions: filteredPermissions,
+  //   };
+  //   const token = this.jwtService.sign(payload, {
+  //     expiresIn: '15h',
+  //   });
+
+  //   await this.redisService.saveSession(`user-session:${user.id}`, token, 3600);
+  //   return token;
+  // }
+  private async createFinalToken(user: User) {
     const payload = {
       email: user?.email,
-      id: user?.id,
-      permissions: filteredPermissions,
+      id: user.id,
     };
-    const token = this.jwtService.sign(payload, {
-      expiresIn: '15h',
-    });
-
-    await this.redisService.saveSession(`user-session:${user.id}`, token, 3600);
-    return token;
+    return this.jwtService.sign(payload);
   }
 
   // Lấy thông tin user từ final token
@@ -333,44 +340,48 @@ export class AuthService {
       }
 
       const dataVerify = await this.verifyAuthTempCode(data.auth_code);
-      const user = await this.userRepository
-        .createQueryBuilder('user')
-        .leftJoinAndSelect('user.roles', 'role')
-        .leftJoinAndSelect('role.permissions', 'rolePermission')
-        .leftJoinAndSelect('user.userHasPermissions', 'userHasPermission')
-        .leftJoinAndSelect('userHasPermission.permission', 'directPermission')
-        .where('user.id = :userId', { userId: dataVerify.id })
-        .getOne();
+      // const user = await this.userRepository
+      //   .createQueryBuilder('user')
+      //   .leftJoinAndSelect('user.roles', 'role')
+      //   .leftJoinAndSelect('role.permissions', 'rolePermission')
+      //   .leftJoinAndSelect('user.userHasPermissions', 'userHasPermission')
+      //   .leftJoinAndSelect('userHasPermission.permission', 'directPermission')
+      //   .where('user.id = :userId', { userId: dataVerify.id })
+      //   .getOne();
+      const user = await this.userRepository.findOne({
+        where: { id: dataVerify.id },
+      });
 
-      const rolePermissions = user.roles.flatMap((role) => role.permissions);
-      const directPermissions = user.userHasPermissions
-        .filter((userHasPermission) => userHasPermission.is_direct)
-        .map((userHasPermission) => userHasPermission.permission);
+      // const rolePermissions = user.roles.flatMap((role) => role.permissions);
+      // const directPermissions = user.userHasPermissions
+      //   .filter((userHasPermission) => userHasPermission.is_direct)
+      //   .map((userHasPermission) => userHasPermission.permission);
 
-      const ignoredPermissions = new Set(
-        user.userHasPermissions
-          .filter(
-            (userHasPermission) =>
-              !userHasPermission.is_direct &&
-              userHasPermission.status === UserPermissionStatusEnum.IGNORED,
-          )
-          .map((userHasPermission) => userHasPermission.permission.id),
-      );
+      // const ignoredPermissions = new Set(
+      //   user.userHasPermissions
+      //     .filter(
+      //       (userHasPermission) =>
+      //         !userHasPermission.is_direct &&
+      //         userHasPermission.status === UserPermissionStatusEnum.IGNORED,
+      //     )
+      //     .map((userHasPermission) => userHasPermission.permission.id),
+      // );
 
-      const finalPermissions = [
-        ...rolePermissions,
-        ...directPermissions,
-      ].filter((permission) => !ignoredPermissions.has(permission.id));
+      // const finalPermissions = [
+      //   ...rolePermissions,
+      //   ...directPermissions,
+      // ].filter((permission) => !ignoredPermissions.has(permission.id));
 
-      const systemCode = system.code;
-      const newFinalPermissions = finalPermissions
-        .filter((permission) => permission.code.startsWith(systemCode))
-        .map((permission) => ({
-          code: permission.code,
-          name: permission.name,
-        }));
+      // const systemCode = system.code;
+      // const newFinalPermissions = finalPermissions
+      //   .filter((permission) => permission.code.startsWith(systemCode))
+      //   .map((permission) => ({
+      //     code: permission.code,
+      //     name: permission.name,
+      //   }));
 
-      const finalToken = await this.createFinalToken(user, newFinalPermissions);
+      // const finalToken = await this.createFinalToken(user, newFinalPermissions);
+      const finalToken = await this.createFinalToken(user);
       // await this.userLoginHistoryService.recordLogin({
       //   id: user.id,
       //   device_id: data.device_id,
@@ -385,6 +396,65 @@ export class AuthService {
         error.message,
       );
     }
+  }
+
+  async getPermissionsForSystem(
+    userId: number,
+    clientId: string,
+    clientSecret: string,
+  ) {
+    // Find the system using client_id and client_secret
+    const system = await this.systemRepository.findOne({
+      where: {
+        client_id: clientId,
+        client_secret: clientSecret,
+      },
+    });
+
+    if (!system) {
+      throw new Error('Invalid client credentials');
+    }
+
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.roles', 'role')
+      .leftJoinAndSelect('role.permissions', 'rolePermission')
+      .leftJoinAndSelect('user.userHasPermissions', 'userHasPermission')
+      .leftJoinAndSelect('userHasPermission.permission', 'directPermission')
+      .where('user.id = :userId', { userId })
+      .getOne();
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const rolePermissions = user.roles.flatMap((role) => role.permissions);
+    const directPermissions = user.userHasPermissions
+      .filter((userHasPermission) => userHasPermission.is_direct)
+      .map((userHasPermission) => userHasPermission.permission);
+
+    const ignoredPermissions = new Set(
+      user.userHasPermissions
+        .filter(
+          (userHasPermission) =>
+            !userHasPermission.is_direct &&
+            userHasPermission.status === UserPermissionStatusEnum.IGNORED,
+        )
+        .map((userHasPermission) => userHasPermission.permission.id),
+    );
+
+    const finalPermissions = [...rolePermissions, ...directPermissions].filter(
+      (permission) => !ignoredPermissions.has(permission.id),
+    );
+
+    const newFinalPermissions = finalPermissions
+      .filter((permission) => permission.code.startsWith(system.code))
+      .map((permission) => ({
+        code: permission.code,
+        name: permission.name,
+      }));
+
+    return newFinalPermissions;
   }
 
   public getCookieWithJwtAccessToken(
