@@ -737,8 +737,34 @@ export class UserService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} system`;
+  async remove(id: number) {
+    try {
+      const user = await this.userRepository.findOne({ where: { id } });
+      if (!user) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+
+      user.deleted_at = new Date();
+      await this.userRepository.save(user);
+
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Deleted-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
   async setTwoFactorAuthenticationSecret(secret: string, userId: number) {

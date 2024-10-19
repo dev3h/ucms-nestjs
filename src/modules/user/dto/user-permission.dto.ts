@@ -1,5 +1,5 @@
-import { System } from "@/modules/system/entities/system.entity";
-import { DataSource } from "typeorm";
+import { System } from '@/modules/system/entities/system.entity';
+import { DataSource } from 'typeorm';
 
 export class UserPermissionDto {
   id: number;

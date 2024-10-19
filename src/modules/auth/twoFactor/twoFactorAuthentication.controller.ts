@@ -142,12 +142,12 @@ export class TwoFactorAuthenticationController {
       // request.res.setHeader('Set-Cookie', [accessTokenCookie]);
 
       // return request.user;
-    } catch (err) {
+    } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {
           lang: 'vi',
         }),
-        err.message,
+        error.message,
       );
     }
   }
@@ -156,25 +156,17 @@ export class TwoFactorAuthenticationController {
   @HttpCode(200)
   // @UseGuards(JwtAuthenticationGuard)
   async challenge(@Body() data, @Res() res) {
-    try {
-      const dataVerify = await this.authenticationService.verifyConsentToken(
-        data?.consent_token,
-      );
-      const user = await this.userService.getUserById(dataVerify?.id);
-      this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
-        data?.totpCode,
-        user,
-      );
-      const code = await this.authenticationService.createAuthTempCode(user);
-      const dataRes = ResponseUtil.sendSuccessResponse({ data: code });
-      return res.status(200).json(dataRes);
-    } catch (err) {
-      return ResponseUtil.sendErrorResponse(
-        this.i18n.t('message.Something-went-wrong', {
-          lang: 'vi',
-        }),
-        err.message,
-      );
-    }
+    const dataVerify = await this.authenticationService.verifyConsentToken(
+      data?.consent_token,
+    );
+
+    const user = await this.userService.getUserById(dataVerify?.id);
+    this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
+      data?.totpCode,
+      user,
+    );
+    const code = await this.authenticationService.createAuthTempCode(user);
+    const dataRes = ResponseUtil.sendSuccessResponse({ data: code });
+    return res.status(200).json(dataRes);
   }
 }
