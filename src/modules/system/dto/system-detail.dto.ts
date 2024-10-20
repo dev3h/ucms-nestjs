@@ -6,6 +6,8 @@ export class ActionDto {
   code: string;
   granted: boolean;
   permission_code: string; // Add permission_code property
+  status: number;
+  is_direct: boolean;
 
   constructor(
     action: any,
@@ -19,6 +21,8 @@ export class ActionDto {
     this.granted = false;
     // Generate permission_code based on system, subsystem, module, and action codes
     this.permission_code = `${systemCode}-${subsystemCode}-${moduleCode}-${action?.code}`;
+    this.status = null;
+    this.is_direct = false;
   }
 
   static mapFromEntities(

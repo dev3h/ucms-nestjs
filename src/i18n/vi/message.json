@@ -30,5 +30,6 @@
     "email.not-found": "Email không tìm thấy",
     "not-admin-account": "Tài khoản không phải là admin",
     "Invalid-client_id": "client id không hợp lệ",
-    "Invalid-redirect_uri": "redirect uri không hợp lệ"
+    "Invalid-redirect_uri": "redirect uri không hợp lệ",
+    "invalid-token": "Token không hợp lệ"
 }

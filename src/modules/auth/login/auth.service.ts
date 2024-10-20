@@ -69,7 +69,11 @@ export class AuthService {
   async verifyToken(token: string) {
     const isBlacklisted = await this.redisService.isTokenBlacklisted(token);
     if (isBlacklisted) {
-      throw new UnauthorizedException('Token is blacklisted');
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.invalid-token', {
+          lang: 'vi',
+        }),
+      );
     }
     try {
       const payload = this.jwtService.verify(token);
@@ -114,7 +118,7 @@ export class AuthService {
 
   // Xác thực consent token khi người dùng đồng ý quyền
   verifyConsentToken(token: string): any {
-    return this.jwtService.verify(token); // xác thực token
+    this.jwtService.verify(token);
   }
 
   async validateUserCreds(email: string, password: string): Promise<any> {

@@ -1,4 +1,8 @@
-import { HttpStatus, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
+import {
+  HttpStatus,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import * as speakeasy from 'speakeasy';
 import { toFileStream } from 'qrcode';
 import { Response } from 'express';

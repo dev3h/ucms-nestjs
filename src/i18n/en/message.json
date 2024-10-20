@@ -30,5 +30,6 @@
     "email.not-found": "Email not found",
     "not-admin-account": "Account is not an admin",
     "Invalid-client_id": "client id is invalid",
-    "Invalid-redirect_uri": "redirect uri is invalid"
+    "Invalid-redirect_uri": "redirect uri is invalid",
+    "invalid-token": "Invalid token"
 }

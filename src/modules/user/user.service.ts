@@ -510,12 +510,23 @@ export class UserService {
         user.roles.flatMap((role) => role.permissions.map((perm) => perm.code)),
       );
 
-      permissionTree.forEach((system) => {
-        system.subsystems.forEach((subsystem) => {
-          subsystem.modules.forEach((module) => {
-            module.actions.forEach((action) => {
-              // Logic kiểm tra grant cho action
-              const actionCode = action.code;
+      for (const system of permissionTree) {
+        for (const subsystem of system.subsystems) {
+          for (const module of subsystem.modules) {
+            for (const action of module.actions) {
+              // Tạo actionCode bằng cách nối các code từ system, subsystem, module và action
+              const actionCode = `${system.code}-${subsystem.code}-${module.code}-${action.code}`;
+
+              // Tìm trong UserHasPermission bằng actionCode
+              const userPermission =
+                await this.userPermissionRepository.findOne({
+                  where: {
+                    user: { id: user.id },
+                    permission: { code: actionCode },
+                  },
+                });
+              action.is_direct = userPermission?.is_direct;
+              action.status = userPermission?.status;
 
               if (ignoredPermissionCodes.has(actionCode)) {
                 // Nếu permission bị ignore thì grant = false
@@ -530,10 +541,10 @@ export class UserService {
                 // Nếu không có trong direct hoặc role, thì grant = false
                 action.granted = false;
               }
-            });
-          });
-        });
-      });
+            }
+          }
+        }
+      }
 
       // 5. Trả về tree permission với trạng thái granted
       return ResponseUtil.sendSuccessResponse({ data: permissionTree });
