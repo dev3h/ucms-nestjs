@@ -4,9 +4,10 @@ import { SystemController } from './system.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { System } from './entities/system.entity';
 import { SystemFilter } from './filters/system.filter';
+import { SystemClientSecret } from '../system-client-secret/entities/system-client-secret.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([System])],
+  imports: [TypeOrmModule.forFeature([System, SystemClientSecret])],
   controllers: [SystemController],
   providers: [
     SystemService,

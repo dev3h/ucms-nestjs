@@ -1,4 +1,5 @@
 import { Utils } from '@/utils/utils';
+import { SystemClientSecret } from '../../system-client-secret/entities/system-client-secret.entity';
 
 export class ActionDto {
   id: number;
@@ -90,15 +91,31 @@ export class SubSystemDto {
   }
 }
 
+export class SystemClientSecretDto {
+  id: number;
+  client_secret: string;
+  status: number;
+
+  constructor(clientSecret: SystemClientSecret) {
+    this.id = clientSecret?.id;
+    this.client_secret = clientSecret?.client_secret;
+    this.status = clientSecret?.status;
+  }
+
+  static mapFromEntities(entities: any[]): SystemClientSecretDto[] {
+    return entities.map((entity) => new SystemClientSecretDto(entity));
+  }
+}
+
 export class SystemDetailDto {
   id: number;
   name: string;
   code: string;
   client_id: string;
-  client_secret: string;
   created_at: string;
   redirect_uris: string;
   subsystems: SubSystemDto[];
+  client_secrets: any[];
 
   constructor(system: any) {
     this.id = system?.id;
@@ -106,7 +123,9 @@ export class SystemDetailDto {
     this.code = system?.code;
     this.created_at = Utils.formatDate(system?.created_at);
     this.client_id = system?.client_id;
-    this.client_secret = system?.client_secret;
+    this.client_secrets = SystemClientSecretDto.mapFromEntities(
+      system?.clientSecrets || [],
+    );
     this.redirect_uris = system?.redirect_uris;
     this.subsystems = SubSystemDto.mapFromEntities(
       system?.subsystems || [],

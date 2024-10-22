@@ -23,7 +23,7 @@ export class SystemController {
   @Post()
   @HttpCode(200)
   create(@Body() body: CreateSystemDto) {
-    return this.systemService.create(body);
+    return this.systemService.store(body);
   }
 
   @Post('check-data-system')

@@ -11,6 +11,7 @@ import { paginate } from '@/utils/pagination.util';
 import { v4 as uuidv4 } from 'uuid';
 import { I18nService } from 'nestjs-i18n';
 import { SystemDetailDto } from './dto/system-detail.dto';
+import { SystemClientSecret } from '../system-client-secret/entities/system-client-secret.entity';
 
 @Injectable()
 export class SystemService {
@@ -18,9 +19,11 @@ export class SystemService {
     private readonly i18n: I18nService,
     @InjectRepository(System)
     private systemsRepository: Repository<System>,
+    @InjectRepository(SystemClientSecret)
+    private readonly clientSecretRepository: Repository<SystemClientSecret>,
     private readonly systemFilter: SystemFilter,
   ) {}
-  async create(body) {
+  async store(body) {
     try {
       let client_id: string;
       let client_secret: string;
@@ -31,10 +34,14 @@ export class SystemService {
         client_secret = uuidv4();
 
         const existingSystem = await this.systemsRepository.findOne({
-          where: [{ client_id }, { client_secret }],
+          where: { client_id },
         });
 
-        if (!existingSystem) {
+        const existingClientSecret = await this.clientSecretRepository.findOne({
+          where: { client_secret },
+        });
+
+        if (!existingSystem && !existingClientSecret) {
           isUnique = true;
         }
       }
@@ -42,10 +49,16 @@ export class SystemService {
       const system = this.systemsRepository.create({
         ...body,
         client_id,
-        client_secret,
       });
 
       await this.systemsRepository.save(system);
+
+      const clientSecretEntity = this.clientSecretRepository.create({
+        client_secret: client_secret,
+        system: system,
+``      });
+
+      await this.clientSecretRepository.save(clientSecretEntity);
       return ResponseUtil.sendSuccessResponse(
         null,
         this.i18n.t('message.Created-successfully', {
@@ -123,6 +136,7 @@ export class SystemService {
       const system = await this.systemsRepository.findOne({
         where: { id },
         relations: [
+          'clientSecrets',
           'subsystems',
           'subsystems.modules',
           'subsystems.modules.actions',

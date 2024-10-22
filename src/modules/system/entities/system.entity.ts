@@ -11,6 +11,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Subsystem } from '../../subsystem/entities/subsystem.entity';
 import { SystemToken } from '@/modules/system-token/entities/system-token.entity';
+import { SystemClientSecret } from '@/modules/system-client-secret/entities/system-client-secret.entity';
 
 @Entity({ name: 'systems' })
 // @Unique(['name', 'code', 'client_id', 'client_secret'])
@@ -31,9 +32,8 @@ export class System {
   @Column({ length: 255 })
   client_id: string;
 
-  @ApiProperty({ description: 'Client Secret' })
-  @Column({ length: 255 })
-  client_secret: string;
+  @OneToMany(() => SystemClientSecret, (clientSecret) => clientSecret.system)
+  clientSecrets: SystemClientSecret[];
 
   @ApiProperty({ description: 'Redirect URI' })
   @Column('json')

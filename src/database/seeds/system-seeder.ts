@@ -2,10 +2,12 @@ import { Seeder } from 'typeorm-extension';
 import { DataSource } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { System } from '@/modules/system/entities/system.entity';
+import { SystemClientSecret } from '@/modules/system-client-secret/entities/system-client-secret.entity';
 
 export class SystemSeeder implements Seeder {
   async run(dataSource: DataSource): Promise<void> {
     const systemRepository = dataSource.getRepository(System);
+    const clientSecretRepository = dataSource.getRepository(SystemClientSecret);
 
     const systems = [
       {
@@ -43,21 +45,32 @@ export class SystemSeeder implements Seeder {
         }
 
         const existingSystem = await systemRepository.findOne({
-          where: [{ client_id }, ...(client_secret ? [{ client_secret }] : [])],
+          where: { client_id },
         });
 
-        if (!existingSystem) {
+        const existingClientSecret = client_secret
+          ? await clientSecretRepository.findOne({
+              where: { client_secret },
+            })
+          : null;
+
+        if (!existingSystem && !existingClientSecret) {
           isUnique = true;
         }
       }
 
       systemData.client_id = client_id;
-      if (client_secret) {
-        systemData.client_secret = client_secret;
-      }
 
       const system = systemRepository.create(systemData);
       await systemRepository.save(system);
+
+      if (client_secret) {
+        const clientSecretEntity = clientSecretRepository.create({
+          client_secret: client_secret,
+          system: system,
+        });
+        await clientSecretRepository.save(clientSecretEntity);
+      }
     }
   }
 }
