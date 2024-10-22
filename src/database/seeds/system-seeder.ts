@@ -15,7 +15,7 @@ export class SystemSeeder implements Seeder {
         code: 'HT01',
         client_id: '',
         client_secret: 'L49ijGoCUOAJucNAk8VZMRHIlxMbJdTM9N09ir3Ab7QR',
-        redirect_uris: ['http://localhost:3000', 'http://localhost:3001'],
+        redirect_uris: ['http://localhost:3000', 'http://localhost:3002'],
       },
       {
         name: 'Hệ thống quản lý nhân sự',
@@ -42,6 +42,8 @@ export class SystemSeeder implements Seeder {
         client_id = uuidv4();
         if (systemData.code !== 'HT01') {
           client_secret = uuidv4();
+        } else {
+          client_secret = systemData.client_secret;
         }
 
         const existingSystem = await systemRepository.findOne({

@@ -31,5 +31,8 @@
     "not-admin-account": "Tài khoản không phải là admin",
     "Invalid-client_id": "client id không hợp lệ",
     "Invalid-redirect_uri": "redirect uri không hợp lệ",
-    "invalid-token": "Token không hợp lệ"
+    "invalid-token": "Token không hợp lệ",
+    "Cannot-disable-only-client-secret": "Không thể vô hiệu hóa khi chỉ có 1 client secret",
+    "At-least-one-client-secret-enabled": "Ít nhất một client secret phải được kích hoạt",
+    "Only-delete-disabled-client-secret": "Chỉ xóa được client secret đã vô hiệu hóa"
 }

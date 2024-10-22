@@ -94,12 +94,14 @@ export class SubSystemDto {
 export class SystemClientSecretDto {
   id: number;
   client_secret: string;
-  status: number;
+  is_enabled: boolean;
+  created_at: string;
 
   constructor(clientSecret: SystemClientSecret) {
     this.id = clientSecret?.id;
     this.client_secret = clientSecret?.client_secret;
-    this.status = clientSecret?.status;
+    this.is_enabled = clientSecret?.is_enabled;
+    this.created_at = Utils.formatDate(clientSecret?.created_at?.toISOString());
   }
 
   static mapFromEntities(entities: any[]): SystemClientSecretDto[] {

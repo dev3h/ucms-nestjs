@@ -23,6 +23,170 @@ export class SystemService {
     private readonly clientSecretRepository: Repository<SystemClientSecret>,
     private readonly systemFilter: SystemFilter,
   ) {}
+  async createClientSecret(system: System, clientSecret: string) {
+    const clientSecretEntity = this.clientSecretRepository.create({
+      client_secret: clientSecret,
+      system: system,
+    });
+
+    // Save the client secret entity
+    await this.clientSecretRepository.save(clientSecretEntity);
+
+    return clientSecretEntity;
+  }
+
+  async storeClientSecret(systemId: number) {
+    try {
+      const system = await this.systemsRepository.findOne({
+        where: { id: systemId },
+      });
+
+      if (!system) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+
+      const client_secret = uuidv4();
+
+      await this.createClientSecret(system, client_secret);
+
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Created-successfully', {
+          lang: 'vis',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async updateClientSecret(systemId: number, clientSecretId: number) {
+    const system = await this.systemsRepository.findOne({
+      where: { id: systemId },
+    });
+
+    if (!system) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Data-not-found', {
+          lang: 'vi',
+        }),
+        'NOT_FOUND',
+      );
+    }
+
+    const clientSecret = await this.clientSecretRepository.findOne({
+      where: {
+        id: clientSecretId,
+        system: {
+          id: systemId,
+        },
+      },
+    });
+
+    if (!clientSecret) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Data-not-found', {
+          lang: 'vi',
+        }),
+        'CLIENT_SECRET_NOT_FOUND',
+      );
+    }
+    const allClientSecrets = await this.clientSecretRepository.find({
+      where: {
+        system: {
+          id: systemId,
+        },
+      },
+    });
+    if (allClientSecrets.length === 1 && clientSecret.is_enabled) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Cannot-disable-only-client-secret', {
+          lang: 'vi',
+        }),
+        'NOT_ALLOWED',
+      );
+    } else if (allClientSecrets.length > 1) {
+      const enabledClientSecrets = allClientSecrets.filter(
+        (clientSecret) => clientSecret.is_enabled,
+      );
+      if (enabledClientSecrets.length === 1 && clientSecret.is_enabled) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.At-least-one-client-secret-enabled', {
+            lang: 'vi',
+          }),
+          'NOT_ALLOWED',
+        );
+      }
+    }
+
+    clientSecret.is_enabled = !clientSecret.is_enabled;
+    await this.clientSecretRepository.save(clientSecret);
+
+    return ResponseUtil.sendSuccessResponse(
+      null,
+      this.i18n.t('message.Updated-successfully', {
+        lang: 'vi',
+      }),
+    );
+  }
+
+  async deleteClientSecret(systemId: number, systemClientSecretId: number) {
+    const system = await this.systemsRepository.findOne({
+      where: { id: systemId },
+    });
+
+    if (!system) {
+      return ResponseUtil.sendErrorResponse('System not found', 'NOT_FOUND');
+    }
+
+    const clientSecret = await this.clientSecretRepository.findOne({
+      where: {
+        id: systemClientSecretId,
+        system: {
+          id: systemId,
+        },
+      },
+    });
+
+    if (!clientSecret) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Data-not-found', {
+          lang: 'vi',
+        }),
+        'CLIENT_SECRET_NOT_FOUND',
+      );
+    }
+    if (clientSecret?.is_enabled) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Only-delete-disabled-client-secret', {
+          lang: 'vi',
+        }),
+        'NOT_ALLOWED',
+      );
+    }
+    await this.clientSecretRepository.update(
+      { id: systemClientSecretId },
+      { deleted_at: new Date() },
+    );
+
+    return ResponseUtil.sendSuccessResponse(
+      null,
+      this.i18n.t('message.Deleted-successfully', {
+        lang: 'vi',
+      }),
+    );
+  }
+
   async store(body) {
     try {
       let client_id: string;
@@ -46,19 +210,17 @@ export class SystemService {
         }
       }
 
-      const system = this.systemsRepository.create({
-        ...body,
-        client_id,
-      });
+      const system = await this.systemsRepository.save(
+        this.systemsRepository.create({
+          ...body,
+          client_id,
+        }),
+      );
 
-      await this.systemsRepository.save(system);
+      const singleSystem = Array.isArray(system) ? system[0] : system;
 
-      const clientSecretEntity = this.clientSecretRepository.create({
-        client_secret: client_secret,
-        system: system,
-``      });
+      await this.createClientSecret(singleSystem, client_secret);
 
-      await this.clientSecretRepository.save(clientSecretEntity);
       return ResponseUtil.sendSuccessResponse(
         null,
         this.i18n.t('message.Created-successfully', {

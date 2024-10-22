@@ -20,6 +20,8 @@ import { RedisService } from '@/modules/redis/redis.service';
 import { SystemService } from '../../system/system.service';
 import { UserPermissionStatusEnum } from '@/modules/user/enums/user-permission-status.enum';
 import { UserLoginHistoryService } from '@/modules/user-login-history/user-login-history.service';
+import { SystemClientSecret } from '@/modules/system-client-secret/entities/system-client-secret.entity';
+import { SystemClientSecretEnum } from '@/modules/system-client-secret/enums/system-client-secret.enum';
 
 @Injectable()
 export class AuthService {
@@ -32,6 +34,8 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(SystemToken)
     private readonly systemTokenRepository: Repository<SystemToken>,
+    @InjectRepository(SystemClientSecret)
+    private readonly systemClientSecretRepository: Repository<SystemClientSecret>,
     private readonly systemService: SystemService,
     private jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -336,7 +340,14 @@ export class AuthService {
       //     'INVALID_REDIRECT_URI',
       //   );
       // }
-      if (system.client_secret !== data?.client_secret) {
+      const clientSecret = await this.systemClientSecretRepository.findOne({
+        where: {
+          system: { id: system.id },
+          client_secret: data?.client_secret,
+          is_enabled: true,
+        },
+      });
+      if (!clientSecret) {
         return ResponseUtil.sendErrorResponse(
           'Invalid client secret',
           'INVALID_CLIENT_SECRET',
@@ -407,16 +418,27 @@ export class AuthService {
     clientId: string,
     clientSecret: string,
   ) {
-    // Find the system using client_id and client_secret
+    // Find the system using client_id
     const system = await this.systemRepository.findOne({
       where: {
         client_id: clientId,
-        client_secret: clientSecret,
       },
     });
 
     if (!system) {
-      throw new Error('Invalid client credentials');
+      throw new Error('Client id not found');
+    }
+
+    // Check if the provided client secret exists for the system
+    const clientSecretEntity = await this.systemClientSecretRepository.findOne({
+      where: {
+        system: { id: system.id },
+        client_secret: clientSecret,
+        is_enabled: true,
+      },
+    });
+    if (!clientSecretEntity) {
+      throw new Error('Invalid client secret');
     }
 
     const user = await this.userRepository

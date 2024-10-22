@@ -21,6 +21,7 @@ import { JwtUserStrategy } from '../strategy/jwt-user.strategy';
 import { SystemModule } from '@/modules/system/system.module';
 import { CheckClientIdRedirectUriMiddleware } from '@/common/middleware/check-client-id-redirect-uri.middleware';
 import { UserLoginHistoryModule } from '@/modules/user-login-history/user-login-history.module';
+import { SystemClientSecret } from '@/modules/system-client-secret/entities/system-client-secret.entity';
 
 @Module({
   imports: [
@@ -38,7 +39,7 @@ import { UserLoginHistoryModule } from '@/modules/user-login-history/user-login-
     //   secret: process.env.JWT_ADMIN_SECRET || 'adminSecret', // JWT for admins
     //   signOptions: { expiresIn: '1h' },
     // }),
-    TypeOrmModule.forFeature([System, SystemToken, User]),
+    TypeOrmModule.forFeature([System, SystemToken, User, SystemClientSecret]),
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy, JwtUserStrategy],
   controllers: [AuthController],

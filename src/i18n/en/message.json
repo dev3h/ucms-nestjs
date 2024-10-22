@@ -31,5 +31,8 @@
     "not-admin-account": "Account is not an admin",
     "Invalid-client_id": "client id is invalid",
     "Invalid-redirect_uri": "redirect uri is invalid",
-    "invalid-token": "Invalid token"
+    "invalid-token": "Invalid token",
+    "Cannot-disable-only-client-secret": "Cannot disable when only have one client secret",
+    "At-least-one-client-secret-enabled": "At least one client secret must be enabled",
+    "Only-delete-disabled-client-secret": "Only delete disabled client secret"
 }

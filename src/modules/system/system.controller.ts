@@ -8,6 +8,7 @@ import {
   Delete,
   Req,
   HttpCode,
+  Put,
 } from '@nestjs/common';
 import { SystemService } from './system.service';
 import { CreateSystemDto } from './dto/create-system.dto';
@@ -45,6 +46,30 @@ export class SystemController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: UpdateSystemDto) {
     return this.systemService.update(+id, body);
+  }
+
+  @Post(':id/create-new-client-secret')
+  @HttpCode(200)
+  storeClientSecret(@Param('id') id: string) {
+    return this.systemService.storeClientSecret(+id);
+  }
+
+  @Put(':id/update-client-secret/:clientSecretId')
+  @HttpCode(200)
+  updateClientSecret(
+    @Param('id') id: string,
+    @Param('clientSecretId') clientSecretId: string,
+  ) {
+    return this.systemService.updateClientSecret(+id, +clientSecretId);
+  }
+
+  @Delete(':id/delete-client-secret/:clientSecretId')
+  @HttpCode(200)
+  deleteClientSecret(
+    @Param('id') id: string,
+    @Param('clientSecretId') clientSecretId: string,
+  ) {
+    return this.systemService.deleteClientSecret(+id, +clientSecretId);
   }
 
   @Delete(':id')

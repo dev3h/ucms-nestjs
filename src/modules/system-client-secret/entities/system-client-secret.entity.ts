@@ -6,12 +6,12 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { System } from '@/modules/system/entities/system.entity';
 
 @Entity({ name: 'system_client_secrets' })
-// @Unique(['name', 'code', 'client_id', 'client_secret'])
 export class SystemClientSecret {
   @ApiProperty({ description: 'Primary key', example: 1 })
   @PrimaryGeneratedColumn()
@@ -22,6 +22,7 @@ export class SystemClientSecret {
   client_secret: string;
 
   @ManyToOne(() => System, (system) => system.clientSecrets)
+  @JoinColumn({ name: 'system_id' })
   system: System;
 
   @ApiProperty({
@@ -29,11 +30,10 @@ export class SystemClientSecret {
     example: 'active',
   })
   @Column({
-    type: 'tinyint',
-    comment: '1 = enabled, 2 = disabled',
-    default: 1,
+    type: 'boolean',
+    default: true,
   })
-  status: number;
+  is_enabled: boolean;
 
   @ApiProperty({ description: 'When Client Secret was created' })
   @CreateDateColumn()
