@@ -136,6 +136,12 @@ export class AuthController {
     await this.authService.logout(decodedToken.jti);
     return res.status(200).json({ message: 'Successfully logged out' });
   }
+  @ApiTags('Auth Redirect UCMS')
+  @Post('generate-device-id')
+  @HttpCode(200)
+  async generateDeviceId() {
+    return await this.authService.generateDeviceId();
+  }
   // Login Redirect UCMS
   @ApiTags('Auth Redirect UCMS')
   @ApiQuery({

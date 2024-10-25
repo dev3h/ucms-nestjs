@@ -294,6 +294,35 @@ export class AuthService {
       );
     }
   }
+  async generateDeviceId() {
+    try {
+      let random: string;
+      let isUnique = false;
+
+      while (!isUnique) {
+        random = Math.random().toString(36).substring(2, 15);
+        const existingDevice = await this.deviceLoginHistoryRepository.findOne({
+          where: {
+            device_identifier: random,
+          },
+        });
+
+        if (!existingDevice) {
+          isUnique = true;
+        }
+      }
+
+      return ResponseUtil.sendSuccessResponse({ data: random });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
   async confirmSSO_UCMS(data: any) {
     try {
       const system = await this.systemRepository.findOne({
