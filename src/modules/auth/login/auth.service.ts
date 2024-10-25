@@ -21,7 +21,7 @@ import { SystemService } from '../../system/system.service';
 import { UserPermissionStatusEnum } from '@/modules/user/enums/user-permission-status.enum';
 import { UserLoginHistoryService } from '@/modules/user-login-history/user-login-history.service';
 import { SystemClientSecret } from '@/modules/system-client-secret/entities/system-client-secret.entity';
-import { SystemClientSecretEnum } from '@/modules/system-client-secret/enums/system-client-secret.enum';
+import { DeviceLoginHistory } from '@/modules/device-login-history/entities/device-login-history.entity';
 
 @Injectable()
 export class AuthService {
@@ -36,6 +36,8 @@ export class AuthService {
     private readonly systemTokenRepository: Repository<SystemToken>,
     @InjectRepository(SystemClientSecret)
     private readonly systemClientSecretRepository: Repository<SystemClientSecret>,
+    @InjectRepository(DeviceLoginHistory)
+    private readonly deviceLoginHistoryRepository: Repository<DeviceLoginHistory>,
     private readonly systemService: SystemService,
     private jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -309,6 +311,11 @@ export class AuthService {
       const dataVerify = await this.verifyConsentToken(data?.consent_token);
       const user = await this.userService.getUserById(dataVerify?.id);
       const authTempCode = await this.createAuthTempCode(user);
+      await this.deviceLoginHistoryRepository.save({
+        user: user,
+        account_identifier: user?.email,
+        device_identifier: data?.device_id,
+      });
       return ResponseUtil.sendSuccessResponse({ data: authTempCode });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(

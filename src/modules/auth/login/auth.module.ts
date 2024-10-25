@@ -22,6 +22,7 @@ import { SystemModule } from '@/modules/system/system.module';
 import { CheckClientIdRedirectUriMiddleware } from '@/common/middleware/check-client-id-redirect-uri.middleware';
 import { UserLoginHistoryModule } from '@/modules/user-login-history/user-login-history.module';
 import { SystemClientSecret } from '@/modules/system-client-secret/entities/system-client-secret.entity';
+import { DeviceLoginHistoryModule } from '@/modules/device-login-history/device-login-history.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { SystemClientSecret } from '@/modules/system-client-secret/entities/syst
     RedisModule,
     SystemModule,
     UserLoginHistoryModule,
+    DeviceLoginHistoryModule,
     JwtModule.registerAsync(jwtConfig),
     // JwtModule.register({
     //   secret: process.env.JWT_USER_SECRET || 'userSecret', // JWT for users
@@ -39,7 +41,13 @@ import { SystemClientSecret } from '@/modules/system-client-secret/entities/syst
     //   secret: process.env.JWT_ADMIN_SECRET || 'adminSecret', // JWT for admins
     //   signOptions: { expiresIn: '1h' },
     // }),
-    TypeOrmModule.forFeature([System, SystemToken, User, SystemClientSecret]),
+    TypeOrmModule.forFeature([
+      System,
+      SystemToken,
+      User,
+      SystemClientSecret,
+      DeviceLoginHistoryModule,
+    ]),
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy, JwtUserStrategy],
   controllers: [AuthController],

@@ -16,6 +16,7 @@ import { EmailRequestDto } from '../dto/email.dto';
 import { ResponseUtil } from '@/utils/response-util';
 import { UserTypeEnum } from '@/modules/user/enums/user-type.enum';
 import { I18n, I18nContext } from 'nestjs-i18n';
+import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -196,7 +197,15 @@ export class AuthController {
   @ApiTags('Auth Redirect UCMS')
   @Post('sso-ucms/confirm')
   @HttpCode(200)
-  async confirmSSO_UCMS(@Body() data, @Response() res) {
+  async confirmSSO_UCMS(
+    @Req() request: Request,
+    @Body() data,
+    @Response() res,
+  ) {
+    const deviceId = request.cookies?.deviceId;
+    if (deviceId) {
+      data.device_id = deviceId;
+    }
     const response = await this.authService.confirmSSO_UCMS(data);
     const dataRes = ResponseUtil.sendSuccessResponse(response);
     return res.status(200).json(dataRes);

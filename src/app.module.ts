@@ -43,6 +43,7 @@ import { RedisModule } from './modules/redis/redis.module';
 import { MailModule } from './mail/mail.module';
 import { UserLoginHistoryModule } from './modules/user-login-history/user-login-history.module';
 import { SystemClientSecretModule } from './modules/system-client-secret/system-client-secret.module';
+import { DeviceLoginHistoryModule } from './modules/device-login-history/device-login-history.module';
 
 @Module({
   imports: [
@@ -94,6 +95,7 @@ import { SystemClientSecretModule } from './modules/system-client-secret/system-
     MailModule,
     UserLoginHistoryModule,
     SystemClientSecretModule,
+    DeviceLoginHistoryModule,
   ],
   controllers: [AppController],
   providers: [AppService, IsUniqueConstraint, IsExistsConstraint],
