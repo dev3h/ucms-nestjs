@@ -8,6 +8,7 @@ import {
   Res,
   Response,
   Query,
+  Param,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -141,6 +142,11 @@ export class AuthController {
   @HttpCode(200)
   async generateDeviceId() {
     return await this.authService.generateDeviceId();
+  }
+  @ApiTags('Auth Redirect UCMS')
+  @Get('get-device-login-histories/:device_id')
+  async getDeviceLoginHistories(@Param('device_id') device_id: string) {
+    return await this.authService.getDeviceLoginHistories(device_id);
   }
   // Login Redirect UCMS
   @ApiTags('Auth Redirect UCMS')

@@ -31,7 +31,7 @@ export class DeviceLoginHistory {
 
   @ApiProperty({ description: 'Last login' })
   @Column({ type: 'timestamp' })
-  last_login: Date;
+  last_login_at: Date;
 
   @ApiProperty({ description: 'Token when login success' })
   @Column({ type: 'varchar', length: 255, nullable: true })

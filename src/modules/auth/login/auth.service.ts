@@ -1,7 +1,6 @@
 import {
   HttpStatus,
   Injectable,
-  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { UserService } from '../../user/user.service';
@@ -22,6 +21,7 @@ import { UserPermissionStatusEnum } from '@/modules/user/enums/user-permission-s
 import { UserLoginHistoryService } from '@/modules/user-login-history/user-login-history.service';
 import { SystemClientSecret } from '@/modules/system-client-secret/entities/system-client-secret.entity';
 import { DeviceLoginHistory } from '@/modules/device-login-history/entities/device-login-history.entity';
+import { DeviceLoginHistoryDto } from '@/modules/device-login-history/dto/device-login-history.dto';
 
 @Injectable()
 export class AuthService {
@@ -322,6 +322,28 @@ export class AuthService {
       );
     }
   }
+  async getDeviceLoginHistories(deviceId) {
+    try {
+      const deviceLoginHistories = await this.deviceLoginHistoryRepository.find(
+        {
+          where: {
+            device_identifier: deviceId,
+          },
+          relations: ['user'],
+        },
+      );
+      const formattedData =
+        DeviceLoginHistoryDto.mapFromEntities(deviceLoginHistories);
+      return ResponseUtil.sendSuccessResponse({ data: formattedData });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
 
   async confirmSSO_UCMS(data: any) {
     try {
@@ -340,11 +362,28 @@ export class AuthService {
       const dataVerify = await this.verifyConsentToken(data?.consent_token);
       const user = await this.userService.getUserById(dataVerify?.id);
       const authTempCode = await this.createAuthTempCode(user);
-      await this.deviceLoginHistoryRepository.save({
-        user: user,
-        account_identifier: user?.email,
-        device_identifier: data?.device_id,
+      const device = await this.deviceLoginHistoryRepository.findOne({
+        where: {
+          device_identifier: data?.device_id,
+          account_identifier: user?.email,
+          user: { id: user?.id },
+        },
       });
+      if (device) {
+        await this.deviceLoginHistoryRepository.update(
+          { id: device.id },
+          {
+            last_login_at: new Date(),
+          },
+        );
+      } else {
+        await this.deviceLoginHistoryRepository.save({
+          user: user,
+          account_identifier: user?.email,
+          device_identifier: data?.device_id,
+          last_login_at: new Date(),
+        });
+      }
       return ResponseUtil.sendSuccessResponse({ data: authTempCode });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
