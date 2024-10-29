@@ -21,7 +21,7 @@ export class PermissionController {
 
   @Post()
   create(@Body() createPermissionDto: CreatePermissionDto) {
-    return this.permissionService.create(createPermissionDto);
+    return this.permissionService.store(createPermissionDto);
   }
 
   @Get()

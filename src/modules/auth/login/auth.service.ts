@@ -124,7 +124,7 @@ export class AuthService {
 
   // Xác thực consent token khi người dùng đồng ý quyền
   verifyConsentToken(token: string): any {
-    this.jwtService.verify(token);
+    return this.jwtService.verify(token);
   }
 
   async validateUserCreds(email: string, password: string): Promise<any> {

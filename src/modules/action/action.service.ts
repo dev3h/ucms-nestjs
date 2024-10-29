@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreateActionDto } from './dto/create-action.dto';
-import { UpdateActionDto } from './dto/update-action.dto';
 import { I18nService } from 'nestjs-i18n';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from './entities/action.entity';
@@ -10,17 +8,35 @@ import { Request } from 'express';
 import { paginate } from '@/utils/pagination.util';
 import { ResponseUtil } from '@/utils/response-util';
 import { ActionDto } from './dto/action.dto';
+import { BaseService } from '@/share/base-service/base.service';
 
 @Injectable()
-export class ActionService {
+export class ActionService extends BaseService<Action> {
   constructor(
     private readonly i18n: I18nService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     private readonly actionFilter: ActionFilter,
-  ) {}
-  create(createActionDto: CreateActionDto) {
-    return 'This action adds a new action';
+  ) {
+    super(actionRepository);
+  }
+  async store(body) {
+    try {
+      await this.actionRepository.save(body);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Created-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
   async findAll(request: Request) {
@@ -49,15 +65,87 @@ export class ActionService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} action`;
+  async findOne(id: number) {
+    try {
+      const action = await this.actionRepository.findOne({
+        where: { id },
+      });
+      if (!action) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      const formattedData = new ActionDto(action);
+      return ResponseUtil.sendSuccessResponse({
+        data: formattedData,
+      });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
-  update(id: number, updateActionDto: UpdateActionDto) {
-    return `This action updates a #${id} action`;
+  async update(id: number, body) {
+    try {
+      const action = await this.actionRepository.findOne({
+        where: { id },
+      });
+      if (!action) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      this.actionRepository.update(id, body);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} action`;
+  async remove(id: number) {
+    try {
+      const action = await this.actionRepository.findOne({
+        where: { id },
+      });
+      if (!action) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      await this.softDelete(id);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Deleted-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 }

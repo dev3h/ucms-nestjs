@@ -13,7 +13,7 @@ import { I18nContext } from 'nestjs-i18n';
 
 export class CreateSystemDto {
   @ApiProperty({ description: 'System name', example: 'Main System' })
-  @Matches(/^[a-zA-Z0-9 _-]+$/, {
+  @Matches(/^[\p{L}\p{N} _-]+$/u, {
     message: (args) => I18nContext.current().t('validation.invalidCharacters'),
   })
   @MinLength(2, {
@@ -66,7 +66,10 @@ export class CreateSystemDto {
       }),
   })
   @IsUrl(
-    {},
+    {
+      protocols: ['http', 'https'],
+      require_tld: false, // This allows 'localhost' without a top-level domain
+    },
     {
       each: true,
       message: (args) => I18nContext.current().t('validation.url'),

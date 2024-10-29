@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Req,
+  Put,
 } from '@nestjs/common';
 import { ActionService } from './action.service';
 import { CreateActionDto } from './dto/create-action.dto';
@@ -21,7 +22,7 @@ export class ActionController {
 
   @Post()
   create(@Body() createActionDto: CreateActionDto) {
-    return this.actionService.create(createActionDto);
+    return this.actionService.store(createActionDto);
   }
 
   @Get()
@@ -34,7 +35,7 @@ export class ActionController {
     return this.actionService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(@Param('id') id: string, @Body() updateActionDto: UpdateActionDto) {
     return this.actionService.update(+id, updateActionDto);
   }

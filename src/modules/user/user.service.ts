@@ -133,7 +133,6 @@ export class UserService {
         }),
       );
     } catch (error) {
-      console.log(error);
       // await queryRunner.rollbackTransaction();
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {

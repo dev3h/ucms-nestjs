@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   Req,
+  Put,
 } from '@nestjs/common';
 import { SubsystemService } from './subsystem.service';
 import { CreateSubsystemDto } from './dto/create-subsystem.dto';
@@ -23,7 +24,7 @@ export class SubsystemController {
   @Post()
   @HttpCode(200)
   create(@Body() createSubsystemDto: CreateSubsystemDto) {
-    return this.subsystemService.create(createSubsystemDto);
+    return this.subsystemService.store(createSubsystemDto);
   }
 
   @Get()
@@ -36,7 +37,7 @@ export class SubsystemController {
     return this.subsystemService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateSubsystemDto: UpdateSubsystemDto,

@@ -12,9 +12,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { I18nService } from 'nestjs-i18n';
 import { SystemDetailDto } from './dto/system-detail.dto';
 import { SystemClientSecret } from '../system-client-secret/entities/system-client-secret.entity';
+import { BaseService } from '@/share/base-service/base.service';
 
 @Injectable()
-export class SystemService {
+export class SystemService extends BaseService<System> {
   constructor(
     private readonly i18n: I18nService,
     @InjectRepository(System)
@@ -22,7 +23,9 @@ export class SystemService {
     @InjectRepository(SystemClientSecret)
     private readonly clientSecretRepository: Repository<SystemClientSecret>,
     private readonly systemFilter: SystemFilter,
-  ) {}
+  ) {
+    super(systemsRepository);
+  }
   async createClientSecret(system: System, clientSecret: string) {
     const clientSecretEntity = this.clientSecretRepository.create({
       client_secret: clientSecret,
@@ -305,7 +308,12 @@ export class SystemService {
         ],
       });
       if (!system) {
-        return ResponseUtil.sendErrorResponse('System not found', 'NOT_FOUND');
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
       } else {
         const formattedData = new SystemDetailDto(system);
         return ResponseUtil.sendSuccessResponse({ data: formattedData });
@@ -320,11 +328,67 @@ export class SystemService {
     }
   }
 
-  update(id: number, updateSystemDto: UpdateSystemDto) {
-    return `This action updates a #${id} system`;
+  update(id: number, body) {
+    try {
+      const system = this.systemsRepository.findOne({
+        where: { id },
+      });
+      if (!system) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+
+      this.systemsRepository.update({ id }, body);
+
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} system`;
+  async remove(id: number) {
+    try {
+      const system = this.systemsRepository.findOne({
+        where: { id },
+      });
+      if (!system) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+
+      await this.softDelete(id);
+
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Deleted-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 }

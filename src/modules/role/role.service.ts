@@ -12,10 +12,13 @@ import { System } from '../system/entities/system.entity';
 import { paginate } from '@/utils/pagination.util';
 import { RoleDto } from './dto/role.dto';
 import { RoleFilter } from './filters/role.filter';
+import { BaseService } from '@/share/base-service/base.service';
+import { I18nService } from 'nestjs-i18n';
 
 @Injectable()
-export class RoleService {
+export class RoleService extends BaseService<Role> {
   constructor(
+    private readonly i18n: I18nService,
     @InjectRepository(Role)
     private roleRepository: Repository<Role>,
     @InjectRepository(Permission)
@@ -23,10 +26,27 @@ export class RoleService {
     @InjectRepository(System)
     private readonly systemRepository: Repository<System>,
     private readonly roleFilter: RoleFilter,
-  ) {}
+  ) {
+    super(roleRepository);
+  }
 
-  create(createRoleDto: CreateRoleDto) {
-    return 'This action adds a new role';
+  async store(body) {
+    try {
+      await this.roleRepository.save(body);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Created-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
   async findAll(request: Request) {
@@ -56,22 +76,88 @@ export class RoleService {
       });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} role`;
+    try {
+      const role = this.roleRepository.findOne({
+        where: { id },
+      });
+      return ResponseUtil.sendSuccessResponse({
+        data: role,
+      });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
-  update(id: number, updateRoleDto: UpdateRoleDto) {
-    return `This action updates a #${id} role`;
+  update(id: number, body) {
+    try {
+      const role = this.roleRepository.findOne({
+        where: { id },
+      });
+      if (!role) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      this.roleRepository.update(id, body);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} role`;
+  async remove(id: number) {
+    try {
+      const role = await this.roleRepository.findOne({
+        where: { id },
+      });
+      if (!role) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      await this.softDelete(id);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Deleted-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
   async restPermission(id: number) {
@@ -104,7 +190,9 @@ export class RoleService {
       return ResponseUtil.sendSuccessResponse({ data: formattedData });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }

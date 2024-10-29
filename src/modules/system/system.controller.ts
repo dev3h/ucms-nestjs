@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Req,
@@ -43,7 +42,7 @@ export class SystemController {
     return this.systemService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(@Param('id') id: string, @Body() body: UpdateSystemDto) {
     return this.systemService.update(+id, body);
   }

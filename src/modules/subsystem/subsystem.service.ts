@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreateSubsystemDto } from './dto/create-subsystem.dto';
-import { UpdateSubsystemDto } from './dto/update-subsystem.dto';
 import { ResponseUtil } from '@/utils/response-util';
 import { I18nService } from 'nestjs-i18n';
 import { Subsystem } from './entities/subsystem.entity';
@@ -10,24 +8,60 @@ import { SubSystemFilter } from './filters/subsystem.filter';
 import { Request } from 'express';
 import { paginate } from '@/utils/pagination.util';
 import { SubSystemDto } from './dto/subsystem.dto';
+import { BaseService } from '@/share/base-service/base.service';
+import { System } from '../system/entities/system.entity';
 
 @Injectable()
-export class SubsystemService {
+export class SubsystemService extends BaseService<Subsystem> {
   constructor(
     private readonly i18n: I18nService,
     @InjectRepository(Subsystem)
     private subsystemRepository: Repository<Subsystem>,
+    @InjectRepository(System)
+    private systemRepository: Repository<System>,
     private readonly subsystemFilter: SubSystemFilter,
-  ) {}
-  create(createSubsystemDto: CreateSubsystemDto) {
-    return 'This action adds a new subsystem';
+  ) {
+    super(subsystemRepository);
+  }
+  async store(body) {
+    try {
+      const system = await this.systemRepository.findOne({
+        where: { id: body.systemId },
+      });
+
+      if (!system) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      const subsystem = this.subsystemRepository.create({
+        ...body,
+        system: system,
+      });
+      await this.subsystemRepository.save(subsystem);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Created-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
   async findAll(request: Request) {
     try {
       const query = this.subsystemRepository.createQueryBuilder('subsystem');
       this.subsystemFilter.applyFilters(query);
-
+      query.leftJoinAndSelect('subsystem.system', 'system');
       query.orderBy('subsystem.created_at', 'DESC');
       const page = parseInt(request.query.page as string, 10) || 1;
       const limit = parseInt(request.query.limit as string, 10) || 10;
@@ -49,15 +83,101 @@ export class SubsystemService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} subsystem`;
+  async findOne(id: number) {
+    try {
+      const subsystem = await this.subsystemRepository.findOne({
+        where: { id },
+        relations: ['system'],
+      });
+      if (!subsystem) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+      const formattedData = new SubSystemDto(subsystem);
+      return ResponseUtil.sendSuccessResponse({ data: formattedData });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
-  update(id: number, updateSubsystemDto: UpdateSubsystemDto) {
-    return `This action updates a #${id} subsystem`;
+  async update(id: number, body) {
+    try {
+      const subsystem = this.subsystemRepository.findOne({
+        where: { id },
+      });
+      if (!subsystem) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      if (body.system_id) {
+        const system = await this.systemRepository.findOne({
+          where: { id: body.system_id },
+        });
+        if (!system) {
+          return ResponseUtil.sendErrorResponse(
+            this.i18n.t('message.System-not-found', {
+              lang: 'vi',
+            }),
+          );
+        }
+        body.system = system;
+        delete body.system_id;
+      }
+      this.subsystemRepository.update(id, body);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} subsystem`;
+  async remove(id: number) {
+    try {
+      const subsystem = await this.subsystemRepository.findOne({
+        where: { id },
+      });
+      if (!subsystem) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      await this.softDelete(id);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Deleted-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 }

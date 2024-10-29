@@ -9,16 +9,36 @@ import { paginate } from '@/utils/pagination.util';
 import { PermissionDto } from './dto/permission.dto';
 import { ResponseUtil } from '@/utils/response-util';
 import { PermissionFilter } from './filters/permission.filter';
+import { BaseService } from '@/share/base-service/base.service';
+import { I18nService } from 'nestjs-i18n';
 
 @Injectable()
-export class PermissionService {
+export class PermissionService extends BaseService<Permission> {
   constructor(
+    private readonly i18n: I18nService,
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
     private readonly permissionFilter: PermissionFilter,
-  ) {}
-  create(createPermissionDto: CreatePermissionDto) {
-    return 'This action adds a new permission';
+  ) {
+    super(permissionRepository);
+  }
+  async store(body) {
+    try {
+      await this.permissionRepository.save(body);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Created-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
   async findAll(request: Request) {
@@ -48,21 +68,87 @@ export class PermissionService {
       });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
         error.message,
       );
     }
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} permission`;
+    try {
+      const permission = this.permissionRepository.findOne({
+        where: { id },
+      });
+      return ResponseUtil.sendSuccessResponse({
+        data: permission,
+      });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
-  update(id: number, updatePermissionDto: UpdatePermissionDto) {
-    return `This action updates a #${id} permission`;
+  update(id: number, body) {
+    try {
+      const permission = this.permissionRepository.findOne({
+        where: { id },
+      });
+      if (!permission) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      this.permissionRepository.update(id, body);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} permission`;
+  async remove(id: number) {
+    try {
+      const subsystem = await this.permissionRepository.findOne({
+        where: { id },
+      });
+      if (!subsystem) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      await this.softDelete(id);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Deleted-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 }

@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   Req,
+  Put,
 } from '@nestjs/common';
 import { ModuleService } from './module.service';
 import { CreateModuleDto } from './dto/create-module.dto';
@@ -23,7 +24,7 @@ export class ModuleController {
   @Post()
   @HttpCode(200)
   create(@Body() createModuleDto: CreateModuleDto) {
-    return this.moduleService.create(createModuleDto);
+    return this.moduleService.store(createModuleDto);
   }
 
   @Get()
@@ -36,9 +37,9 @@ export class ModuleController {
     return this.moduleService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateModuleDto: UpdateModuleDto) {
-    return this.moduleService.update(+id, updateModuleDto);
+  @Put(':id')
+  update(@Param('id') id: string, @Body() body: UpdateModuleDto) {
+    return this.moduleService.update(+id, body);
   }
 
   @Delete(':id')
