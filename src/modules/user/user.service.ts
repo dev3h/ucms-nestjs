@@ -27,7 +27,6 @@ import { Subsystem } from '../subsystem/entities/subsystem.entity';
 import { Module } from '../module/entities/module.entity';
 import { Action } from '../action/entities/action.entity';
 import { UserDetailDto } from './dto/user-detail.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { SystemDetailDto } from '../system/dto/system-detail.dto';
 
 dotenv.config();

@@ -7,6 +7,7 @@
     "email.reset-password.content.line5": "Email này được gửi tự động.",
     "email.reset-password.content.line6": "Vui lòng không trả lời email này vì chúng tôi không thể thay đổi mật khẩu qua email này",
     "Update Password Success": "Cập nhật mật khẩu thành công",
+    "Reset-password-successfully": "Đặt lại mật khẩu thành công",
     "You are not authorized to access this page": "Bạn không được phép truy cập trang này",
     "Data-not-found": "Không tìm thấy dữ liệu",
     "Something-went-wrong": "Đã xảy ra lỗi vui lòng thử lại sau",
@@ -15,7 +16,7 @@
     "Deleted-successfully": "Xóa thành công",
     "File not found": "Không tìm thấy tệp",
     "Invalid signature": "Chữ ký không hợp lệ",
-    "Reset Password Mail": "Đặt Lại Mật Khẩu",
+    "Reset-password-mail": "Đặt Lại Mật Khẩu",
     "Imported successfully": "Nhập thành công",
     "email.create-new-account": "Tạo tài khoản mới",
     "email.create-new-account-admin": "Tạo tài khoản admin mới",
@@ -32,7 +33,9 @@
     "Invalid-client_id": "client id không hợp lệ",
     "Invalid-redirect_uri": "redirect uri không hợp lệ",
     "invalid-token": "Token không hợp lệ",
+    "token-not-found": "Token không tìm thấy",
     "Cannot-disable-only-client-secret": "Không thể vô hiệu hóa khi chỉ có 1 client secret",
     "At-least-one-client-secret-enabled": "Ít nhất một client secret phải được kích hoạt",
-    "Only-delete-disabled-client-secret": "Chỉ xóa được client secret đã vô hiệu hóa"
+    "Only-delete-disabled-client-secret": "Chỉ xóa được client secret đã vô hiệu hóa",
+    "Send-reset-password-successfully": "Gửi email đặt lại mật khẩu thành công"
 }

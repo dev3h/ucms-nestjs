@@ -5,23 +5,17 @@ import { UpdateResetPasswordDto } from './dto/update-reset-password.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Reset Password')
-@Controller('reset-password')
+@Controller('auth')
 export class ResetPasswordController {
   constructor(private readonly resetPasswordService: ResetPasswordService) {}
 
-  @Post('send-mail')
-  async sendMailResetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return await this.resetPasswordService.sendMailResetPassword(
-      resetPasswordDto,
-    );
+  @Post('forgot-password')
+  async sendMailResetPassword(@Body() body: ResetPasswordDto) {
+    return await this.resetPasswordService.sendMailResetPassword(body);
   }
 
-  @Post('update')
-  async passwordResetUpdate(
-    @Body() updateResetPasswordDto: UpdateResetPasswordDto,
-  ) {
-    return await this.resetPasswordService.passwordResetUpdate(
-      updateResetPasswordDto,
-    );
+  @Post('reset-password')
+  async passwordResetUpdate(@Body() body: UpdateResetPasswordDto) {
+    return await this.resetPasswordService.passwordResetUpdate(body);
   }
 }

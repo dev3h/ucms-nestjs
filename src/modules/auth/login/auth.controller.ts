@@ -148,6 +148,12 @@ export class AuthController {
   async getDeviceLoginHistories(@Param('device_id') device_id: string) {
     return await this.authService.getDeviceLoginHistories(device_id);
   }
+  @ApiTags('Auth Redirect UCMS')
+  @Post('check-account-device-history')
+  @HttpCode(200)
+  async checkDeviceLoginHistories(@Body() body: any) {
+    return await this.authService.checkDeviceLoginHistories(body);
+  }
   // Login Redirect UCMS
   @ApiTags('Auth Redirect UCMS')
   @ApiQuery({
@@ -234,10 +240,23 @@ export class AuthController {
 
   @ApiTags('Auth Redirect UCMS')
   @Post('sso-ucms/me')
-  async meSSO_UCMS(@Body() body, @Req() req, @Res() res) {
+  async meSSO_UCMS(
+    @Req() request: Request,
+    @Body() body,
+    @Req() req,
+    @Res() res,
+  ) {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = await this.authService.verifyToken(token);
 
+    const deviceId = request.cookies?.deviceId;
+    if (deviceId) {
+      await this.authService.updateAccessTokenDeviceLoginHistory({
+        device_id: deviceId,
+        session_token: token,
+        ...decodedToken,
+      });
+    }
     const permissions = await this.authService.getPermissionsForSystem(
       decodedToken.id,
       body.client_id,
@@ -247,6 +266,7 @@ export class AuthController {
     const dataRes = ResponseUtil.sendSuccessResponse({
       data: {
         ...decodedToken,
+        access_token: token,
         permissions,
       },
     });

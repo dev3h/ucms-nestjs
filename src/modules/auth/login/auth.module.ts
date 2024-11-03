@@ -23,6 +23,9 @@ import { CheckClientIdRedirectUriMiddleware } from '@/common/middleware/check-cl
 import { UserLoginHistoryModule } from '@/modules/user-login-history/user-login-history.module';
 import { SystemClientSecret } from '@/modules/system-client-secret/entities/system-client-secret.entity';
 import { DeviceLoginHistoryModule } from '@/modules/device-login-history/device-login-history.module';
+import { Subsystem } from '@/modules/subsystem/entities/subsystem.entity';
+import { Action } from '@/modules/action/entities/action.entity';
+import { Module as ModuleSubsystem } from '@/modules/module/entities/module.entity';
 
 @Module({
   imports: [
@@ -43,6 +46,9 @@ import { DeviceLoginHistoryModule } from '@/modules/device-login-history/device-
     // }),
     TypeOrmModule.forFeature([
       System,
+      Subsystem,
+      ModuleSubsystem,
+      Action,
       SystemToken,
       User,
       SystemClientSecret,

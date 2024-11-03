@@ -3,11 +3,13 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { ResponseUtil } from '@/utils/response-util';
+import { I18nService } from 'nestjs-i18n';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   constructor(
+    private readonly i18n: I18nService,
     private readonly mailerService: MailerService,
     @InjectQueue('mail') private readonly mailQueue: Queue,
   ) {}
@@ -40,8 +42,26 @@ export class MailService {
       return ResponseUtil.sendErrorResponse('Failed to send email', error);
     }
   }
+  async sendResetPasswordMail(data: any) {
+    try {
+      await this.mailerService.sendMail({
+        to: data.email,
+        subject: 'Reset Password Mail',
+        template: 'reset-password-mail',
+        context: data,
+      });
+      this.logger.log(`Email sent to ${data.email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${data.email}`, error.stack);
+      return ResponseUtil.sendErrorResponse('Failed to send email', error);
+    }
+  }
   async addSendMailJob(data) {
     this.logger.log(`Adding job to queue with data: ${JSON.stringify(data)}`);
     await this.mailQueue.add('sendMail', data);
+  }
+  async addSendResetPasswordMailJob(data) {
+    this.logger.log(`Adding job to queue with data: ${JSON.stringify(data)}`);
+    await this.mailQueue.add('sendResetPasswordMail', data);
   }
 }

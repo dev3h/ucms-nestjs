@@ -1,78 +1,98 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { UpdateResetPasswordDto } from './dto/update-reset-password.dto';
+import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { User } from '@/modules/user/user.entity';
 import { PasswordResetToken } from '@/modules/password-reset-token/entities/password-reset-token.entity';
+import { I18nService } from 'nestjs-i18n';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { MailService } from '@/mail/mail.service';
+import { ResponseUtil } from '@/utils/response-util';
 
 @Injectable()
 export class ResetPasswordService {
-  // constructor(private mailService: MailService) {}
+  constructor(
+    private readonly i18n: I18nService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(PasswordResetToken)
+    private passwordResetTokenRepository: Repository<PasswordResetToken>,
+    private readonly mailService: MailService,
+  ) {}
 
-  async sendMailResetPassword(
-    resetPasswordDto: ResetPasswordDto,
-  ): Promise<any> {
-    const { email } = resetPasswordDto;
-    const user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      throw new HttpException(
-        'The email address you entered does not exist',
-        HttpStatus.NOT_FOUND,
-      );
-    }
+  async sendMailResetPassword(body: any): Promise<any> {
+    const user = await this.userRepository.findOne({
+      where: { email: body.email },
+    });
 
     const token = crypto.randomBytes(30).toString('hex');
     const hashedToken = await bcrypt.hash(token, 10);
 
-    await PasswordResetToken.upsert(
-      { email, token: hashedToken },
-      { conflictPaths: ['email'] },
-    );
-
+    const dataToken = await this.passwordResetTokenRepository.findOne({
+      where: { email: user.email },
+    });
+    if (dataToken) {
+      await this.passwordResetTokenRepository.update(
+        { email: user.email },
+        { token: hashedToken },
+      );
+    } else {
+      await this.passwordResetTokenRepository.save({
+        email: user.email,
+        token: hashedToken,
+      });
+    }
+    const dataSend = {
+      email: user.email,
+      resetLink: `${process.env.FRONTEND_URL}/admin/reset-password?email=${user.email}&token=${token}`,
+    };
+    await this.mailService.addSendResetPasswordMailJob(dataSend);
     // await this.mailService.sendResetPasswordMail(user, token, 'reset-password');
 
-    return { message: 'A link has been sent to the email address you entered' };
+    return ResponseUtil.sendSuccessResponse(
+      null,
+      this.i18n.t('message.Send-reset-password-successfully', {
+        lang: 'vi',
+      }),
+    );
   }
 
-  async passwordResetUpdate(
-    updateResetPasswordDto: UpdateResetPasswordDto,
-  ): Promise<any> {
-    const { token, password } = updateResetPasswordDto;
+  async passwordResetUpdate(body): Promise<any> {
     const resetToken = await PasswordResetToken.findOne({
-      where: { token },
+      where: { email: body?.email },
     });
 
     if (!resetToken) {
-      throw new HttpException(
-        'Invalid or expired token',
-        HttpStatus.BAD_REQUEST,
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.token-not-found', {
+          lang: 'vi',
+        }),
       );
     }
 
-    const user = await User.findOne({
-      where: { email: resetToken.email },
-    });
-
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-
-    const isTokenValid = await bcrypt.compare(token, resetToken.token);
+    const isTokenValid = await bcrypt.compare(body.token, resetToken.token);
     if (!isTokenValid) {
-      throw new HttpException(
-        'Invalid or expired token',
-        HttpStatus.BAD_REQUEST,
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.invalid-token', {
+          lang: 'vi',
+        }),
       );
     }
 
-    user.password = await bcrypt.hash(password, 10);
-    user.is_change_password_first = true; // Adjust based on your enum logic
-    await User.save(user);
+    await this.userRepository.update(
+      { email: body?.email },
+      {
+        password: await bcrypt.hash(body?.password, 10),
+      },
+    );
 
-    await PasswordResetToken.delete({ email: resetToken.email });
+    await PasswordResetToken.delete({ email: body?.email });
 
-    return { message: 'Updated successfully' };
+    return ResponseUtil.sendSuccessResponse(
+      null,
+      this.i18n.t('message.Reset-password-successfully', {
+        lang: 'vi',
+      }),
+    );
   }
 }

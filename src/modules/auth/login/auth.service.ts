@@ -22,6 +22,9 @@ import { UserLoginHistoryService } from '@/modules/user-login-history/user-login
 import { SystemClientSecret } from '@/modules/system-client-secret/entities/system-client-secret.entity';
 import { DeviceLoginHistory } from '@/modules/device-login-history/entities/device-login-history.entity';
 import { DeviceLoginHistoryDto } from '@/modules/device-login-history/dto/device-login-history.dto';
+import { Subsystem } from '@/modules/subsystem/entities/subsystem.entity';
+import { Module } from '@/modules/module/entities/module.entity';
+import { Action } from '@/modules/action/entities/action.entity';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +33,12 @@ export class AuthService {
     private userService: UserService,
     @InjectRepository(System)
     private readonly systemRepository: Repository<System>,
+    @InjectRepository(Subsystem)
+    private readonly subsystemRepository: Repository<Subsystem>,
+    @InjectRepository(Module)
+    private readonly moduleRepository: Repository<Module>,
+    @InjectRepository(Action)
+    private readonly actionRepository: Repository<Action>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(SystemToken)
@@ -345,6 +354,34 @@ export class AuthService {
     }
   }
 
+  async checkDeviceLoginHistories(data) {
+    try {
+      const deviceLoginHistories =
+        await this.deviceLoginHistoryRepository.findOne({
+          where: {
+            device_identifier: data?.device_id,
+            account_identifier: data?.email,
+          },
+        });
+      if (!deviceLoginHistories) {
+        return ResponseUtil.sendErrorResponse('NOT_FOUND', 'NOT_FOUND');
+      }
+      await this.verifyFinalToken(deviceLoginHistories?.session_token);
+      const user = await this.userRepository.findOne({
+        where: { id: data?.user_id },
+      });
+      const authTempCode = await this.createAuthTempCode(user);
+      return ResponseUtil.sendSuccessResponse({ data: authTempCode });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
   async confirmSSO_UCMS(data: any) {
     try {
       const system = await this.systemRepository.findOne({
@@ -385,6 +422,36 @@ export class AuthService {
         });
       }
       return ResponseUtil.sendSuccessResponse({ data: authTempCode });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async updateAccessTokenDeviceLoginHistory(data: any) {
+    try {
+      const device = await this.deviceLoginHistoryRepository.findOne({
+        where: {
+          device_identifier: data?.device_id,
+          account_identifier: data?.email,
+        },
+      });
+      if (!device) {
+        return ResponseUtil.sendErrorResponse(
+          'Device not found',
+          'DEVICE_NOT_FOUND',
+        );
+      }
+      await this.deviceLoginHistoryRepository.update(
+        { id: device.id },
+        {
+          session_token: data?.session_token,
+        },
+      );
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {
@@ -548,14 +615,71 @@ export class AuthService {
       (permission) => !ignoredPermissions.has(permission.id),
     );
 
-    const newFinalPermissions = finalPermissions
+    const filteredPermissions = finalPermissions
       .filter((permission) => permission.code.startsWith(system.code))
       .map((permission) => ({
         code: permission.code,
         name: permission.name,
       }));
 
-    return newFinalPermissions;
+    const permissionHierarchy = {};
+
+    for (const { code } of filteredPermissions) {
+      const [systemCode, subsystemCode, moduleCode, actionCode] =
+        code.split('-');
+
+      // Retrieve names from the database for each part of the hierarchy
+      const systemName = await this.systemRepository.findOne({
+        where: { code: systemCode },
+        select: ['name', 'code'],
+      });
+      const subsystem = await this.subsystemRepository.findOne({
+        where: { code: subsystemCode },
+        select: ['name', 'code'],
+      });
+      const module = await this.moduleRepository.findOne({
+        where: { code: moduleCode },
+        select: ['name', 'code'],
+      });
+      const action = await this.actionRepository.findOne({
+        where: { code: actionCode },
+        select: ['name', 'code'],
+      });
+
+      if (!subsystem || !module || !action) {
+        continue; // Skip if any part of the hierarchy is missing
+      }
+
+      if (!permissionHierarchy[systemCode]) {
+        permissionHierarchy[systemCode] = { name: systemName, subsystems: {} };
+      }
+
+      if (!permissionHierarchy[systemCode].subsystems[subsystemCode]) {
+        permissionHierarchy[systemCode].subsystems[subsystemCode] = {
+          name: subsystem.name,
+          modules: {},
+        };
+      }
+
+      if (
+        !permissionHierarchy[systemCode].subsystems[subsystemCode].modules[
+          moduleCode
+        ]
+      ) {
+        permissionHierarchy[systemCode].subsystems[subsystemCode].modules[
+          moduleCode
+        ] = { name: module.name, actions: {} };
+      }
+
+      // Assign the action with its name
+      permissionHierarchy[systemCode].subsystems[subsystemCode].modules[
+        moduleCode
+      ].actions[actionCode] = {
+        name: action.name,
+      };
+    }
+
+    return permissionHierarchy;
   }
 
   public getCookieWithJwtAccessToken(
