@@ -807,4 +807,79 @@ export class UserService {
       return user;
     }
   }
+
+  async updatePermission(userId: number, body) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['userHasPermissions'],
+    });
+
+    if (!user) {
+      return ResponseUtil.sendErrorResponse('User not found');
+    }
+    const permissionAction = [];
+    if (body?.length > 0) {
+      for (const system of body) {
+        for (const subsystem of system.subsystems) {
+          for (const module of subsystem.modules) {
+            for (const action of module.actions) {
+              permissionAction.push(action);
+            }
+          }
+        }
+      }
+      if (permissionAction.length > 0) {
+        for (const action of permissionAction) {
+          const permission = await this.permissionRepository.findOne({
+            where: { code: action.permission_code },
+          });
+          if (!permission) {
+            return ResponseUtil.sendErrorResponse('Permission not found');
+          }
+          const userPermission = await this.userPermissionRepository.findOne({
+            where: { user: { id: userId }, permission: { id: permission.id } },
+          });
+          if (!userPermission) {
+            await this.userPermissionRepository.save({
+              user,
+              permission,
+              is_direct: true,
+              status: UserPermissionStatusEnum.ADDED,
+            });
+          } else {
+            if (userPermission?.is_direct) {
+              if (!action?.granted) {
+                await this.userPermissionRepository.delete(userPermission.id);
+              }
+            } else {
+              if (action?.granted) {
+                userPermission.status = null;
+                await this.userPermissionRepository.save(userPermission);
+              } else {
+                userPermission.status = UserPermissionStatusEnum.IGNORED;
+                await this.userPermissionRepository.save(userPermission);
+              }
+            }
+          }
+        }
+      }
+
+      // const userPermissions = await this.userPermissionRepository.find({
+      //   where: {
+      //     user: { id: userId },
+      //     permission: { id: In(permissionIds) },
+      //   },
+      // });
+
+      // for (const userPermission of userPermissions) {
+      //   userPermission.status = UserPermissionStatusEnum.ADDED;
+      //   await this.userPermissionRepository.save(userPermission);
+      // }
+
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        'Permissions updated successfully',
+      );
+    }
+  }
 }

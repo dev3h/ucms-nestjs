@@ -113,4 +113,10 @@ export class UserController {
       removePermissionIgnoreIds,
     );
   }
+
+  @Post(':id/update-permission')
+  @HttpCode(200)
+  async updatePermission(@Param('id') userId: number, @Body() body) {
+    return await this.userService.updatePermission(userId, body);
+  }
 }
