@@ -14,6 +14,7 @@ import { RoleDto } from './dto/role.dto';
 import { RoleFilter } from './filters/role.filter';
 import { BaseService } from '@/share/base-service/base.service';
 import { I18nService } from 'nestjs-i18n';
+import { SystemDetailDto } from '../system/dto/system-detail.dto';
 
 @Injectable()
 export class RoleService extends BaseService<Role> {
@@ -51,7 +52,10 @@ export class RoleService extends BaseService<Role> {
 
   async findAll(request: Request) {
     try {
-      const query = this.roleRepository.createQueryBuilder('role');
+      const query = this.roleRepository
+        .createQueryBuilder('role')
+        .leftJoinAndSelect('role.permissions', 'permissions')
+        .leftJoinAndSelect('role.users', 'users');
 
       this.roleFilter.applyFilters(query);
 
@@ -188,6 +192,27 @@ export class RoleService extends BaseService<Role> {
           : [];
 
       return ResponseUtil.sendSuccessResponse({ data: formattedData });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getPermissionTemplate() {
+    try {
+      const allSystems = await this.systemRepository.find({
+        relations: [
+          'subsystems',
+          'subsystems.modules',
+          'subsystems.modules.actions',
+        ],
+      });
+      const permissionTree = SystemDetailDto.mapFromEntities(allSystems);
+      return ResponseUtil.sendSuccessResponse({ data: permissionTree });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {

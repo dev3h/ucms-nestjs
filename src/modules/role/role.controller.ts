@@ -30,6 +30,10 @@ export class RoleController {
     return this.roleService.findAll(request);
   }
 
+  @Get('permission-template')
+  async permissionTemplate() {
+    return this.roleService.getPermissionTemplate();
+  }
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.roleService.findOne(+id);

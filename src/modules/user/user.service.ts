@@ -878,7 +878,9 @@ export class UserService {
 
       return ResponseUtil.sendSuccessResponse(
         null,
-        'Permissions updated successfully',
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
       );
     }
   }

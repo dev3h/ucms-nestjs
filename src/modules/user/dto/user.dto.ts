@@ -7,6 +7,8 @@ export class UserDto {
   email: string;
   created_at: string;
   roles: string[];
+  type: string;
+  two_factor_enable: boolean;
 
   constructor(user: any) {
     this.id = user.id;
@@ -14,6 +16,8 @@ export class UserDto {
     this.email = user.email;
     this.created_at = Utils.formatDate(user.created_at);
     this.roles = user?.roles?.map((role: Role) => role?.name);
+    this.type = user.type;
+    this.two_factor_enable = user.two_factor_enable;
   }
 
   static mapFromEntities(entities: any[]): UserDto[] {
