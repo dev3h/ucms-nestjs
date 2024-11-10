@@ -95,6 +95,9 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   refresh_token: string;
 
+  @ApiProperty({ description: 'Last login at' })
+  @Column({ nullable: true })
+  last_login_at: Date;
   @ApiProperty({ description: 'When user was created' })
   @CreateDateColumn()
   created_at: Date;

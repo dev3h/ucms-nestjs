@@ -11,7 +11,6 @@ import {
 } from 'typeorm';
 
 import { Role } from '@/modules/role/entities/role.entity';
-import { User } from '@/modules/user/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserHasPermission } from '@/modules/user/user-has-permission.entity';
 
@@ -21,9 +20,13 @@ export class Permission {
   id: number;
 
   // @Column({ unique: true })
-  @Column()
-  name: string;
+  @ApiProperty({ description: 'description permission' })
+  @Column({ nullable: true })
+  description: string;
 
+  @ApiProperty({
+    description: 'format: syscode-subsyscode-modulecode-actioncode',
+  })
   @Column()
   code: string;
 

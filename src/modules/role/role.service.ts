@@ -33,7 +33,41 @@ export class RoleService extends BaseService<Role> {
 
   async store(body) {
     try {
-      await this.roleRepository.save(body);
+      const { permissions: permSystems, ...restBody } = body;
+      const role = await this.roleRepository.save(
+        this.roleRepository.create(restBody),
+      );
+      const singleRole = Array.isArray(role) ? role[0] : role;
+
+      const permissionAction = [];
+      if (permSystems?.length > 0) {
+        for (const system of permSystems) {
+          for (const subsystem of system.subsystems) {
+            for (const module of subsystem.modules) {
+              for (const action of module.actions) {
+                permissionAction.push(action);
+              }
+            }
+          }
+        }
+        if (permissionAction.length > 0) {
+          for (const action of permissionAction) {
+            if (action?.granted) {
+              const permission = await this.permissionRepository.findOne({
+                where: { code: action.permission_code },
+              });
+              if (!permission) {
+                return ResponseUtil.sendErrorResponse('Permission not found');
+              }
+              await this.roleRepository
+                .createQueryBuilder()
+                .relation(Role, 'permissions')
+                .of(singleRole)
+                .add(permission);
+            }
+          }
+        }
+      }
       return ResponseUtil.sendSuccessResponse(
         null,
         this.i18n.t('message.Created-successfully', {
@@ -88,13 +122,21 @@ export class RoleService extends BaseService<Role> {
     }
   }
 
-  findOne(id: number) {
+  async findOne(id: number) {
     try {
-      const role = this.roleRepository.findOne({
+      const role = await this.roleRepository.findOne({
         where: { id },
       });
+      if (!role) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      const formattedData = new RoleDto(role);
       return ResponseUtil.sendSuccessResponse({
-        data: role,
+        data: formattedData,
       });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
@@ -106,10 +148,12 @@ export class RoleService extends BaseService<Role> {
     }
   }
 
-  update(id: number, body) {
+  async update(id: number, body) {
     try {
-      const role = this.roleRepository.findOne({
+      const { permissions: rolePermissions, ...restBody } = body;
+      const role = await this.roleRepository.findOne({
         where: { id },
+        relations: ['permissions'],
       });
       if (!role) {
         return ResponseUtil.sendErrorResponse(
@@ -118,7 +162,50 @@ export class RoleService extends BaseService<Role> {
           }),
         );
       }
-      this.roleRepository.update(id, body);
+      await this.roleRepository.update(id, restBody);
+      const permissionAction = [];
+      for (const system of rolePermissions) {
+        for (const subsystem of system.subsystems) {
+          for (const module of subsystem.modules) {
+            for (const action of module.actions) {
+              permissionAction.push(action);
+            }
+          }
+        }
+      }
+      if (permissionAction.length > 0) {
+        for (const action of permissionAction) {
+          const permission = await this.permissionRepository.findOne({
+            where: { code: action.permission_code },
+          });
+          if (!permission) {
+            return ResponseUtil.sendErrorResponse('Permission not found');
+          }
+          if (action?.granted) {
+            const isExist = role.permissions.some(
+              (rolePermission) => rolePermission.id === permission.id,
+            );
+            if (!isExist) {
+              await this.roleRepository
+                .createQueryBuilder()
+                .relation(Role, 'permissions')
+                .of(role)
+                .add(permission);
+            }
+          } else {
+            const isExist = role.permissions.some(
+              (rolePermission) => rolePermission.id === permission.id,
+            );
+            if (isExist) {
+              await this.roleRepository
+                .createQueryBuilder()
+                .relation(Role, 'permissions')
+                .of(role)
+                .remove(permission);
+            }
+          }
+        }
+      }
       return ResponseUtil.sendSuccessResponse(
         null,
         this.i18n.t('message.Updated-successfully', {
@@ -139,6 +226,7 @@ export class RoleService extends BaseService<Role> {
     try {
       const role = await this.roleRepository.findOne({
         where: { id },
+        relations: ['permissions'],
       });
       if (!role) {
         return ResponseUtil.sendErrorResponse(
@@ -147,6 +235,11 @@ export class RoleService extends BaseService<Role> {
           }),
         );
       }
+      await this.roleRepository
+        .createQueryBuilder()
+        .relation(Role, 'permissions')
+        .of(role)
+        .remove(role.permissions);
       await this.softDelete(id);
       return ResponseUtil.sendSuccessResponse(
         null,
@@ -212,6 +305,62 @@ export class RoleService extends BaseService<Role> {
         ],
       });
       const permissionTree = SystemDetailDto.mapFromEntities(allSystems);
+      return ResponseUtil.sendSuccessResponse({ data: permissionTree });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getPermissionsOfRole(roleId: number) {
+    try {
+      const role = await this.roleRepository
+        .createQueryBuilder('role')
+        .leftJoinAndSelect('role.permissions', 'permissions')
+        .where('role.id = :roleId', { roleId })
+        .getOne();
+
+      if (!role) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT-FOUND',
+        );
+      }
+
+      const allSystems = await this.systemRepository.find({
+        relations: [
+          'subsystems',
+          'subsystems.modules',
+          'subsystems.modules.actions',
+        ],
+      });
+
+      const permissionTree = SystemDetailDto.mapFromEntities(allSystems);
+
+      for (const system of permissionTree) {
+        for (const subsystem of system.subsystems) {
+          for (const module of subsystem.modules) {
+            for (const action of module.actions) {
+              // Tạo actionCode bằng cách nối các code từ system, subsystem, module và action
+              const actionCode = `${system.code}-${subsystem.code}-${module.code}-${action.code}`;
+
+              const hasPermission = role.permissions.some(
+                (permission) => permission.code === actionCode,
+              );
+              if (hasPermission) {
+                action.granted = true;
+              }
+            }
+          }
+        }
+      }
+
       return ResponseUtil.sendSuccessResponse({ data: permissionTree });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(

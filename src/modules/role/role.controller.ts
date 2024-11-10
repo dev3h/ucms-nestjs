@@ -8,6 +8,7 @@ import {
   Delete,
   ParseIntPipe,
   Req,
+  Put,
 } from '@nestjs/common';
 import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -21,8 +22,8 @@ export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 
   @Post()
-  create(@Body() createRoleDto: CreateRoleDto) {
-    return this.roleService.store(createRoleDto);
+  create(@Body() body: CreateRoleDto) {
+    return this.roleService.store(body);
   }
 
   @Get()
@@ -39,14 +40,19 @@ export class RoleController {
     return this.roleService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
-    return this.roleService.update(+id, updateRoleDto);
+  @Put(':id')
+  update(@Param('id') id: string, @Body() body: UpdateRoleDto) {
+    return this.roleService.update(+id, body);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.roleService.remove(+id);
+  }
+
+  @Get(':id/role-permissions')
+  async getPermissionOfRole(@Param('id') id: string, @Req() request: Request) {
+    return this.roleService.getPermissionsOfRole(+id);
   }
 
   @Get(':id/rest-permission')
