@@ -17,6 +17,7 @@ export class SubSystemDto {
   code: string;
   system: any;
   created_at: string;
+  module_count: number;
 
   constructor(subsystem: any) {
     this.id = subsystem?.id;
@@ -24,6 +25,7 @@ export class SubSystemDto {
     this.code = subsystem?.code;
     this.created_at = Utils.formatDate(subsystem?.created_at);
     this.system = new SystemDto(subsystem?.system);
+    this.module_count = subsystem?.modules?.length;
   }
 
   static mapFromEntities(entities: any[]): SubSystemDto[] {

@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { Request } from 'express';
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
 import { ResponseUtil } from '@/utils/response-util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Role } from './entities/role.entity';
@@ -362,6 +360,98 @@ export class RoleService extends BaseService<Role> {
       }
 
       return ResponseUtil.sendSuccessResponse({ data: permissionTree });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getUsersOfRole(roleId: number) {
+    try {
+      const role = await this.roleRepository.findOne({
+        where: { id: roleId },
+        relations: ['users'],
+      });
+      if (!role) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      return ResponseUtil.sendSuccessResponse({ data: role.users });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async assignUsersToRole(roleId: number, userIds: number[]) {
+    try {
+      const role = await this.roleRepository.findOne({
+        where: { id: roleId },
+        relations: ['users'],
+      });
+      if (!role) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      const singleRole = Array.isArray(role) ? role[0] : role;
+      const users = await this.roleRepository
+        .createQueryBuilder('user')
+        .where('user.id IN (:...userIds)', { userIds })
+        .getMany();
+      singleRole.users = users;
+      await this.roleRepository.save(singleRole);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async removeUsersFromRole(roleId: number, userId) {
+    try {
+      const role = await this.roleRepository.findOne({
+        where: { id: roleId },
+        relations: ['users'],
+      });
+      if (!role) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      const singleRole = Array.isArray(role) ? role[0] : role;
+      singleRole.users = singleRole.users.filter((user) => user.id !== userId);
+      await this.roleRepository.save(singleRole);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {

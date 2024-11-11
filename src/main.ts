@@ -66,6 +66,7 @@ async function bootstrap() {
 
   // Lấy FRONTEND_URL từ configService
   const frontendUrl = configService.get('FRONTEND_URL');
+  const backendUrl = configService.get('URL_SERVER');
 
   let allowedOrigins: string[] = [];
 
@@ -86,7 +87,9 @@ async function bootstrap() {
   if (frontendUrl) {
     allowedOrigins.push(frontendUrl);
   }
-
+  if (backendUrl) {
+    allowedOrigins.push(backendUrl);
+  }
   app.enableCors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {

@@ -4,9 +4,10 @@ import { ModuleController } from './module.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module as ModuleEntity } from './entities/module.entity';
 import { ModuleFilter } from './filters/module.filter';
+import { Action } from '../action/entities/action.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ModuleEntity])],
+  imports: [TypeOrmModule.forFeature([ModuleEntity, Action])],
   controllers: [ModuleController],
   providers: [
     ModuleService,

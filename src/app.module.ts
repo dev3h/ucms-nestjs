@@ -44,9 +44,21 @@ import { MailModule } from './mail/mail.module';
 import { UserLoginHistoryModule } from './modules/user-login-history/user-login-history.module';
 import { SystemClientSecretModule } from './modules/system-client-secret/system-client-secret.module';
 import { DeviceLoginHistoryModule } from './modules/device-login-history/device-login-history.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [
+        {
+          ttl: config.get('THROTTLE_TTL', 1000),
+          limit: config.get('THROTTLE_LIMIT', 10),
+        },
+      ],
+    }),
     ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),
     // setup multi language
     I18nModule.forRoot({
@@ -74,6 +86,7 @@ import { DeviceLoginHistoryModule } from './modules/device-login-history/device-
       }),
       inject: [ConfigService],
     }),
+
     // setting Schedule
     ScheduleModule.forRoot(),
     DatabaseConfigModule,
@@ -98,7 +111,15 @@ import { DeviceLoginHistoryModule } from './modules/device-login-history/device-
     DeviceLoginHistoryModule,
   ],
   controllers: [AppController],
-  providers: [AppService, IsUniqueConstraint, IsExistsConstraint],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    AppService,
+    IsUniqueConstraint,
+    IsExistsConstraint,
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

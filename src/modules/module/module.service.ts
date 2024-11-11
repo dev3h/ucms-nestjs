@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Module } from './entities/module.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Request } from 'express';
 import { paginate } from '@/utils/pagination.util';
 import { ResponseUtil } from '@/utils/response-util';
 import { ModuleFilter } from './filters/module.filter';
 import { ModuleDto } from './dto/module.dto';
 import { BaseService } from '@/share/base-service/base.service';
+import { Action } from '../action/entities/action.entity';
 
 @Injectable()
 export class ModuleService extends BaseService<Module> {
@@ -16,6 +17,8 @@ export class ModuleService extends BaseService<Module> {
     private readonly i18n: I18nService,
     @InjectRepository(Module)
     private moduleRepository: Repository<Module>,
+    @InjectRepository(Action)
+    private actionRepository: Repository<Action>,
     private readonly moduleFilter: ModuleFilter,
   ) {
     super(moduleRepository);
@@ -136,6 +139,99 @@ export class ModuleService extends BaseService<Module> {
       return ResponseUtil.sendSuccessResponse(
         null,
         this.i18n.t('message.Deleted-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getActionsOfModule(moduleId: number) {
+    try {
+      const module = await this.moduleRepository.findOne({
+        where: { id: moduleId },
+        relations: ['actions'],
+      });
+      if (!module) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      return ResponseUtil.sendSuccessResponse({
+        data: module.actions,
+      });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async addActionsToModule(moduleId: number, actionIds: number[]) {
+    try {
+      const module = await this.moduleRepository.findOne({
+        where: { id: moduleId },
+        relations: ['actions'],
+      });
+      if (!module) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      const actions = await this.actionRepository.findBy({
+        id: In(actionIds),
+      });
+      module.actions = actions;
+      await this.moduleRepository.save(module);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async removeActionFromModule(moduleId: number, actionId: number) {
+    try {
+      const module = await this.moduleRepository.findOne({
+        where: { id: moduleId },
+        relations: ['actions'],
+      });
+      if (!module) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      module.actions = module.actions.filter(
+        (action) => action.id !== actionId,
+      );
+      await this.moduleRepository.save(module);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
           lang: 'vi',
         }),
       );

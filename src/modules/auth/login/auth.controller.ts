@@ -18,6 +18,7 @@ import { ResponseUtil } from '@/utils/response-util';
 import { UserTypeEnum } from '@/modules/user/enums/user-type.enum';
 import { I18n, I18nContext } from 'nestjs-i18n';
 import { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -93,6 +94,7 @@ export class AuthController {
       },
     },
   })
+  // @Throttle({ default: { ttl: 2000, limit: 1 } })
   @Post('admin/login')
   @HttpCode(200)
   async adminLogin(

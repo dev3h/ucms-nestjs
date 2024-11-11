@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreatePermissionDto } from './dto/create-permission.dto';
-import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Permission } from './entities/permission.entity';
@@ -76,13 +74,14 @@ export class PermissionService extends BaseService<Permission> {
     }
   }
 
-  findOne(id: number) {
+  async findOne(id: number) {
     try {
-      const permission = this.permissionRepository.findOne({
+      const permission = await this.permissionRepository.findOne({
         where: { id },
       });
+      const formattedData = new PermissionDto(permission);
       return ResponseUtil.sendSuccessResponse({
-        data: permission,
+        data: formattedData,
       });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
@@ -125,10 +124,10 @@ export class PermissionService extends BaseService<Permission> {
 
   async remove(id: number) {
     try {
-      const subsystem = await this.permissionRepository.findOne({
+      const permission = await this.permissionRepository.findOne({
         where: { id },
       });
-      if (!subsystem) {
+      if (!permission) {
         return ResponseUtil.sendErrorResponse(
           this.i18n.t('message.Data-not-found', {
             lang: 'vi',

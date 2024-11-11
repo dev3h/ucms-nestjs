@@ -8,7 +8,7 @@ export class SubSystemFilter {
   constructor(@Inject(REQUEST) private readonly request: Request) {}
 
   applyFilters(query: SelectQueryBuilder<any>): SelectQueryBuilder<any> {
-    const { search, created_at } = this.request.query;
+    const { search, created_at, system_id } = this.request.query;
 
     if (search) {
       query.andWhere(
@@ -22,6 +22,12 @@ export class SubSystemFilter {
     if (created_at) {
       query.andWhere('DATE(subsystem.created_at) = :created_at', {
         created_at,
+      });
+    }
+
+    if (system_id) {
+      query.andWhere('subsystem.system_id = :system_id', {
+        system_id,
       });
     }
 

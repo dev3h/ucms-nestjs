@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ResponseUtil } from '@/utils/response-util';
 import { I18nService } from 'nestjs-i18n';
 import { Subsystem } from './entities/subsystem.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubSystemFilter } from './filters/subsystem.filter';
 import { Request } from 'express';
@@ -10,6 +10,7 @@ import { paginate } from '@/utils/pagination.util';
 import { SubSystemDto } from './dto/subsystem.dto';
 import { BaseService } from '@/share/base-service/base.service';
 import { System } from '../system/entities/system.entity';
+import { Module } from '../module/entities/module.entity';
 
 @Injectable()
 export class SubsystemService extends BaseService<Subsystem> {
@@ -17,6 +18,8 @@ export class SubsystemService extends BaseService<Subsystem> {
     private readonly i18n: I18nService,
     @InjectRepository(Subsystem)
     private subsystemRepository: Repository<Subsystem>,
+    @InjectRepository(Module)
+    private moduleRepository: Repository<Module>,
     @InjectRepository(System)
     private systemRepository: Repository<System>,
     private readonly subsystemFilter: SubSystemFilter,
@@ -62,6 +65,7 @@ export class SubsystemService extends BaseService<Subsystem> {
       const query = this.subsystemRepository.createQueryBuilder('subsystem');
       this.subsystemFilter.applyFilters(query);
       query.leftJoinAndSelect('subsystem.system', 'system');
+      query.leftJoinAndSelect('subsystem.modules', 'modules');
       query.orderBy('subsystem.created_at', 'DESC');
       const page = parseInt(request.query.page as string, 10) || 1;
       const limit = parseInt(request.query.limit as string, 10) || 10;
@@ -168,6 +172,111 @@ export class SubsystemService extends BaseService<Subsystem> {
       return ResponseUtil.sendSuccessResponse(
         null,
         this.i18n.t('message.Deleted-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getModulesOfSubsystem(subsystemId: number) {
+    try {
+      const subsystem = await this.subsystemRepository.findOne({
+        where: { id: subsystemId },
+        relations: ['modules'],
+      });
+      if (!subsystem) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+      return ResponseUtil.sendSuccessResponse({
+        data: subsystem.modules,
+      });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async addModulesToSubsystem(subsystemId: number, moduleIds: number[]) {
+    try {
+      const subsystem = await this.subsystemRepository.findOne({
+        where: { id: subsystemId },
+        relations: ['modules'],
+      });
+      if (!subsystem) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+      const modules = await this.moduleRepository.findBy({
+        id: In(moduleIds),
+      });
+      subsystem.modules = modules;
+      await this.subsystemRepository.save(subsystem);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async removeModuleFromSubsystem(subsystemId: number, moduleId: number) {
+    try {
+      const subsystem = await this.subsystemRepository.findOne({
+        where: { id: subsystemId },
+        relations: ['modules'],
+      });
+      if (!subsystem) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+      const module = await this.moduleRepository.findOne({
+        where: { id: moduleId },
+      });
+      if (!module) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+      subsystem.modules = subsystem.modules.filter((m) => m.id !== moduleId);
+      await this.subsystemRepository.save(subsystem);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
           lang: 'vi',
         }),
       );

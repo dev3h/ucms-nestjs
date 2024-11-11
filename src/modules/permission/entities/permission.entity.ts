@@ -21,7 +21,7 @@ export class Permission {
 
   // @Column({ unique: true })
   @ApiProperty({ description: 'description permission' })
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   description: string;
 
   @ApiProperty({

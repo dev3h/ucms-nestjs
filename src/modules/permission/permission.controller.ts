@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Req,
+  Put,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { PermissionService } from './permission.service';
@@ -34,7 +35,7 @@ export class PermissionController {
     return this.permissionService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updatePermissionDto: UpdatePermissionDto,

@@ -619,7 +619,7 @@ export class AuthService {
       .filter((permission) => permission.code.startsWith(system.code))
       .map((permission) => ({
         code: permission.code,
-        name: permission.name,
+        description: permission.description,
       }));
 
     const permissionHierarchy = {};

@@ -37,7 +37,7 @@ export class RolePermissionSeeder implements Seeder {
           for (const action of module.actions) {
             const permissionName = `${system.code}-${subsystem.code}-${module.code}-${action.code}`;
             const permission = permissionRepository.create({
-              name: permissionName,
+              description: permissionName,
               code: permissionName,
             });
             await permissionRepository.save(permission);

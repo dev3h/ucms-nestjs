@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Subsystem } from './entities/subsystem.entity';
 import { SubSystemFilter } from './filters/subsystem.filter';
 import { System } from '../system/entities/system.entity';
+import { Module as ModuleSubsystem } from '@/modules/module/entities/module.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Subsystem, System])],
+  imports: [TypeOrmModule.forFeature([Subsystem, System, ModuleSubsystem])],
   controllers: [SubsystemController],
   providers: [
     SubsystemService,

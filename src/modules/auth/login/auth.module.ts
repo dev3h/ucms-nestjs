@@ -26,6 +26,7 @@ import { DeviceLoginHistoryModule } from '@/modules/device-login-history/device-
 import { Subsystem } from '@/modules/subsystem/entities/subsystem.entity';
 import { Action } from '@/modules/action/entities/action.entity';
 import { Module as ModuleSubsystem } from '@/modules/module/entities/module.entity';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
