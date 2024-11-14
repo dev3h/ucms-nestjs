@@ -11,6 +11,7 @@ import { SubSystemDto } from './dto/subsystem.dto';
 import { BaseService } from '@/share/base-service/base.service';
 import { System } from '../system/entities/system.entity';
 import { Module } from '../module/entities/module.entity';
+import { ModuleDto } from '../module/dto/module.dto';
 
 @Injectable()
 export class SubsystemService extends BaseService<Subsystem> {
@@ -185,7 +186,42 @@ export class SubsystemService extends BaseService<Subsystem> {
     }
   }
 
-  async getModulesOfSubsystem(subsystemId: number) {
+  async getModulesOfSubsystem(subsystemId: number, request: Request) {
+    try {
+      const query = this.moduleRepository
+        .createQueryBuilder('module')
+        .innerJoin('subsystems_modules', 'sm', 'sm.module_id = module.id')
+        .innerJoin('subsystems', 'sub', 'sub.id = sm.subsystem_id')
+        .where('sub.id = :subsystemId', { subsystemId })
+        .orderBy('module.created_at', 'DESC')
+        .select([
+          'module.id',
+          'module.name',
+          'module.code',
+          'module.created_at',
+        ]); // Select only necessary fields
+      const page = parseInt(request.query.page as string, 10) || 1;
+      const limit = parseInt(request.query.limit as string, 10) || 10;
+      const baseUrl = `${request.protocol}://${request.get('host')}${request.baseUrl}`;
+      const paginationResult = await paginate(query, page, limit, baseUrl);
+
+      const formattedData = ModuleDto.mapFromEntities(paginationResult.data);
+
+      return ResponseUtil.sendSuccessResponse({
+        data: formattedData,
+        meta: paginationResult.meta,
+      });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getRestModulesOfSubsystem(subsystemId: number, request: Request) {
     try {
       const subsystem = await this.subsystemRepository.findOne({
         where: { id: subsystemId },
@@ -199,8 +235,13 @@ export class SubsystemService extends BaseService<Subsystem> {
           'NOT_FOUND',
         );
       }
+      const modules = await this.moduleRepository.find();
+      const restModules = modules.filter((module) => {
+        return !subsystem.modules.find((m) => m.id === module.id);
+      });
+      const formattedData = ModuleDto.mapFromEntities(restModules);
       return ResponseUtil.sendSuccessResponse({
-        data: subsystem.modules,
+        data: formattedData,
       });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
@@ -229,8 +270,9 @@ export class SubsystemService extends BaseService<Subsystem> {
       const modules = await this.moduleRepository.findBy({
         id: In(moduleIds),
       });
-      subsystem.modules = modules;
+      subsystem.modules = [...subsystem.modules, ...modules];
       await this.subsystemRepository.save(subsystem);
+
       return ResponseUtil.sendSuccessResponse(
         null,
         this.i18n.t('message.Updated-successfully', {

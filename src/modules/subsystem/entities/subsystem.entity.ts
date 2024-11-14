@@ -29,12 +29,20 @@ export class Subsystem {
   code: string;
 
   @ManyToOne(() => System, (system) => system.subsystems)
-  @JoinColumn({ name: 'system_id' }) // Custom foreign key column name
+  @JoinColumn({ name: 'system_id' })
   system: System;
 
   @ManyToMany(() => Module, (module) => module.subsystems)
   @JoinTable({
-    name: 'subsystems_modules', // Tùy chỉnh tên bảng trung gian ở đây
+    name: 'subsystems_modules',
+    joinColumn: {
+      name: 'subsystem_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'module_id',
+      referencedColumnName: 'id',
+    },
   })
   modules: Module[];
 

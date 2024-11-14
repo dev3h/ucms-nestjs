@@ -31,7 +31,15 @@ export class Module {
 
   @ManyToMany(() => Action, (action) => action.modules)
   @JoinTable({
-    name: 'modules_actions', // Tùy chỉnh tên bảng trung gian nếu cần
+    name: 'modules_actions',
+    joinColumn: {
+      name: 'module_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'action_id',
+      referencedColumnName: 'id',
+    },
   })
   actions: Action[];
 
