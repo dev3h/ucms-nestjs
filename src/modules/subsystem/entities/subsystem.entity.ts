@@ -28,11 +28,13 @@ export class Subsystem {
   @Column()
   code: string;
 
-  @ManyToOne(() => System, (system) => system.subsystems)
+  @ManyToOne(() => System, (system) => system.subsystems, {
+    cascade: ['update', 'remove'],
+  })
   @JoinColumn({ name: 'system_id' })
   system: System;
 
-  @ManyToMany(() => Module, (module) => module.subsystems)
+  @ManyToMany(() => Module, (module) => module.subsystems, { cascade: true })
   @JoinTable({
     name: 'subsystems_modules',
     joinColumn: {

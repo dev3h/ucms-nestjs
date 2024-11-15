@@ -8,6 +8,7 @@ export class SystemDto {
   client_secret: string;
   created_at: string;
   redirect_uris: string;
+  subsystem_count: number;
 
   constructor(system: any) {
     this.id = system?.id;
@@ -17,6 +18,7 @@ export class SystemDto {
     this.client_id = system?.client_id;
     this.client_secret = system?.client_secret;
     this.redirect_uris = system?.redirect_uris;
+    this.subsystem_count = system?.subsystems?.length;
   }
 
   static mapFromEntities(entities: any[]): SystemDto[] {

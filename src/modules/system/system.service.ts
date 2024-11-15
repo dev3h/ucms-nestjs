@@ -13,6 +13,8 @@ import { I18nService } from 'nestjs-i18n';
 import { SystemDetailDto } from './dto/system-detail.dto';
 import { SystemClientSecret } from '../system-client-secret/entities/system-client-secret.entity';
 import { BaseService } from '@/share/base-service/base.service';
+import { SubSystemDto } from '../subsystem/dto/subsystem.dto';
+import { Subsystem } from '../subsystem/entities/subsystem.entity';
 
 @Injectable()
 export class SystemService extends BaseService<System> {
@@ -20,6 +22,8 @@ export class SystemService extends BaseService<System> {
     private readonly i18n: I18nService,
     @InjectRepository(System)
     private systemsRepository: Repository<System>,
+    @InjectRepository(Subsystem)
+    private subsystemRepository: Repository<Subsystem>,
     @InjectRepository(SystemClientSecret)
     private readonly clientSecretRepository: Repository<SystemClientSecret>,
     private readonly systemFilter: SystemFilter,
@@ -274,6 +278,7 @@ export class SystemService extends BaseService<System> {
     try {
       const query = this.systemsRepository.createQueryBuilder('system');
       this.systemFilter.applyFilters(query);
+      query.leftJoinAndSelect('system.subsystems', 'subsystems');
 
       query.orderBy('system.created_at', 'DESC');
       const page = parseInt(request.query.page as string, 10) || 1;
@@ -382,6 +387,34 @@ export class SystemService extends BaseService<System> {
           lang: 'vi',
         }),
       );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getSubsystemsOfSystem(systemId: number, request: Request) {
+    try {
+      const query = this.subsystemRepository
+        .createQueryBuilder('subsystem')
+        .innerJoinAndSelect('subsystem.modules', 'modules')
+        .where('subsystem.system_id = :systemId', { systemId });
+
+      const page = parseInt(request.query.page as string, 10) || 1;
+      const limit = parseInt(request.query.limit as string, 10) || 10;
+      const baseUrl = `${request.protocol}://${request.get('host')}${request.baseUrl}`;
+      const paginationResult = await paginate(query, page, limit, baseUrl);
+
+      const formattedData = SubSystemDto.mapFromEntities(paginationResult.data);
+
+      return ResponseUtil.sendSuccessResponse({
+        data: formattedData,
+        meta: paginationResult.meta,
+      });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {

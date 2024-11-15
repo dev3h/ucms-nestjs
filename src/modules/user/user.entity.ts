@@ -15,7 +15,6 @@ import * as bcrypt from 'bcrypt';
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Role } from '../role/entities/role.entity';
-import { Permission } from '../permission/entities/permission.entity';
 import { Exclude } from 'class-transformer';
 import { SystemToken } from '../system-token/entities/system-token.entity';
 import { UserHasPermission } from './user-has-permission.entity';
@@ -136,6 +135,7 @@ export class User extends BaseEntity {
   @OneToMany(
     () => UserHasPermission,
     (userHasPermission) => userHasPermission.user,
+    { cascade: true },
   )
   userHasPermissions: UserHasPermission[];
 

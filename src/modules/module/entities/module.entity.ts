@@ -29,7 +29,9 @@ export class Module {
   @ManyToMany(() => Subsystem, (subsystem) => subsystem.modules)
   subsystems: Subsystem[];
 
-  @ManyToMany(() => Action, (action) => action.modules)
+  @ManyToMany(() => Action, (action) => action.modules, {
+    cascade: true,
+  })
   @JoinTable({
     name: 'modules_actions',
     joinColumn: {

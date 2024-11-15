@@ -36,6 +36,10 @@ export class SystemController {
   findAll(@Req() request: Request) {
     return this.systemService.findAll(request);
   }
+  @Get(':id/subsystems')
+  getSubsystems(@Param('id') id: string, @Req() request: Request) {
+    return this.systemService.getSubsystemsOfSystem(+id, request);
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
