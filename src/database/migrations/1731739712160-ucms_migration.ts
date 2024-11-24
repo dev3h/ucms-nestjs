@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class UcmsMigration1731643193626 implements MigrationInterface {
-    name = 'UcmsMigration1731643193626'
+export class UcmsMigration1731739712160 implements MigrationInterface {
+    name = 'UcmsMigration1731739712160'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE \`user_has_permissions\` (\`id\` int NOT NULL AUTO_INCREMENT, \`is_direct\` tinyint NOT NULL DEFAULT 0, \`status\` tinyint NULL COMMENT '1 = added, 2 = ignored, NULL = inherited from role', \`user_id\` int NULL, \`permission_id\` int NULL, PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);

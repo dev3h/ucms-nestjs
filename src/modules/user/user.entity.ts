@@ -98,6 +98,10 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   last_login_at: Date;
 
+  @ApiProperty({ description: 'Login fail count' })
+  @Column({ default: 0 })
+  failed_login_count: number;
+
   @ApiProperty({ description: 'Is blocked user' })
   @Column({ default: false })
   is_blocked: boolean;

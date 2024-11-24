@@ -113,6 +113,9 @@ export class AuthController {
       );
     }
     const token = await this.authService.createAdminToken(admin);
+    const refreshToken = await this.authService.createRefreshToken(admin);
+    await this.authService.setCurrentRefreshToken(refreshToken, admin.id);
+    await this.authService.updateLastLoginAtAndResetBlock(admin.id);
     const dataRes = ResponseUtil.sendSuccessResponse({
       data: {
         access_token: token,

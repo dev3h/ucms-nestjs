@@ -192,14 +192,8 @@ export class SubsystemService extends BaseService<Subsystem> {
         .createQueryBuilder('module')
         .innerJoin('subsystems_modules', 'sm', 'sm.module_id = module.id')
         .innerJoin('subsystems', 'sub', 'sub.id = sm.subsystem_id')
-        .where('sub.id = :subsystemId', { subsystemId })
-        .orderBy('module.created_at', 'DESC')
-        .select([
-          'module.id',
-          'module.name',
-          'module.code',
-          'module.created_at',
-        ]); // Select only necessary fields
+        .innerJoinAndSelect('module.actions', 'actions')
+        .where('sub.id = :subsystemId', { subsystemId });
       const page = parseInt(request.query.page as string, 10) || 1;
       const limit = parseInt(request.query.limit as string, 10) || 10;
       const baseUrl = `${request.protocol}://${request.get('host')}${request.baseUrl}`;

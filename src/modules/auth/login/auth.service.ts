@@ -57,9 +57,11 @@ export class AuthService {
   // Tạo admin token
   async createAdminToken(admin: any) {
     const payload = { email: admin.email, id: admin.id, role: 'admin' };
-    const token = this.jwtService.sign(payload, {
-      expiresIn: '5h',
-    });
+    const expiresIn = this.configService.get<string>(
+      'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
+      '10m',
+    );
+    const token = this.jwtService.sign(payload, { expiresIn });
 
     await this.redisService.saveSession(
       `admin-session:${admin.id}`,
@@ -67,6 +69,27 @@ export class AuthService {
       18000,
     );
     return token;
+  }
+  async createRefreshToken(user: User): Promise<string> {
+    const payload = { sub: user.id, email: user.email, type: user.type };
+    const expiresIn = this.configService.get<string>(
+      'JWT_REFRESH_TOKEN_EXPIRATION_TIME',
+      '7d',
+    );
+    return this.jwtService.sign(payload, { expiresIn });
+  }
+  async setCurrentRefreshToken(refreshToken: string, userId: number) {
+    await this.userRepository.update(userId, {
+      refresh_token: refreshToken,
+    });
+  }
+  async updateLastLoginAtAndResetBlock(userId: number) {
+    await this.userRepository.update(userId, {
+      last_login_at: new Date(),
+      failed_login_count: 0,
+      is_blocked: false,
+      blocked_at: null,
+    });
   }
 
   // Tạo user token
@@ -154,8 +177,37 @@ export class AuthService {
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       });
     }
+    if (user.failed_login_count >= 5) {
+      const fiveMinutesInMilliseconds = 5 * 60 * 1000;
+      const unblockTime = new Date(
+        user.blocked_at.getTime() + fiveMinutesInMilliseconds,
+      );
+      const remainingTime = Math.floor(
+        (unblockTime.getTime() - new Date().getTime()) / 1000,
+      );
+
+      if (remainingTime > 0) {
+        return ResponseUtil.sendErrorResponse(
+          String(remainingTime),
+          'USER_IS_BLOCKED',
+        );
+      } else {
+        // Reset the block status if the block time has passed
+        user.blocked_at = null;
+        user.is_blocked = false;
+        user.failed_login_count = 0;
+        await user.save();
+      }
+    }
 
     if (!(await bcrypt.compare(password, user.password))) {
+      user.failed_login_count += 1;
+      await user.save();
+      if (user.failed_login_count >= 5) {
+        user.is_blocked = true;
+        user.blocked_at = new Date();
+        await user.save();
+      }
       throw new UnprocessableEntityException({
         errors: {
           password: [
