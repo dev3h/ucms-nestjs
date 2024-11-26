@@ -102,6 +102,7 @@ export class AuthController {
     @Response() res,
     @I18n() i18n: I18nContext,
   ) {
+    await this.authService.adminLogin(data);
     const admin = await this.authService.validateUserCreds(
       data?.email,
       data?.password,

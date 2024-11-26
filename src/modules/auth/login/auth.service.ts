@@ -25,6 +25,7 @@ import { DeviceLoginHistoryDto } from '@/modules/device-login-history/dto/device
 import { Subsystem } from '@/modules/subsystem/entities/subsystem.entity';
 import { Module } from '@/modules/module/entities/module.entity';
 import { Action } from '@/modules/action/entities/action.entity';
+import { UserTypeEnum } from '@/modules/user/enums/user-type.enum';
 
 @Injectable()
 export class AuthService {
@@ -225,6 +226,42 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async adminLogin(data) {
+    const admin = await this.validateUserCreds(data.email, data.password);
+    if (admin.type !== UserTypeEnum.ADMIN) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.not-admin-account'),
+        'NOT_ADMIN_ACCOUNT',
+      );
+    }
+
+    const passwordExpiryMonths = parseInt(
+      this.configService.get<string>('PASSWORD_EXPIRY_MONTHS', '3'),
+      10,
+    );
+    const passwordExpiryDate = new Date(admin.password_updated_at);
+    passwordExpiryDate.setMonth(
+      passwordExpiryDate.getMonth() + passwordExpiryMonths,
+    );
+
+    if (new Date() > passwordExpiryDate) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('auth.password-expired'),
+        'PASSWORD_EXPIRED',
+      );
+    }
+
+    const accessToken = await this.createAdminToken(admin);
+    const refreshToken = await this.createRefreshToken(admin);
+    await this.setCurrentRefreshToken(refreshToken, admin.id);
+    await this.updateLastLoginAtAndResetBlock(admin.id);
+    const dataRes = {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    return ResponseUtil.sendSuccessResponse({ data: dataRes });
   }
 
   async generateToken(user: any) {

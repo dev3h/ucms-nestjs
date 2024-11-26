@@ -114,6 +114,10 @@ export class User extends BaseEntity {
   @CreateDateColumn()
   created_at: Date;
 
+  @ApiProperty({ description: 'Password updated at' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  password_updated_at: Date;
+
   @ApiProperty({ description: 'When user was updated' })
   @UpdateDateColumn()
   updated_at: Date;
