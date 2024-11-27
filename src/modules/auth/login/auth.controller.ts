@@ -19,6 +19,7 @@ import { UserTypeEnum } from '@/modules/user/enums/user-type.enum';
 import { I18n, I18nContext } from 'nestjs-i18n';
 import { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import { UpdatePasswordDto } from '../dto/update-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -124,6 +125,31 @@ export class AuthController {
     });
     return res.status(200).json(dataRes);
   }
+
+  @ApiTags('Auth')
+  @Post('admin/refresh-token')
+  @HttpCode(200)
+  async refreshToken(@Req() req, @Response() res) {
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = await this.authService.verifyToken(token);
+    // const user = await this.authService.getUserById(decodedToken.id);
+    // const refreshToken = req.cookies?.refresh_token;
+    // const newToken = await this.authService.refreshToken(user, refreshToken);
+    // const dataRes = ResponseUtil.sendSuccessResponse({
+    //   data: {
+    //     access_token: newToken,
+    //   },
+    // });
+    // return res.status(200).json(dataRes);
+  }
+
+  @ApiTags('Auth')
+  @Post('admin/password-update')
+  @HttpCode(200)
+  updatePassword(@Body() data: UpdatePasswordDto) {
+    return this.authService.updatePassword(data);
+  }
+
   @ApiTags('Auth')
   @Get('/admin/me')
   async getAdmin(@Req() req, @Response() res) {

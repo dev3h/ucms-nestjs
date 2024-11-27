@@ -799,4 +799,62 @@ export class AuthService {
       token,
     };
   }
+
+  async updatePassword(body) {
+    const oldPassword = body?.old_password;
+    const user = await this.userRepository.findOne({
+      where: {
+        email: body?.email,
+      },
+    });
+    if (!user) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.email.not-found', {
+          lang: 'vi',
+        }),
+      );
+    }
+    if (!(await bcrypt.compare(oldPassword, user.password))) {
+      throw new UnprocessableEntityException({
+        errors: {
+          old_password: [
+            this.i18n.t('auth.password', {
+              lang: 'vi',
+            }),
+          ],
+        },
+        message: this.i18n.t('auth.old-password', {
+          lang: 'vi',
+        }),
+        error: 'Unprocessable Entity',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
+    }
+
+    await this.userRepository.update(
+      { email: body?.email },
+      {
+        password: await bcrypt.hash(body?.password, 10),
+      },
+    );
+    await this.userRepository.update(
+      { email: body?.email },
+      {
+        password_updated_at: new Date(),
+      },
+    );
+    const accessToken = await this.createAdminToken(user);
+    const refreshToken = await this.createRefreshToken(user);
+    await this.updateLastLoginAtAndResetBlock(user.id);
+    const dataRes = {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    return ResponseUtil.sendSuccessResponse(
+      { data: dataRes },
+      this.i18n.t('message.Update-password-successfully', {
+        lang: 'vi',
+      }),
+    );
+  }
 }
