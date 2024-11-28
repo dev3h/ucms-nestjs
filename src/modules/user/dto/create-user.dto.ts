@@ -2,6 +2,7 @@ import { IsUnique } from '@/share/validation/unique/is-unique';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, Length, Matches } from 'class-validator';
 import { I18nContext } from 'nestjs-i18n';
+import { PasswordStrength } from '@/share/validation/strength/password-strength';
 
 export class CreateUserDto {
   @ApiProperty({ description: 'Name', example: 'Anka' })
@@ -29,6 +30,7 @@ export class CreateUserDto {
   readonly email: string;
 
   @ApiProperty({ description: 'Password', example: '123456' })
+  @PasswordStrength()
   @Matches(/^[0-9a-zA-Z!"#$%&'()-^\\@\[;:\],.\/=~|`{+*}<>?_]+$/)
   @Length(8, 16, {
     message: (args) =>

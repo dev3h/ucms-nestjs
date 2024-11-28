@@ -11,5 +11,6 @@
   "totpCode": "Mã code không hợp lệ",
   "arrayMaxSize": "{column} không được nhiều hơn {max} mục",
   "arrayUnique": "{column} không được trùng lặp",
-  "invalidFormat": "{column} không hợp lệ"
+  "invalidFormat": "{column} không hợp lệ",
+  "weak": "Mật khẩu yếu. Vui lòng nhập mật khẩu mạnh hơn"
 }

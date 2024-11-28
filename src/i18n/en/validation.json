@@ -9,5 +9,6 @@
   "totpCode": "Invalid TOTP code",
   "arrayMaxSize": "{column} cannot have more than {max} items",
   "arrayUnique": "{column} cannot have duplicate items",
-  "invalidFormat": "{column} is invalid format"
+  "invalidFormat": "{column} is invalid format",
+  "weak": "Weak password. Please enter a stronger password"
 }

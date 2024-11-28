@@ -1,5 +1,12 @@
+import { PasswordStrength } from '@/share/validation/strength/password-strength';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Matches, MaxLength, MinLength, Validate } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { I18nContext } from 'nestjs-i18n';
 
 export class UpdateResetPasswordDto {
@@ -7,6 +14,7 @@ export class UpdateResetPasswordDto {
     description: 'Password in plain text',
     example: 'a12345678X',
   })
+  @PasswordStrength()
   @Matches(/^[0-9a-zA-Z!"#$%&'()-^\\@\[;:\],.\/=~|`{+*}<>?_]+$/)
   @MinLength(8, {
     message: (args) =>

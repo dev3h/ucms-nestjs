@@ -79,6 +79,16 @@ export class AuthService {
     );
     return this.jwtService.sign(payload, { expiresIn });
   }
+  async verifyRefreshToken(token: string) {
+    try {
+      return this.jwtService.verify(token);
+    } catch (err) {
+      return ResponseUtil.sendErrorResponse(
+        'Something went wrong',
+        err?.message,
+      );
+    }
+  }
   async setCurrentRefreshToken(refreshToken: string, userId: number) {
     await this.userRepository.update(userId, {
       refresh_token: refreshToken,
