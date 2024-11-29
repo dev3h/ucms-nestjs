@@ -9,6 +9,7 @@ import {
   Response,
   Query,
   Param,
+  Headers,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -20,10 +21,17 @@ import { I18n, I18nContext } from 'nestjs-i18n';
 import { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { UpdatePasswordDto } from '../dto/update-password.dto';
+import { DeviceSessionService } from '@/modules/device-session/device-session.service';
+import ReAuthDto from '../dto/re-auth.dto';
+import { UserService } from '@/modules/user/user.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private deviceSessionService: DeviceSessionService,
+    private readonly userService: UserService,
+  ) {}
 
   // @ApiTags('Auth')
   // @UseGuards(LocalAuthGuard)
@@ -99,49 +107,72 @@ export class AuthController {
   @Post('admin/login')
   @HttpCode(200)
   async adminLogin(
-    @Body() data: LoginRequestDto,
+    @Req() req,
     @Response() res,
-    @I18n() i18n: I18nContext,
+    @Body() data: LoginRequestDto,
+    @Headers() headers: Headers,
   ) {
-    await this.authService.adminLogin(data);
-    const admin = await this.authService.validateUserCreds(
-      data?.email,
-      data?.password,
-    );
-    if (admin?.type !== UserTypeEnum.ADMIN) {
-      return ResponseUtil.sendErrorResponse(
-        i18n.t('message.not-admin-account'),
-        'NOT_ADMIN_ACCOUNT',
-      );
+    const fingerprint = req?.fp;
+    const ipAddress = req.connection.remoteAddress;
+    const ua = headers['user-agent'];
+    const deviceId = fingerprint?.id;
+    const os = fingerprint?.userAgent?.os?.family;
+    const browser = fingerprint?.userAgent?.browser?.family;
+    const metaData = { ipAddress, ua, deviceId, os, browser };
+    const result = await this.authService.adminLogin(data, metaData);
+
+    if (result.status_code === 200) {
+      const { refresh_token, expired_at } = result;
+      res.cookie('admin_ucms_refresh_token', refresh_token, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+      // res.cookie('device_id_session', device_id_session, {
+      //   httpOnly: true,
+      //   expires: new Date(expired_at),
+      //   sameSite: 'Strict',
+      // });
     }
-    const token = await this.authService.createAdminToken(admin);
-    const refreshToken = await this.authService.createRefreshToken(admin);
-    await this.authService.setCurrentRefreshToken(refreshToken, admin.id);
-    await this.authService.updateLastLoginAtAndResetBlock(admin.id);
-    const dataRes = ResponseUtil.sendSuccessResponse({
-      data: {
-        access_token: token,
-      },
-    });
-    return res.status(200).json(dataRes);
+
+    return res.send(result);
   }
 
   @ApiTags('Auth')
   @Post('admin/refresh-token')
   @HttpCode(200)
-  async refreshToken(@Req() req, @Response() res) {
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = await this.authService.verifyToken(token);
-    // const user = await this.authService.getUserById(decodedToken.id);
-    // const refreshToken = req.cookies?.refresh_token;
-    // const newToken = await this.authService.refreshToken(user, refreshToken);
-    // const dataRes = ResponseUtil.sendSuccessResponse({
-    //   data: {
-    //     access_token: newToken,
-    //   },
-    // });
-    // return res.status(200).json(dataRes);
+  @Post('refresh-token')
+  async reAuth(@Req() req, @Response() res) {
+    const fingerprint = req?.fp;
+    const deviceId = fingerprint?.id;
+    const refreshToken = req.cookies?.admin_ucms_refresh_token;
+    const result = await this.deviceSessionService.reAuth(
+      deviceId,
+      refreshToken,
+    );
+    if (result.status_code === 200) {
+      const { refresh_token, expired_at } = result;
+      res.cookie('admin_ucms_refresh_token', refresh_token, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+    }
+    return res.send(result);
   }
+  // async refreshToken(@Req() req, @Response() res) {
+  //   const token = req.headers.authorization.split(' ')[1];
+  //   const decodedToken = await this.authService.verifyToken(token);
+  //   // const user = await this.authService.getUserById(decodedToken.id);
+  //   // const refreshToken = req.cookies?.refresh_token;
+  //   // const newToken = await this.authService.refreshToken(user, refreshToken);
+  //   // const dataRes = ResponseUtil.sendSuccessResponse({
+  //   //   data: {
+  //   //     access_token: newToken,
+  //   //   },
+  //   // });
+  //   // return res.status(200).json(dataRes);
+  // }
 
   @ApiTags('Auth')
   @Post('admin/password-update')
@@ -152,21 +183,25 @@ export class AuthController {
 
   @ApiTags('Auth')
   @Get('/admin/me')
-  async getAdmin(@Req() req, @Response() res) {
+  async getAdmin(@Req() req) {
     const token = req.headers.authorization?.split(' ')?.[1];
-    const decodedToken = await this.authService.verifyToken(token);
-    const dataRes = ResponseUtil.sendSuccessResponse({
-      data: decodedToken,
-    });
-    return res.status(200).json(dataRes);
+    const fingerprint = req?.fp;
+    const deviceId = fingerprint?.id;
+    const payload = await this.authService.verifyToken(token, deviceId);
+    return this.userService.findOne(payload?.id);
   }
 
   @ApiTags('Auth')
   @Post('admin/logout')
   async logout(@Req() req, @Response() res) {
     const token = req.headers.authorization.split(' ')?.[1];
-    const decodedToken = await this.authService.verifyToken(token);
-    await this.authService.logout(decodedToken.jti);
+    const fingerprint = req?.fp;
+    const deviceId = fingerprint?.id;
+    const decodedToken = await this.authService.verifyToken(token, deviceId);
+    if (decodedToken.status_code !== 200) {
+      return res.status(decodedToken.status_code).json(decodedToken);
+    }
+    await this.deviceSessionService.logout(decodedToken.id, deviceId);
     return res.status(200).json({ message: 'Successfully logged out' });
   }
   @ApiTags('Auth Redirect UCMS')
@@ -279,7 +314,8 @@ export class AuthController {
     @Res() res,
   ) {
     const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = await this.authService.verifyToken(token);
+    const device_id = request.cookies?.deviceId;
+    const decodedToken = await this.authService.verifyToken(token, device_id);
 
     const deviceId = request.cookies?.deviceId;
     if (deviceId) {

@@ -1,4 +1,5 @@
 import {
+  forwardRef,
   MiddlewareConsumer,
   Module,
   NestModule,
@@ -27,6 +28,8 @@ import { Subsystem } from '@/modules/subsystem/entities/subsystem.entity';
 import { Action } from '@/modules/action/entities/action.entity';
 import { Module as ModuleSubsystem } from '@/modules/module/entities/module.entity';
 import { APP_GUARD } from '@nestjs/core';
+import { DeviceSessionModule } from '@/modules/device-session/device-session.module';
+import { RedisService } from '@/modules/redis/redis.service';
 
 @Module({
   imports: [
@@ -37,6 +40,7 @@ import { APP_GUARD } from '@nestjs/core';
     UserLoginHistoryModule,
     DeviceLoginHistoryModule,
     JwtModule.registerAsync(jwtConfig),
+    forwardRef(() => DeviceSessionModule),
     // JwtModule.register({
     //   secret: process.env.JWT_USER_SECRET || 'userSecret', // JWT for users
     //   signOptions: { expiresIn: '1h' },
@@ -56,7 +60,13 @@ import { APP_GUARD } from '@nestjs/core';
       DeviceLoginHistoryModule,
     ]),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy, JwtUserStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    JwtUserStrategy,
+    RedisService,
+  ],
   controllers: [AuthController],
   exports: [AuthService, JwtUserStrategy],
 })

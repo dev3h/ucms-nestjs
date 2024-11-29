@@ -14,11 +14,11 @@ export class JwtUserStrategy extends PassportStrategy(Strategy, 'jwt-user') {
   }
 
   async validate(payload: any) {
-    const data = await this.authService.verifyToken(payload);
-    if (!data) {
-      throw new UnauthorizedException('Token is blacklisted');
-    }
+    // const data = await this.authService.verifyToken(payload);
+    // if (!data) {
+    //   throw new UnauthorizedException('Token is blacklisted');
+    // }
 
-    return data;
+    return payload;
   }
 }

@@ -14,10 +14,10 @@ export class JwtAdminStrategy extends PassportStrategy(Strategy, 'jwt-admin') {
   }
 
   async validate(payload: any) {
-    const isTokenBlacklisted = await this.authService.verifyToken(payload.jti);
-    if (isTokenBlacklisted) {
-      throw new UnauthorizedException('Token is blacklisted');
-    }
+    // const isTokenBlacklisted = await this.authService.verifyToken(payload.jti);
+    // if (isTokenBlacklisted) {
+    //   throw new UnauthorizedException('Token is blacklisted');
+    // }
 
     // Xác thực admin
     if (payload.role !== 'admin') {

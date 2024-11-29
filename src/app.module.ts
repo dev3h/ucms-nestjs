@@ -46,9 +46,13 @@ import { SystemClientSecretModule } from './modules/system-client-secret/system-
 import { DeviceLoginHistoryModule } from './modules/device-login-history/device-login-history.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { NestjsFingerprintModule } from 'nestjs-fingerprint';
+import { DeviceSessionModule } from './modules/device-session/device-session.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
+    NestjsFingerprintModule.forRoot(),
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -58,6 +62,9 @@ import { APP_GUARD } from '@nestjs/core';
           limit: config.get('THROTTLE_LIMIT', 10),
         },
       ],
+    }),
+    CacheModule.register({
+      isGlobal: true,
     }),
     ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),
     // setup multi language
@@ -91,6 +98,7 @@ import { APP_GUARD } from '@nestjs/core';
     ScheduleModule.forRoot(),
     DatabaseConfigModule,
     EventEmitterModule.forRoot(),
+    RedisModule,
     AuthModule,
     UserModule,
     SystemModule,
@@ -104,11 +112,11 @@ import { APP_GUARD } from '@nestjs/core';
     ResetPasswordModule,
     SystemTokenModule,
     TwoFactorAuthenticationModule,
-    RedisModule,
     MailModule,
     UserLoginHistoryModule,
     SystemClientSecretModule,
     DeviceLoginHistoryModule,
+    DeviceSessionModule,
   ],
   controllers: [AppController],
   providers: [

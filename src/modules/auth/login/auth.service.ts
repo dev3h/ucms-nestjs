@@ -1,6 +1,9 @@
 import {
+  forwardRef,
   HttpStatus,
+  Inject,
   Injectable,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { UserService } from '../../user/user.service';
@@ -26,7 +29,17 @@ import { Subsystem } from '@/modules/subsystem/entities/subsystem.entity';
 import { Module } from '@/modules/module/entities/module.entity';
 import { Action } from '@/modules/action/entities/action.entity';
 import { UserTypeEnum } from '@/modules/user/enums/user-type.enum';
+import { DeviceSessionService } from '@/modules/device-session/device-session.service';
+import { DeviceSession } from '@/modules/device-session/entities/device-session.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { JwtStrategy } from '../guard/jwt.strategy';
+import { Cache } from 'cache-manager';
 
+export interface JwtPayload {
+  id: string;
+  deviceId: string;
+  exp: number;
+}
 @Injectable()
 export class AuthService {
   constructor(
@@ -53,6 +66,12 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
     private readonly userLoginHistoryService: UserLoginHistoryService,
+    @Inject(forwardRef(() => DeviceSessionService))
+    private deviceSessionService: DeviceSessionService,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
+    @InjectRepository(DeviceSession)
+    private deviceSessionRepository: Repository<DeviceSession>,
   ) {}
 
   // Tạo admin token
@@ -115,21 +134,42 @@ export class AuthService {
   }
 
   // Xác thực token từ Redis, kiểm tra nếu bị blacklist
-  async verifyToken(token: string) {
-    const isBlacklisted = await this.redisService.isTokenBlacklisted(token);
-    if (isBlacklisted) {
-      return ResponseUtil.sendErrorResponse(
-        this.i18n.t('message.invalid-token', {
-          lang: 'vi',
-        }),
-      );
-    }
+  async verifyToken(token: string, deviceId: string) {
     try {
-      const payload = this.jwtService.verify(token);
+      const isBlacklisted = await this.redisService?.isTokenBlacklisted(token);
+      if (isBlacklisted) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.invalid-token', {
+            lang: 'vi',
+          }),
+        );
+      }
+
+      const deviceSession = await this.deviceSessionRepository.findOne({
+        where: { device_id: deviceId },
+      });
+      if (!deviceSession) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n?.t('message.invalid-device', {
+            lang: 'vi',
+          }),
+        );
+      }
+
+      const payload = this.jwtService.verify(token, {
+        secret: deviceSession.secret_key,
+      });
       return payload;
     } catch (e) {
+      if (e.name === 'JsonWebTokenError' || e.name === 'TokenExpiredError') {
+        throw new UnauthorizedException(
+          this.i18n.t('message.invalid-token', {
+            lang: 'vi',
+          }),
+        );
+      }
       return ResponseUtil.sendErrorResponse(
-        this.i18n.t('message.Something-went-wrong', {
+        this.i18n?.t('message.Something-went-wrong', {
           lang: 'vi',
         }),
         e.message,
@@ -238,7 +278,7 @@ export class AuthService {
     return user;
   }
 
-  async adminLogin(data) {
+  async adminLogin(data, metaData) {
     const admin = await this.validateUserCreds(data.email, data.password);
     if (admin.type !== UserTypeEnum.ADMIN) {
       return ResponseUtil.sendErrorResponse(
@@ -263,15 +303,21 @@ export class AuthService {
       );
     }
 
-    const accessToken = await this.createAdminToken(admin);
-    const refreshToken = await this.createRefreshToken(admin);
-    await this.setCurrentRefreshToken(refreshToken, admin.id);
+    // const accessToken = await this.createAdminToken(admin);
+    // const refreshToken = await this.createRefreshToken(admin);
+    // await this.setCurrentRefreshToken(refreshToken, admin.id);
     await this.updateLastLoginAtAndResetBlock(admin.id);
+    const deviceSession = await this.deviceSessionService.handleDeviceSession(
+      admin.id,
+      metaData,
+    );
     const dataRes = {
-      access_token: accessToken,
-      refresh_token: refreshToken,
+      access_token: deviceSession.token,
+      refresh_token: deviceSession.refreshToken,
+      expired_at: deviceSession.expiredAt,
     };
-    return ResponseUtil.sendSuccessResponse({ data: dataRes });
+
+    return ResponseUtil.sendSuccessResponse({ ...dataRes });
   }
 
   async generateToken(user: any) {
@@ -866,5 +912,32 @@ export class AuthService {
         lang: 'vi',
       }),
     );
+  }
+
+  async getSecretKey(request): Promise<string> {
+    const headers = request.headers;
+    const payload = JwtStrategy.decode(headers.authorization) as JwtPayload;
+    const { id, deviceId, exp } = payload;
+    const keyCache = this.getKeyCache(id, deviceId);
+    const secretKeyFromCache: string = await this.cacheManager.get(keyCache);
+
+    if (secretKeyFromCache) return secretKeyFromCache;
+
+    const { secret_key } = await this.deviceSessionRepository
+      .createQueryBuilder('deviceSessions')
+      .where('deviceSessions.device_idd = :deviceId', { deviceId })
+      .andWhere('deviceSessions.user_id = :id', { id })
+      .getOne();
+
+    await this.cacheManager.set(
+      keyCache,
+      secret_key,
+      (exp - Math.floor(Date.now() / 1000)) * 1000,
+    );
+    return secret_key;
+  }
+
+  getKeyCache(userId, deviceId): string {
+    return `sk_${userId}_${deviceId}`;
   }
 }
