@@ -42,25 +42,27 @@ export class DeviceSessionService {
     return crypto.randomBytes(length).toString('hex');
   }
 
-  async logout(userId: string, sessionId: string) {
-    const session: any = await this.repository
-      .createQueryBuilder('session')
-      .leftJoinAndSelect('session.user', 'user')
-      .select(['session', 'user.id'])
-      .where('session.id = :sessionId', { sessionId })
+  async logout(userId: string, deviceId: string) {
+    const deviceSession: any = await this.repository
+      .createQueryBuilder('deviceSession')
+      .leftJoinAndSelect('deviceSession.user', 'user')
+      .select(['deviceSession', 'user.id'])
+      .where('deviceSession.device_id = :deviceId', { deviceId })
       .getOne();
 
-    if (!session || session.user.id !== userId) {
+    if (!deviceSession || deviceSession.user.id !== userId) {
       throw new ForbiddenException();
     }
-    const keyCache = this.authService.getKeyCache(userId, session.deviceId);
+    const keyCache = this.authService.getKeyCache(
+      userId,
+      deviceSession.device_id,
+    );
 
     await this.cacheManager.set(keyCache, null);
-    await this.repository.delete(sessionId);
+    await this.repository.delete(deviceSession?.id);
     return {
       message: 'Logout success',
       status: 200,
-      sessionId,
     };
   }
 

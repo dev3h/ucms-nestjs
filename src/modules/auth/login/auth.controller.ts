@@ -141,7 +141,6 @@ export class AuthController {
   @ApiTags('Auth')
   @Post('admin/refresh-token')
   @HttpCode(200)
-  @Post('refresh-token')
   async reAuth(@Req() req, @Response() res) {
     const fingerprint = req?.fp;
     const deviceId = fingerprint?.id;
@@ -198,10 +197,13 @@ export class AuthController {
     const fingerprint = req?.fp;
     const deviceId = fingerprint?.id;
     const decodedToken = await this.authService.verifyToken(token, deviceId);
-    if (decodedToken.status_code !== 200) {
-      return res.status(decodedToken.status_code).json(decodedToken);
-    }
-    await this.deviceSessionService.logout(decodedToken.id, deviceId);
+    // if (decodedToken.status_code !== 200) {
+    //   return res.status(decodedToken.status_code).json(decodedToken);
+    // }
+    await this.deviceSessionService.logout(
+      decodedToken.id,
+      decodedToken.deviceId,
+    );
     return res.status(200).json({ message: 'Successfully logged out' });
   }
   @ApiTags('Auth Redirect UCMS')
@@ -282,15 +284,12 @@ export class AuthController {
   @ApiTags('Auth Redirect UCMS')
   @Post('sso-ucms/confirm')
   @HttpCode(200)
-  async confirmSSO_UCMS(
-    @Req() request: Request,
-    @Body() data,
-    @Response() res,
-  ) {
-    const deviceId = request.cookies?.deviceId;
+  async confirmSSO_UCMS(@Req() req, @Body() data, @Response() res) {
+    const deviceId = req.cookies?.deviceId;
     if (deviceId) {
       data.device_id = deviceId;
     }
+
     const response = await this.authService.confirmSSO_UCMS(data);
     const dataRes = ResponseUtil.sendSuccessResponse(response);
     return res.status(200).json(dataRes);
@@ -299,10 +298,35 @@ export class AuthController {
   @ApiTags('Auth Redirect UCMS')
   @Post('sso-ucms/get-token')
   @HttpCode(200)
-  async getTokenSSO_UCMS(@Body() data, @Response() res) {
-    const response = await this.authService.getSSO_Token_UCMS(data);
-    const dataRes = ResponseUtil.sendSuccessResponse(response);
-    return res.status(200).json(dataRes);
+  async getTokenSSO_UCMS(
+    @Req() req,
+    @Body() data,
+    @Response() res,
+    @Headers() headers: Headers,
+  ) {
+    const fingerprint = req?.fp;
+    const ipAddress = req.connection.remoteAddress;
+    const ua = headers['user-agent'];
+    const deviceId = fingerprint?.id;
+    const os = fingerprint?.userAgent?.os?.family;
+    const browser = fingerprint?.userAgent?.browser?.family;
+    const metaData = { ipAddress, ua, deviceId, os, browser };
+    const result = await this.authService.getSSO_Token_UCMS(data, metaData);
+    if (result.status_code === 200) {
+      const { refresh_token, expired_at } = result;
+      res.cookie('sso_ucms_refresh_token', refresh_token, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+      // res.cookie('device_id_session', device_id_session, {
+      //   httpOnly: true,
+      //   expires: new Date(expired_at),
+      //   sameSite: 'Strict',
+      // });
+    }
+
+    return res.send(result);
   }
 
   @ApiTags('Auth Redirect UCMS')
@@ -315,16 +339,18 @@ export class AuthController {
   ) {
     const token = req.headers.authorization.split(' ')[1];
     const device_id = request.cookies?.deviceId;
-    const decodedToken = await this.authService.verifyToken(token, device_id);
+    const fingerprint = req?.fp;
+    const deviceId = fingerprint?.id;
+    const decodedToken = await this.authService.verifyToken(token, deviceId);
 
-    const deviceId = request.cookies?.deviceId;
-    if (deviceId) {
-      await this.authService.updateAccessTokenDeviceLoginHistory({
-        device_id: deviceId,
-        session_token: token,
-        ...decodedToken,
-      });
-    }
+    // const deviceId = request.cookies?.deviceId;
+    // if (deviceId) {
+    //   await this.authService.updateAccessTokenDeviceLoginHistory({
+    //     device_id: deviceId,
+    //     session_token: token,
+    //     ...decodedToken,
+    //   });
+    // }
     const permissions = await this.authService.getPermissionsForSystem(
       decodedToken.id,
       body.client_id,
@@ -339,5 +365,28 @@ export class AuthController {
       },
     });
     return res.status(200).json(dataRes);
+  }
+
+  @ApiTags('Auth Redirect UCMS')
+  @Post('sso-ucms/refresh-token')
+  @HttpCode(200)
+  async reAuthSSO(@Req() req, @Response() res) {
+    const fingerprint = req?.fp;
+    const deviceId = fingerprint?.id;
+    console.log(req.cookies)
+    const refreshToken = req.cookies?.sso_ucms_refresh_token;
+    const result = await this.deviceSessionService.reAuth(
+      deviceId,
+      refreshToken,
+    );
+    if (result.status_code === 200) {
+      const { refresh_token, expired_at } = result;
+      res.cookie('sso_ucms_refresh_token', refresh_token, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+    }
+    return res.send(result);
   }
 }

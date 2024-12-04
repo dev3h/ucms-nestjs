@@ -527,7 +527,7 @@ export class AuthService {
     }
   }
 
-  async confirmSSO_UCMS(data: any) {
+  async confirmSSO_UCMS(data) {
     try {
       const system = await this.systemRepository.findOne({
         where: {
@@ -607,7 +607,7 @@ export class AuthService {
     }
   }
 
-  async getSSO_Token_UCMS(data: any) {
+  async getSSO_Token_UCMS(data, metaData) {
     try {
       const system = await this.systemRepository.findOne({
         where: {
@@ -684,12 +684,21 @@ export class AuthService {
 
       // const finalToken = await this.createFinalToken(user, newFinalPermissions);
       const finalToken = await this.createFinalToken(user);
+      const deviceSession = await this.deviceSessionService.handleDeviceSession(
+        user.id,
+        metaData,
+      );
+      const dataRes = {
+        access_token: deviceSession.token,
+        refresh_token: deviceSession.refreshToken,
+        expired_at: deviceSession.expiredAt,
+      };
       // await this.userLoginHistoryService.recordLogin({
       //   id: user.id,
       //   device_id: data.device_id,
       //   token: finalToken,
       // });
-      return ResponseUtil.sendSuccessResponse({ data: finalToken });
+      return ResponseUtil.sendSuccessResponse({ ...dataRes });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {
@@ -827,34 +836,34 @@ export class AuthService {
     return permissionHierarchy;
   }
 
-  public getCookieWithJwtAccessToken(
-    userId: number,
-    isSecondFactorAuthenticated = false,
-  ) {
-    const payload: TokenPayload = { userId, isSecondFactorAuthenticated };
-    const token = this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_ACCESS_TOKEN_SECRET'),
-      expiresIn: this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_TIME'),
-    });
-    return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get(
-      'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
-    )}`;
-  }
+  // public getCookieWithJwtAccessToken(
+  //   userId: number,
+  //   isSecondFactorAuthenticated = false,
+  // ) {
+  //   const payload: TokenPayload = { userId, isSecondFactorAuthenticated };
+  //   const token = this.jwtService.sign(payload, {
+  //     secret: this.configService.get('JWT_ACCESS_TOKEN_SECRET'),
+  //     expiresIn: this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_TIME'),
+  //   });
+  //   return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get(
+  //     'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
+  //   )}`;
+  // }
 
-  public getCookieWithJwtRefreshToken(userId: number) {
-    const payload: TokenPayload = { userId };
-    const token = this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_REFRESH_TOKEN_SECRET'),
-      expiresIn: this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION_TIME'),
-    });
-    const cookie = `Refresh=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get(
-      'JWT_REFRESH_TOKEN_EXPIRATION_TIME',
-    )}`;
-    return {
-      cookie,
-      token,
-    };
-  }
+  // public getCookieWithJwtRefreshToken(userId: number) {
+  //   const payload: TokenPayload = { userId };
+  //   const token = this.jwtService.sign(payload, {
+  //     secret: this.configService.get('JWT_REFRESH_TOKEN_SECRET'),
+  //     expiresIn: this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION_TIME'),
+  //   });
+  //   const cookie = `Refresh=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get(
+  //     'JWT_REFRESH_TOKEN_EXPIRATION_TIME',
+  //   )}`;
+  //   return {
+  //     cookie,
+  //     token,
+  //   };
+  // }
 
   async updatePassword(body) {
     const oldPassword = body?.old_password;

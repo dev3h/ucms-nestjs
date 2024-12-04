@@ -1,3 +1,4 @@
+import { System } from '@/modules/system/entities/system.entity';
 import { User } from '@/modules/user/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import {
@@ -64,6 +65,18 @@ export class DeviceSession {
   @ApiProperty({ description: 'Browser' })
   @Column({ type: 'varchar', length: 255, default: 'Unknown' })
   browser: string;
+
+  @ApiProperty({ description: 'Session Type' })
+  @Column({
+    type: 'tinyint',
+    default: 1,
+    comment: '1: Dashboard Admin, 2: SSO System',
+  })
+  session_type: number;
+
+  @ManyToOne(() => System, { nullable: true })
+  @JoinColumn({ name: 'system_id' })
+  system: System;
 
   @ApiProperty({ description: 'When data was created' })
   @CreateDateColumn()
