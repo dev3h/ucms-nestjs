@@ -22,7 +22,6 @@ export class AuthMiddleware implements NestMiddleware {
       if (!token) {
         throw new UnauthorizedException('Token is missing');
       }
-
       // Lấy fingerprint từ request (nếu có)
       const deviceId = req?.cookies?.fp;
       if (!deviceId) {

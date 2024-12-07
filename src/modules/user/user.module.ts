@@ -13,10 +13,12 @@ import { MailModule } from '@/mail/mail.module';
 import { Subsystem } from '../subsystem/entities/subsystem.entity';
 import { Action } from '../action/entities/action.entity';
 import { Module as ModuleEntity } from '../module/entities/module.entity';
+import { DeviceSessionModule } from '../device-session/device-session.module';
 
 @Module({
   imports: [
     MailModule,
+    DeviceSessionModule,
     TypeOrmModule.forFeature([
       User,
       Permission,

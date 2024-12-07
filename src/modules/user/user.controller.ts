@@ -22,11 +22,15 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Request } from 'express';
+import { DeviceSessionService } from '../device-session/device-session.service';
 
 @ApiTags('User Management')
 @Controller('user')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private readonly deviceSessionService: DeviceSessionService,
+  ) {}
 
   @Post('/register')
   @ApiCreatedResponse({
@@ -118,5 +122,18 @@ export class UserController {
   @HttpCode(200)
   async updatePermission(@Param('id') userId: number, @Body() body) {
     return await this.userService.updatePermission(userId, body);
+  }
+
+  @Get(':id/device-session')
+  async getDeviceSession(@Param('id') userId: number) {
+    return await this.userService.getDeviceSessions(userId);
+  }
+
+  @Post(':id/device-session/:deviceId/logout')
+  async logoutDeviceSession(
+    @Param('id') userId: number,
+    @Param('deviceId') deviceId: string,
+  ) {
+    return this.deviceSessionService.logout(+userId, deviceId);
   }
 }

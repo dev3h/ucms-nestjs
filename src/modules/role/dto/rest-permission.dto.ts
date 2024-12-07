@@ -13,7 +13,7 @@ export class RestPermissionDto {
   }
 
   static async toArray(
-    permissions: any[],  
+    permissions: any[],
     systemRepository: Repository<System>,
   ): Promise<any[]> {
     // Get all system codes from permissions

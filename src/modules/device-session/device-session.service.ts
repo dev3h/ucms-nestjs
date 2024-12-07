@@ -42,7 +42,7 @@ export class DeviceSessionService {
     return crypto.randomBytes(length).toString('hex');
   }
 
-  async logout(userId: string, deviceId: string) {
+  async logout(userId: number, deviceId: string) {
     const deviceSession: any = await this.repository
       .createQueryBuilder('deviceSession')
       .leftJoinAndSelect('deviceSession.user', 'user')

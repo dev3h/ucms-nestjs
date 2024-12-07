@@ -18,7 +18,7 @@ export class UserDetailDto {
     this.name = user.name;
     this.email = user.email;
     this.created_at = Utils.formatDate(user.created_at);
-    this.roles = user?.roles?.map ((role: Role) => role?.name);
+    this.roles = user?.roles?.map((role: Role) => role?.name);
     this.role_ids = user?.roles?.map((role: Role) => role?.id);
     this.type = user.type;
     this.type_name = UserTypeEnum[user.type];

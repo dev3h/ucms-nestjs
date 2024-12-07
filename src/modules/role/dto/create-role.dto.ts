@@ -39,12 +39,12 @@ export class CreateRoleDto {
         args: { column: 'Mã', max: 10 },
       }),
   })
-//   @Matches(/^[A-Z]{2}[0-9]+$/, {
-//     message: (args) =>
-//       I18nContext.current().t('validation.invalidFormat', {
-//         args: { column: 'Mã' },
-//       }),
-//   })
+  //   @Matches(/^[A-Z]{2}[0-9]+$/, {
+  //     message: (args) =>
+  //       I18nContext.current().t('validation.invalidFormat', {
+  //         args: { column: 'Mã' },
+  //       }),
+  //   })
   @IsNotEmpty({
     message: (args) => I18nContext.current().t('validation.isNotEmpty'),
   })

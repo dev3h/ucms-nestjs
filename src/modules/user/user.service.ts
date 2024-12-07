@@ -174,6 +174,28 @@ export class UserService {
     }
   }
 
+  async getDeviceSessions(userId: number) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['deviceSessions'],
+      });
+
+      if (!user) {
+        return ResponseUtil.sendErrorResponse('User not found');
+      }
+
+      return ResponseUtil.sendSuccessResponse({ data: user.deviceSessions });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
   async getAllPermissionsOfUser(userId: number, request: Request) {
     try {
       // Fetch user with roles and permissions

@@ -154,7 +154,7 @@ export class User extends BaseEntity {
   @OneToMany(() => UserLoginHistory, (loginHistory) => loginHistory.user)
   loginHistory: UserLoginHistory[];
 
-  @OneToMany(() => DeviceSession, (deviceSessions) => deviceSessions.id)
+  @OneToMany(() => DeviceSession, (deviceSessions) => deviceSessions.user)
   deviceSessions: DeviceSession[];
 
   @BeforeInsert()
