@@ -49,6 +49,14 @@ import { APP_GUARD } from '@nestjs/core';
 import { NestjsFingerprintModule } from 'nestjs-fingerprint';
 import { DeviceSessionModule } from './modules/device-session/device-session.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { AuthMiddleware } from './common/middleware/auth.middleware';
+import { SystemController } from './modules/system/system.controller';
+import { SubsystemController } from './modules/subsystem/subsystem.controller';
+import { ModuleController } from './modules/module/module.controller';
+import { ActionController } from './modules/action/action.controller';
+import { RoleController } from './modules/role/role.controller';
+import { UserController } from './modules/user/user.controller';
+import { PermissionController } from './modules/permission/permission.controller';
 
 @Module({
   imports: [
@@ -136,5 +144,16 @@ export class AppModule implements NestModule {
     consumer
       .apply(ApiTokenCheckMiddleware)
       .forRoutes({ path: '/', method: RequestMethod.ALL });
+    consumer
+      .apply(AuthMiddleware)
+      .exclude()
+      .forRoutes(
+        SystemController,
+        SubsystemController,
+        ModuleController,
+        ActionController,
+        RoleController,
+        PermissionController,
+      );
   }
 }

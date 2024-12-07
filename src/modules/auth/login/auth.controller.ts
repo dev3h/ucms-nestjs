@@ -373,7 +373,6 @@ export class AuthController {
   async reAuthSSO(@Req() req, @Response() res) {
     const fingerprint = req?.fp;
     const deviceId = fingerprint?.id;
-    console.log(req.cookies)
     const refreshToken = req.cookies?.sso_ucms_refresh_token;
     const result = await this.deviceSessionService.reAuth(
       deviceId,

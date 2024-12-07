@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from '../../user/user.service';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
 import { I18nService } from 'nestjs-i18n';
 import { ResponseUtil } from '@/utils/response-util';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -149,10 +149,8 @@ export class AuthService {
         where: { device_id: deviceId },
       });
       if (!deviceSession) {
-        return ResponseUtil.sendErrorResponse(
-          this.i18n?.t('message.invalid-device', {
-            lang: 'vi',
-          }),
+        throw new JsonWebTokenError(
+          this.i18n.t('message.invalid-device', { lang: 'vi' }),
         );
       }
 
