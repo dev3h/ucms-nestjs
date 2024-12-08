@@ -8,6 +8,9 @@ import { useContainer } from 'class-validator';
 import { System } from './modules/system/entities/system.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { LoggingMiddleware } from './common/middleware/logging.middleware';
+import { LoggerService } from './modules/logger/logger.service';
+import { LoggingExceptionFilter } from './common/exceptions/logging.exception';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -124,6 +127,9 @@ async function bootstrap() {
   const port = configService.get('PORT') ?? 3000;
   // useContainer to use custom validation decorators like @IsUnique
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
+  const loggerService = app.get(LoggerService);
+  app.use(new LoggingMiddleware(loggerService).use);
+  app.useGlobalFilters(new LoggingExceptionFilter(loggerService));
   await app.listen(port);
 }
 bootstrap();

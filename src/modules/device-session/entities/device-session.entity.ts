@@ -74,10 +74,6 @@ export class DeviceSession {
   })
   session_type: number;
 
-  @ManyToOne(() => System, { nullable: true })
-  @JoinColumn({ name: 'system_id' })
-  system: System;
-
   @ApiProperty({ description: 'When data was created' })
   @CreateDateColumn()
   created_at: Date;

@@ -685,6 +685,7 @@ export class AuthService {
       const deviceSession = await this.deviceSessionService.handleDeviceSession(
         user.id,
         metaData,
+        system,
       );
       const dataRes = {
         access_token: deviceSession.token,

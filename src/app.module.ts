@@ -57,6 +57,8 @@ import { ActionController } from './modules/action/action.controller';
 import { RoleController } from './modules/role/role.controller';
 import { UserController } from './modules/user/user.controller';
 import { PermissionController } from './modules/permission/permission.controller';
+import { LoggerService } from './modules/logger/logger.service';
+import { LoggerModule } from './modules/logger/logger.module';
 
 @Module({
   imports: [
@@ -125,6 +127,7 @@ import { PermissionController } from './modules/permission/permission.controller
     SystemClientSecretModule,
     DeviceLoginHistoryModule,
     DeviceSessionModule,
+    LoggerModule,
   ],
   controllers: [AppController],
   providers: [
@@ -136,6 +139,7 @@ import { PermissionController } from './modules/permission/permission.controller
     IsUniqueConstraint,
     IsExistsConstraint,
   ],
+  exports: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

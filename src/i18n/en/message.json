@@ -38,5 +38,6 @@
   "Cannot-disable-only-client-secret": "Cannot disable when only have one client secret",
   "At-least-one-client-secret-enabled": "At least one client secret must be enabled",
   "Only-delete-disabled-client-secret": "Only delete disabled client secret",
-  "Send-reset-password-successfully": "Send reset password email successfully"
+  "Send-reset-password-successfully": "Send reset password email successfully",
+  "logout-successfully": "Logout successfully"
 }

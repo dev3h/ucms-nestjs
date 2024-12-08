@@ -64,7 +64,7 @@ export class SystemService extends BaseService<System> {
       return ResponseUtil.sendSuccessResponse(
         null,
         this.i18n.t('message.Created-successfully', {
-          lang: 'vis',
+          lang: 'vi',
         }),
       );
     } catch (error) {

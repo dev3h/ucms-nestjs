@@ -19,6 +19,7 @@ import { AuthService } from '../auth/login/auth.service';
 import { JwtStrategy } from '../auth/guard/jwt.strategy';
 import { DeviceTypeEnum } from './enums/device-type.enum';
 import { ResponseUtil } from '@/utils/response-util';
+import { I18nService } from 'nestjs-i18n';
 const EXP_SESSION = 7; // 1 week
 export interface LoginRespionse {
   token: string;
@@ -30,6 +31,7 @@ export interface LoginRespionse {
 @Injectable()
 export class DeviceSessionService {
   constructor(
+    private readonly i18n: I18nService,
     @Inject(CACHE_MANAGER)
     private cacheManager: Cache,
     @InjectRepository(DeviceSession)
@@ -60,10 +62,12 @@ export class DeviceSessionService {
 
     await this.cacheManager.set(keyCache, null);
     await this.repository.delete(deviceSession?.id);
-    return {
-      message: 'Logout success',
-      status: 200,
-    };
+    return ResponseUtil.sendSuccessResponse(
+      null,
+      this.i18n.t('message.logout-successfully', {
+        lang: 'vi',
+      }),
+    );
   }
 
   async reAuth(deviceId: string, _refreshToken: string) {
@@ -112,7 +116,11 @@ export class DeviceSessionService {
     return ResponseUtil.sendSuccessResponse({ ...dataRes });
   }
 
-  async handleDeviceSession(userId, metaData): Promise<LoginRespionse> {
+  async handleDeviceSession(
+    userId,
+    metaData,
+    system = null,
+  ): Promise<LoginRespionse> {
     const { deviceId } = metaData;
     const currentDevice = await this.repository.findOne({
       where: { device_id: deviceId },
@@ -149,6 +157,9 @@ export class DeviceSessionService {
     deviceSession.browser = metaData.browser;
     const device = this.detectOSFamily(metaData.os);
     deviceSession.device_type = device;
+    if (system) {
+      deviceSession.session_type = 2;
+    }
     // update or create device session
     await this.repository.save(deviceSession);
     return { token, refreshToken, expiredAt, deviceId: deviceName };
