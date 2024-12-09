@@ -8,14 +8,14 @@ export class LoggingMiddleware implements NestMiddleware {
 
   use(req: Request, res: Response, next: NextFunction) {
     const { method, url, ip } = req;
-    const userAgent = req.get('user-agent') || '';
+    const user_agent = req.get('user-agent') || '';
 
     this.loggerService.info(`Incoming Request - ${method} ${url}`, {
-      ipAddress: ip,
-      userAgent,
+      ip_Address: ip,
+      user_agent,
       module: 'HTTP',
-      functionName: 'Middleware',
-      additionalData: { headers: req.headers },
+      function_name: 'Middleware',
+      additional_data: { headers: req.headers },
     });
 
     res.on('finish', () => {
@@ -23,11 +23,11 @@ export class LoggingMiddleware implements NestMiddleware {
       this.loggerService.info(
         `Outgoing Response - ${method} ${url} ${statusCode}`,
         {
-          ipAddress: ip,
-          userAgent,
+          ip_address: ip,
+          user_agent,
           module: 'HTTP',
-          functionName: 'Middleware',
-          statusCode,
+          function_name: 'Middleware',
+          status_code: statusCode,
         },
       );
     });

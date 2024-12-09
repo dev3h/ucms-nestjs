@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
 import { LoggerService } from './modules/logger/logger.service';
 import { LoggingExceptionFilter } from './common/exceptions/logging.exception';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -128,8 +129,9 @@ async function bootstrap() {
   // useContainer to use custom validation decorators like @IsUnique
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const loggerService = app.get(LoggerService);
-  app.use(new LoggingMiddleware(loggerService).use);
+  // app.use(new LoggingMiddleware(loggerService).use);
   app.useGlobalFilters(new LoggingExceptionFilter(loggerService));
+  app.useGlobalInterceptors(new LoggingInterceptor(loggerService));
   await app.listen(port);
 }
 bootstrap();

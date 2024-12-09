@@ -21,25 +21,37 @@ export class LoggingExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException ? exception.getStatus() : 500;
 
     const logContext = {
-      ipAddress: request.ip,
-      userAgent: request.get('user-agent') || '',
-      module: 'HTTP',
-      functionName: 'ExceptionFilter',
-      statusCode: status,
-      additionalData: { path: request.url, method: request.method },
+      ip_address: request.ip,
+      user_agent: request.get('user-agent') || '',
+      module: host.getType() || 'HTTP',
+      function_name: 'ExceptionFilter',
+      status_code: status,
+      additional_data: { path: request.url, method: request.method },
     };
 
     // Determine the log level based on the status code or exception type
     if (status >= 500) {
-      this.loggerService.critical('Critical Error Occurred', {
-        ...logContext,
-        stackTrace: (exception as Error).stack,
-      });
+      this.loggerService.critical(
+        `Critical Error Occurred: ${exception instanceof Error ? exception.message : 'Unknown error'}`,
+        {
+          ...logContext,
+          stack_trace:
+            exception instanceof Error
+              ? exception.stack
+              : 'No stack trace available',
+        },
+      );
     } else if (status >= 400) {
-      this.loggerService.error('Client Error Occurred', {
-        ...logContext,
-        stackTrace: (exception as Error).stack,
-      });
+      this.loggerService.error(
+        `Client Error Occurred: ${exception instanceof Error ? exception.message : 'Unknown error'}`,
+        {
+          ...logContext,
+          stack_trace:
+            exception instanceof Error
+              ? exception.stack
+              : 'No stack trace available',
+        },
+      );
     } else {
       this.loggerService.warning('Warning: Unexpected Issue', logContext);
     }
