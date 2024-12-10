@@ -121,6 +121,7 @@ async function bootstrap() {
     .addTag('Role Management', 'Quản lý vai trò (nhóm quyền)')
     .addTag('Permission Management', 'Quản lý quyền')
     .addTag('User Management', 'Quản lý người dùng')
+    .addTag('Log Management', 'Quản lý log hệ thống')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
