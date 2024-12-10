@@ -16,9 +16,9 @@ export class LoggingInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const logData = {
       module: request.route?.path || 'Unknown module',
-      functionName: request.method,
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
+      function_name: request.method,
+      ip_address: request.ip,
+      user_agent: request.headers['user-agent'],
     };
 
     const now = Date.now();
@@ -33,7 +33,7 @@ export class LoggingInterceptor implements NestInterceptor {
       catchError((error) => {
         this.loggerService.error(error.message, {
           ...logData,
-          stackTrace: error.stack,
+          stack_trace: error.stack,
         });
         throw error;
       }),
