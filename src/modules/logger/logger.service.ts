@@ -9,6 +9,7 @@ import { ResponseUtil } from '@/utils/response-util';
 import { I18nService } from 'nestjs-i18n';
 import { LogFilter } from './filters/log.filter';
 import { LogDto } from './dto/log.dto';
+import { Utils } from '@/utils/utils';
 
 @Injectable()
 export class LoggerService {
@@ -79,6 +80,25 @@ export class LoggerService {
         data: formattedData,
         meta: paginationResult.meta,
       });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getDateTimeLogs() {
+    try {
+      const result = await this.logRepository
+        .createQueryBuilder('log')
+        .select('DISTINCT DATE(log.timestamp)', 'timestamp')
+        .getRawMany();
+      const datas = result?.map((item) => Utils.formatDate(item?.timestamp));
+
+      return ResponseUtil.sendSuccessResponse({ data: datas });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {

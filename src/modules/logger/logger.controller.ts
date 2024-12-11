@@ -21,6 +21,11 @@ export class LogController {
     return this.logService.findAll(request);
   }
 
+  @Get('date-times-logs')
+  getDateTimeLogs() {
+    return this.logService.getDateTimeLogs();
+  }
+
   //   @Delete(':id')
   //   remove(@Param('id') id: string) {
   //     return this.actionService.remove(+id);

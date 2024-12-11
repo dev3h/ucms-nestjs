@@ -17,7 +17,7 @@ export class LogFilter {
     }
 
     if (created_at) {
-      query.andWhere('DATE(log.created_at) = :created_at', {
+      query.andWhere('DATE(log.timestamp) = :created_at', {
         created_at,
       });
     }
