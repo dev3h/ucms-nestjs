@@ -6,9 +6,10 @@ import {
   Param,
   Delete,
   Req,
+  Query,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { LoggerService } from './logger.service';
 
 @ApiTags('Log Management')
@@ -24,6 +25,22 @@ export class LogController {
   @Get('date-times-logs')
   getDateTimeLogs() {
     return this.logService.getDateTimeLogs();
+  }
+
+  @Get('chart-data')
+  @ApiQuery({
+    name: 'range',
+    enum: ['week', 'month', 'year', 'daterange'],
+    required: true,
+  })
+  @ApiQuery({ name: 'start_date', required: false, type: String })
+  @ApiQuery({ name: 'end_date', required: false, type: String })
+  async getChartData(
+    @Query('range') range: string,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+  ) {
+    return this.logService.getChartData(range, startDate, endDate);
   }
 
   //   @Delete(':id')

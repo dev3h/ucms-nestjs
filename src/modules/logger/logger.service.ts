@@ -108,4 +108,92 @@ export class LoggerService {
       );
     }
   }
+
+  async getChartData(range: string, startDate?: string, endDate?: string) {
+    let query = this.logRepository.createQueryBuilder('log');
+
+    // Adjust query range based on input
+    switch (range) {
+      case 'week':
+        query = query.where(
+          'log.timestamp >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)',
+        );
+        break;
+      case 'month':
+        query = query.where(
+          'log.timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)',
+        );
+        break;
+      case 'year':
+        query = query.where(
+          'log.timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)',
+        );
+        break;
+      case 'daterange':
+        if (startDate && endDate) {
+          query = query.where('log.timestamp BETWEEN :startDate AND :endDate', {
+            startDate,
+            endDate,
+          });
+        } else {
+          throw new Error(
+            'Start date and end date are required for "daterange".',
+          );
+        }
+        break;
+      default:
+        throw new Error('Invalid range provided.');
+    }
+
+    // Group by either month or date based on range
+    if (range === 'year') {
+      query = query
+        .select('log.level, COUNT(*) as count')
+        .addSelect('DATE_FORMAT(log.timestamp, "%Y-%m") as dateGroup')
+        .groupBy('log.level, DATE_FORMAT(log.timestamp, "%Y-%m")');
+    } else {
+      query = query
+        .select('log.level, COUNT(*) as count')
+        .addSelect('DATE(log.timestamp) as dateGroup')
+        .groupBy('log.level, DATE(log.timestamp)');
+    }
+
+    // Retrieve data
+    const logs = await query.orderBy('dateGroup', 'ASC').getRawMany();
+
+    // Format the chart data
+    return this.formatChartData(logs, range);
+  }
+
+  private formatChartData(logs: any[], range: string) {
+    const formattedData = {
+      xAxis: [],
+      series: {
+        debug: [],
+        info: [],
+        warning: [],
+        error: [],
+        critical: [],
+      },
+    };
+
+    // Group data by date
+    const groupedByDate = logs.reduce((acc, log) => {
+      if (!acc[log.dateGroup]) acc[log.dateGroup] = {};
+      acc[log.dateGroup][log.level] = parseInt(log.count, 10);
+      return acc;
+    }, {});
+
+    // Populate chart data
+    for (const [dateGroup, levels] of Object.entries(groupedByDate)) {
+      formattedData.xAxis.push(dateGroup);
+      formattedData.series.debug.push(levels['debug'] || 0);
+      formattedData.series.info.push(levels['info'] || 0);
+      formattedData.series.warning.push(levels['warning'] || 0);
+      formattedData.series.error.push(levels['error'] || 0);
+      formattedData.series.critical.push(levels['critical'] || 0);
+    }
+
+    return formattedData;
+  }
 }
