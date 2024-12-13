@@ -83,6 +83,7 @@ export class ResetPasswordService {
       { email: body?.email },
       {
         password: await bcrypt.hash(body?.password, 10),
+        password_updated_at: new Date(),
       },
     );
 

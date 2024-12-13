@@ -39,5 +39,6 @@
     "At-least-one-client-secret-enabled": "Ít nhất một client secret phải được kích hoạt",
     "Only-delete-disabled-client-secret": "Chỉ xóa được client secret đã vô hiệu hóa",
     "Send-reset-password-successfully": "Gửi email đặt lại mật khẩu thành công",
-    "logout-successfully": "Đăng xuất thành công"
+    "logout-successfully": "Đăng xuất thành công",
+    "Account-not-valid": "Tài khoản không hợp lệ"
 }

@@ -5,6 +5,7 @@ import {
   ArgumentsHost,
   HttpException,
   Injectable,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
@@ -56,13 +57,15 @@ export class LoggingExceptionFilter implements ExceptionFilter {
       this.loggerService.warning('Warning: Unexpected Issue', logContext);
     }
 
-    // Send a response back to the client
-    response.status(status).json({
-      statusCode: status,
-      message:
-        exception instanceof HttpException
-          ? exception.getResponse()
-          : 'Internal server error',
-    });
+    response.status(status).json(
+      exception instanceof HttpException ||
+        exception instanceof UnprocessableEntityException
+        ? exception.getResponse()
+        : {
+            status_code: status,
+            message: 'Internal Server Error',
+            errors: ['Internal Server Error'],
+          },
+    );
   }
 }

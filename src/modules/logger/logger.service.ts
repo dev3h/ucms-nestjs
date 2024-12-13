@@ -10,6 +10,7 @@ import { I18nService } from 'nestjs-i18n';
 import { LogFilter } from './filters/log.filter';
 import { LogDto } from './dto/log.dto';
 import { Utils } from '@/utils/utils';
+import { format } from 'date-fns';
 
 @Injectable()
 export class LoggerService {
@@ -95,8 +96,11 @@ export class LoggerService {
       const result = await this.logRepository
         .createQueryBuilder('log')
         .select('DISTINCT DATE(log.timestamp)', 'timestamp')
+        .orderBy('timestamp', 'DESC')
         .getRawMany();
-      const datas = result?.map((item) => Utils.formatDate(item?.timestamp));
+      const datas = result?.map((item) =>
+        format(new Date(item?.timestamp), 'yyyy-MM-dd'),
+      );
 
       return ResponseUtil.sendSuccessResponse({ data: datas });
     } catch (error) {
@@ -170,7 +174,6 @@ export class LoggerService {
 
     // Retrieve data
     const logs = await query.orderBy('dateGroup', 'ASC').getRawMany();
-    console.log(logs);
     // Format the chart data
     return this.formatChartData(logs, range);
   }
@@ -205,5 +208,30 @@ export class LoggerService {
     }
 
     return formattedData;
+  }
+
+  async remove(date: string) {
+    try {
+      await this.logRepository
+        .createQueryBuilder()
+        .update(Log)
+        .set({ deleted_at: new Date() })
+        .where('DATE(timestamp) = :date', { date })
+        .execute();
+
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Deleted-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
   }
 }

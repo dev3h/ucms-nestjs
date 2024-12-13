@@ -47,6 +47,7 @@ export class AuthService {
     private userService: UserService,
     @InjectRepository(System)
     private readonly systemRepository: Repository<System>,
+    private readonly systemService: SystemService,
     @InjectRepository(Subsystem)
     private readonly subsystemRepository: Repository<Subsystem>,
     @InjectRepository(Module)
@@ -61,7 +62,6 @@ export class AuthService {
     private readonly systemClientSecretRepository: Repository<SystemClientSecret>,
     @InjectRepository(DeviceLoginHistory)
     private readonly deviceLoginHistoryRepository: Repository<DeviceLoginHistory>,
-    private readonly systemService: SystemService,
     private jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
@@ -173,6 +173,31 @@ export class AuthService {
         e.message,
       );
     }
+  }
+
+  async verifyTokenAuth(token: string, deviceId: string) {
+    const isBlacklisted = await this.redisService?.isTokenBlacklisted(token);
+    if (isBlacklisted) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.invalid-token', {
+          lang: 'vi',
+        }),
+      );
+    }
+
+    const deviceSession = await this.deviceSessionRepository.findOne({
+      where: { device_id: deviceId },
+    });
+    if (!deviceSession) {
+      throw new JsonWebTokenError(
+        this.i18n.t('message.invalid-device', { lang: 'vi' }),
+      );
+    }
+
+    const payload = this.jwtService.verify(token, {
+      secret: deviceSession.secret_key,
+    });
+    return payload;
   }
 
   // Blacklist token khi user/admin logout
@@ -380,71 +405,109 @@ export class AuthService {
     };
   }
 
-  async checkEmailExist(email: string, query: any) {
-    try {
-      await this.systemService.checkClientIdAndRedirectUri(query);
-      const user = await this.userService.getUserByEmail(email);
-      const sessionToken = this.createSession(user);
-      return ResponseUtil.sendSuccessResponse({
-        data: {
-          sessionToken,
-          email,
-          ...query,
-        },
-      });
-    } catch (error) {
+  async checkClientIdAndRedirectUri(data: any) {
+    const system = await this.systemRepository.findOne({
+      where: { client_id: data.client_id },
+    });
+
+    if (!system) {
+      const errorMessage = encodeURIComponent(
+        this.i18n.t('message.Invalid-client_id', {
+          lang: 'vi',
+        }),
+      );
+      return ResponseUtil.sendErrorResponse(errorMessage, 'INVALID_CLIENT_ID');
+    }
+
+    const isValidRedirectUri = system.redirect_uris.includes(data.redirect_uri);
+    if (!isValidRedirectUri) {
+      const errorMessage = encodeURIComponent(
+        this.i18n.t('message.Invalid-redirect_uri', {
+          lang: 'vi',
+        }),
+      );
       return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
-        error.message,
+        errorMessage,
+        'INVALID_REDIRECT_URI',
       );
     }
+
+    return ResponseUtil.sendSuccessResponse({ data: system });
+  }
+
+  async checkEmailExist(email: string, query: any) {
+    await this.checkClientIdAndRedirectUri(query);
+    const user = await this.userRepository.findOne({
+      where: {
+        email,
+        type: UserTypeEnum.USER,
+      },
+    });
+    if (!user) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Account-not-valid', {
+          lang: 'vi',
+        }),
+        'NOT_FOUND',
+      );
+    }
+    const sessionToken = this.createSession(user);
+    return ResponseUtil.sendSuccessResponse({
+      data: {
+        sessionToken,
+        email,
+        ...query,
+      },
+    });
   }
 
   async loginWithUCSM(data: any, query) {
-    try {
-      const system =
-        await this.systemService.checkClientIdAndRedirectUri(query);
-      if (system?.data === null) {
-        return ResponseUtil.sendErrorResponseWithNoException(
-          'Invalid client_id or redirect_uri',
-          'INVALID_CLIENT_ID_OR_REDIRECT_URI',
-        );
-      }
-      const dataSession = this.verifySession(query?.session_token);
-
-      const user = await this.validateUserCreds(
-        dataSession.email,
-        data.password,
-      );
-      // const payload = { userId: user.id, system_code, client_id };
-      // const token = this.jwtService.sign(payload);
-
-      // await this.systemTokenRepository.save({
-      //   refresh_token: token,
-      //   user_id: user.id,
-      //   system_code,
-      //   client_id,
-      // });
-      const consentToken = this.createConsentToken(user);
-      return ResponseUtil.sendSuccessResponse({
-        data: {
-          consentToken,
-          email: dataSession.email,
-          system_name: system?.data?.name,
-          ...query,
-          two_factor: {
-            enable: user.two_factor_enable,
-            is_secret_token: user.two_factor_secret ? true : false,
-            is_confirmed: user.two_factor_confirmed_at ? true : false,
-          },
-        },
-      });
-    } catch (error) {
-      return ResponseUtil.sendErrorResponse(
-        'Something went wrong',
-        error.message,
+    const system = await this.checkClientIdAndRedirectUri(query);
+    if (system?.data === null) {
+      return ResponseUtil.sendErrorResponseWithNoException(
+        'Invalid client_id or redirect_uri',
+        'INVALID_CLIENT_ID_OR_REDIRECT_URI',
       );
     }
+    const dataSession = this.verifySession(query?.session_token);
+    const isValidEmail = await this.userRepository.findOne({
+      where: {
+        email: dataSession.email,
+        type: UserTypeEnum.USER,
+      },
+    });
+    if (!isValidEmail) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Account-not-valid', {
+          lang: 'vi',
+        }),
+        'NOT_FOUND',
+      );
+    }
+    const user = await this.validateUserCreds(dataSession.email, data.password);
+    // const payload = { userId: user.id, system_code, client_id };
+    // const token = this.jwtService.sign(payload);
+
+    // await this.systemTokenRepository.save({
+    //   refresh_token: token,
+    //   user_id: user.id,
+    //   system_code,
+    //   client_id,
+    // });
+    const consentToken = this.createConsentToken(user);
+    return ResponseUtil.sendSuccessResponse({
+      data: {
+        consentToken,
+        email: dataSession.email,
+        system_name: system?.data?.name,
+        ...query,
+        two_factor: {
+          enable: user.two_factor_enable,
+          is_secret_token: user.two_factor_secret ? true : false,
+          is_confirmed: user.two_factor_confirmed_at ? true : false,
+        },
+      },
+    });
   }
   async generateDeviceId() {
     try {
@@ -899,6 +962,7 @@ export class AuthService {
       { email: body?.email },
       {
         password: await bcrypt.hash(body?.password, 10),
+        password_updated_at: new Date(),
       },
     );
     await this.userRepository.update(

@@ -206,12 +206,23 @@ export class AuthController {
     );
     return res.status(200).json({ message: 'Successfully logged out' });
   }
+
+  // sso ucms api
+
   @ApiTags('Auth Redirect UCMS')
   @Post('generate-device-id')
   @HttpCode(200)
   async generateDeviceId() {
     return await this.authService.generateDeviceId();
   }
+
+  @ApiTags('Auth Redirect UCMS')
+  @Post('/sso-ucms/check-info-system')
+  @HttpCode(200)
+  checkCorrectSystem(@Body() body) {
+    return this.authService.checkClientIdAndRedirectUri(body);
+  }
+
   @ApiTags('Auth Redirect UCMS')
   @Get('get-device-login-histories/:device_id')
   async getDeviceLoginHistories(@Param('device_id') device_id: string) {

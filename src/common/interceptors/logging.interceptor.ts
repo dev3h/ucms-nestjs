@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
@@ -32,10 +33,19 @@ export class LoggingInterceptor implements NestInterceptor {
         }),
       ),
       catchError((error) => {
-        this.loggerService.error(error.message, {
-          ...logData,
-          stack_trace: error.stack,
-        });
+        if (error instanceof UnprocessableEntityException) {
+          logData.status_code = 422;
+          this.loggerService.warning('Unprocessable Entity', {
+            ...logData,
+            responseTime: `${Date.now() - now}ms`,
+            stack_trace: error.stack,
+          });
+        } else {
+          this.loggerService.error(error.message, {
+            ...logData,
+            stack_trace: error.stack,
+          });
+        }
         throw error;
       }),
     );

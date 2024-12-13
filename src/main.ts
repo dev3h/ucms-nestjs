@@ -8,7 +8,7 @@ import { useContainer } from 'class-validator';
 import { System } from './modules/system/entities/system.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LoggingMiddleware } from './common/middleware/logging.middleware';
+// import { LoggingMiddleware } from './common/middleware/logging.middleware';
 import { LoggerService } from './modules/logger/logger.service';
 import { LoggingExceptionFilter } from './common/exceptions/logging.exception';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';

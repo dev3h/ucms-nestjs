@@ -43,8 +43,8 @@ export class LogController {
     return this.logService.getChartData(range, startDate, endDate);
   }
 
-  //   @Delete(':id')
-  //   remove(@Param('id') id: string) {
-  //     return this.actionService.remove(+id);
-  //   }
+  @Delete(':date')
+  async deleteLog(@Param('date') date: string) {
+    return this.logService.remove(date);
+  }
 }
