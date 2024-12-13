@@ -151,16 +151,26 @@ export class LoggerService {
         .select('log.level, COUNT(*) as count')
         .addSelect('DATE_FORMAT(log.timestamp, "%Y-%m") as dateGroup')
         .groupBy('log.level, DATE_FORMAT(log.timestamp, "%Y-%m")');
+    } else if (range === 'month') {
+      query = query
+        .select('log.level, COUNT(*) as count')
+        .addSelect('DATE_FORMAT(log.timestamp, "%m-%d") as dateGroup')
+        .groupBy('log.level, DATE_FORMAT(log.timestamp, "%m-%d")');
+    } else if (range === 'week') {
+      query = query
+        .select('log.level, COUNT(*) as count')
+        .addSelect('DATE_FORMAT(log.timestamp, "%a") as dateGroup')
+        .groupBy('log.level, DATE_FORMAT(log.timestamp, "%a")');
     } else {
       query = query
         .select('log.level, COUNT(*) as count')
-        .addSelect('DATE(log.timestamp) as dateGroup')
-        .groupBy('log.level, DATE(log.timestamp)');
+        .addSelect('DATE_FORMAT(log.timestamp, "%Y-%m-%d") as dateGroup')
+        .groupBy('log.level, DATE_FORMAT(log.timestamp, "%Y-%m-%d")');
     }
 
     // Retrieve data
     const logs = await query.orderBy('dateGroup', 'ASC').getRawMany();
-
+    console.log(logs);
     // Format the chart data
     return this.formatChartData(logs, range);
   }
@@ -187,11 +197,11 @@ export class LoggerService {
     // Populate chart data
     for (const [dateGroup, levels] of Object.entries(groupedByDate)) {
       formattedData.xAxis.push(dateGroup);
-      formattedData.series.debug.push(levels['debug'] || 0);
-      formattedData.series.info.push(levels['info'] || 0);
-      formattedData.series.warning.push(levels['warning'] || 0);
-      formattedData.series.error.push(levels['error'] || 0);
-      formattedData.series.critical.push(levels['critical'] || 0);
+      formattedData.series.debug.push(levels[LogLevelEnum.DEBUG] || 0);
+      formattedData.series.info.push(levels[LogLevelEnum.INFO] || 0);
+      formattedData.series.warning.push(levels[LogLevelEnum.WARNING] || 0);
+      formattedData.series.error.push(levels[LogLevelEnum.ERROR] || 0);
+      formattedData.series.critical.push(levels[LogLevelEnum.CRITICAL] || 0);
     }
 
     return formattedData;
