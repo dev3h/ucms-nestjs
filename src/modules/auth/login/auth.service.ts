@@ -13,7 +13,7 @@ import { I18nService } from 'nestjs-i18n';
 import { ResponseUtil } from '@/utils/response-util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { System } from '@/modules/system/entities/system.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { SystemToken } from '@/modules/system-token/entities/system-token.entity';
 import { User } from '@/modules/user/user.entity';
 import { ConfigService } from '@nestjs/config';
@@ -43,6 +43,7 @@ export interface JwtPayload {
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly dataSource: DataSource,
     private readonly i18n: I18nService,
     private userService: UserService,
     @InjectRepository(System)
@@ -494,6 +495,21 @@ export class AuthService {
     //   system_code,
     //   client_id,
     // });
+    const passwordExpiryMonths = parseInt(
+      this.configService.get<string>('PASSWORD_EXPIRY_MONTHS', '3'),
+      10,
+    );
+    const passwordExpiryDate = new Date(user.password_updated_at);
+    passwordExpiryDate.setMonth(
+      passwordExpiryDate.getMonth() + passwordExpiryMonths,
+    );
+
+    if (new Date() > passwordExpiryDate) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('auth.password-expired'),
+        'PASSWORD_EXPIRED',
+      );
+    }
     const consentToken = this.createConsentToken(user);
     return ResponseUtil.sendSuccessResponse({
       data: {
@@ -984,6 +1000,91 @@ export class AuthService {
         lang: 'vi',
       }),
     );
+  }
+
+  async updateSSOPassword(body, query) {
+    const oldPassword = body?.old_password;
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const user = await this.userRepository.findOne({
+        where: {
+          email: body?.email,
+        },
+      });
+      if (!user) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.email.not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      if (!(await bcrypt.compare(oldPassword, user.password))) {
+        throw new UnprocessableEntityException({
+          errors: {
+            old_password: [
+              this.i18n.t('auth.password', {
+                lang: 'vi',
+              }),
+            ],
+          },
+          message: this.i18n.t('auth.old-password', {
+            lang: 'vi',
+          }),
+          error: 'Unprocessable Entity',
+          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        });
+      }
+
+      await this.userRepository.update(
+        { email: body?.email },
+        {
+          password: await bcrypt.hash(body?.password, 10),
+          password_updated_at: new Date(),
+        },
+      );
+      await this.userRepository.update(
+        { email: body?.email },
+        {
+          password_updated_at: new Date(),
+        },
+      );
+      this.verifySession(query?.session_token);
+      const consentToken = this.createConsentToken(user);
+
+      await queryRunner.commitTransaction();
+      return ResponseUtil.sendSuccessResponse(
+        {
+          data: {
+            consentToken,
+            email: body?.email,
+            system_name: query?.system_name,
+            ...query,
+            two_factor: {
+              enable: user.two_factor_enable,
+              is_secret_token: user.two_factor_secret ? true : false,
+              is_confirmed: user.two_factor_confirmed_at ? true : false,
+            },
+          },
+        },
+        this.i18n.t('message.Update-password-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    } finally {
+      // you need to release a queryRunner which was manually instantiated
+      await queryRunner.release();
+    }
   }
 
   async getSecretKey(request): Promise<string> {

@@ -207,13 +207,20 @@ export class AuthController {
     return res.status(200).json({ message: 'Successfully logged out' });
   }
 
-  // sso ucms api
+  // Login Redirect UCMS
 
   @ApiTags('Auth Redirect UCMS')
   @Post('generate-device-id')
   @HttpCode(200)
   async generateDeviceId() {
     return await this.authService.generateDeviceId();
+  }
+
+  @ApiTags('Auth Redirect UCMS')
+  @Post('/sso-ucms/password-update')
+  @HttpCode(200)
+  updateSSOPassword(@Body() data: UpdatePasswordDto, @Query() query) {
+    return this.authService.updateSSOPassword(data, query);
   }
 
   @ApiTags('Auth Redirect UCMS')
@@ -234,7 +241,7 @@ export class AuthController {
   async checkDeviceLoginHistories(@Body() body: any) {
     return await this.authService.checkDeviceLoginHistories(body);
   }
-  // Login Redirect UCMS
+
   @ApiTags('Auth Redirect UCMS')
   @ApiQuery({
     name: 'client_id',
@@ -262,6 +269,7 @@ export class AuthController {
     const resData = ResponseUtil.sendSuccessResponse(response);
     return res.status(200).json(resData);
   }
+
   @ApiTags('Auth Redirect UCMS')
   @ApiQuery({
     name: 'client_id',
