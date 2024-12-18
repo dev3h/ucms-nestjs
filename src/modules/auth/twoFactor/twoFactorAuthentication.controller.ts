@@ -23,6 +23,8 @@ import { JwtAuthGuard } from '../guard/jwt-auth.guard';
 import { ResponseUtil } from '@/utils/response-util';
 import { JwtUserGuard } from '../guard/jwt-user.guard';
 import { I18nService } from 'nestjs-i18n';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 @ApiTags('MFA')
 @Controller('2fa')
@@ -129,6 +131,16 @@ export class TwoFactorAuthenticationController {
       user,
     );
     user.two_factor_confirmed_at = new Date();
+    const backupCodes = [];
+    for (let i = 0; i < 10; i++) {
+      const code = crypto.randomBytes(4).toString('hex');
+      backupCodes.push(code);
+    }
+    // combine all codes to one string and encryption
+    const recoveryCode = backupCodes.join(',');
+    const saltRounds = 10;
+    const hashedRecoveryCode = await bcrypt.hash(recoveryCode, saltRounds);
+    user.two_factor_recovery_code = hashedRecoveryCode;
     user.save();
     delete data?.totpCode;
     return ResponseUtil.sendSuccessResponse({ data });
