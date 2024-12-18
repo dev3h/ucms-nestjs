@@ -103,6 +103,7 @@ async function bootstrap() {
       }
     },
     credentials: true,
+    exposedHeaders: ['X-Secret-Code'],
   });
 
   const swaggerConfig = new DocumentBuilder()

@@ -59,6 +59,8 @@ export class TwoFactorAuthenticationController {
         await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(
           user,
         );
+      const secretCode = dataGenerate?.data?.secret;
+      response.setHeader('X-Secret-Code', secretCode);
 
       return this.twoFactorAuthenticationService.pipeQrCodeStream(
         response,

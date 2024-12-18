@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Req,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Param, Delete, Req, Query } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { LoggerService } from './logger.service';

@@ -27,9 +27,9 @@ import { DeviceLoginHistoryModule } from '@/modules/device-login-history/device-
 import { Subsystem } from '@/modules/subsystem/entities/subsystem.entity';
 import { Action } from '@/modules/action/entities/action.entity';
 import { Module as ModuleSubsystem } from '@/modules/module/entities/module.entity';
-import { APP_GUARD } from '@nestjs/core';
 import { DeviceSessionModule } from '@/modules/device-session/device-session.module';
 import { RedisService } from '@/modules/redis/redis.service';
+import { SSO_UCMS_AuthController } from './sso.controller';
 
 @Module({
   imports: [
@@ -67,7 +67,7 @@ import { RedisService } from '@/modules/redis/redis.service';
     JwtUserStrategy,
     RedisService,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, SSO_UCMS_AuthController],
   exports: [AuthService, JwtUserStrategy],
 })
 export class AuthModule implements NestModule {
