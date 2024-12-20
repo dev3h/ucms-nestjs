@@ -34,6 +34,7 @@ import { DeviceSession } from '@/modules/device-session/entities/device-session.
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { JwtStrategy } from '../guard/jwt.strategy';
 import { Cache } from 'cache-manager';
+import { DeviceSessionDto } from '../dto/device-session.dto';
 
 export interface JwtPayload {
   id: string;
@@ -555,16 +556,22 @@ export class AuthService {
   }
   async getDeviceLoginHistories(deviceId) {
     try {
-      const deviceLoginHistories = await this.deviceLoginHistoryRepository.find(
-        {
-          where: {
-            device_identifier: deviceId,
-          },
-          relations: ['user'],
-        },
+      const deviceSessions = await this.deviceSessionRepository.find({
+        where: { device_id: deviceId },
+        relations: ['user'],
+      });
+      const filteredSessions = deviceSessions.filter(
+        (session) => session.user.type === UserTypeEnum.USER,
       );
-      const formattedData =
-        DeviceLoginHistoryDto.mapFromEntities(deviceLoginHistories);
+      // const deviceLoginHistories = await this.deviceLoginHistoryRepository.find(
+      //   {
+      //     where: {
+      //       device_identifier: deviceId,
+      //     },
+      //     relations: ['user'],
+      //   },
+      // );
+      const formattedData = DeviceSessionDto.mapFromEntities(filteredSessions);
       return ResponseUtil.sendSuccessResponse({ data: formattedData });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
@@ -578,19 +585,22 @@ export class AuthService {
 
   async checkDeviceLoginHistories(data) {
     try {
-      const deviceLoginHistories =
-        await this.deviceLoginHistoryRepository.findOne({
-          where: {
-            device_identifier: data?.device_id,
-            account_identifier: data?.email,
-          },
-        });
-      if (!deviceLoginHistories) {
+      const deviceSession = await this.deviceSessionRepository.findOne({
+        where: { device_id: data?.device_id, user: { email: data?.email } },
+      });
+      // const deviceLoginHistories =
+      //   await this.deviceLoginHistoryRepository.findOne({
+      //     where: {
+      //       device_identifier: data?.device_id,
+      //       account_identifier: data?.email,
+      //     },
+      //   });
+      if (!deviceSession) {
         return ResponseUtil.sendErrorResponse('NOT_FOUND', 'NOT_FOUND');
       }
-      await this.verifyFinalToken(deviceLoginHistories?.session_token);
+      // await this.verifyRefreshToken(data?.refresh_token);
       const user = await this.userRepository.findOne({
-        where: { id: data?.user_id },
+        where: { email: data?.email },
       });
       const authTempCode = await this.createAuthTempCode(user);
       return ResponseUtil.sendSuccessResponse({ data: authTempCode });
@@ -643,7 +653,13 @@ export class AuthService {
           last_login_at: new Date(),
         });
       }
-      return ResponseUtil.sendSuccessResponse({ data: authTempCode });
+      const deviceId = data?.device_id;
+      return ResponseUtil.sendSuccessResponse({
+        data: {
+          authTempCode,
+          device_id: deviceId,
+        },
+      });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {

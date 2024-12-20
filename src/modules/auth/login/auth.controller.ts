@@ -231,14 +231,18 @@ export class AuthController {
   }
 
   @ApiTags('Auth Redirect UCMS')
-  @Get('get-device-login-histories/:device_id')
-  async getDeviceLoginHistories(@Param('device_id') device_id: string) {
-    return await this.authService.getDeviceLoginHistories(device_id);
+  @Get('get-device-login-histories')
+  async getDeviceLoginHistories(@Req() req) {
+    const fingerprint = req?.fp;
+    const deviceId = fingerprint?.id;
+    return await this.authService.getDeviceLoginHistories(deviceId);
   }
   @ApiTags('Auth Redirect UCMS')
   @Post('check-account-device-history')
   @HttpCode(200)
-  async checkDeviceLoginHistories(@Body() body: any) {
+  async checkDeviceLoginHistories(@Req() req, @Body() body: any) {
+    const fingerprint = req?.fp;
+    body.device_id = fingerprint?.id;
     return await this.authService.checkDeviceLoginHistories(body);
   }
 
@@ -304,14 +308,22 @@ export class AuthController {
   @Post('sso-ucms/confirm')
   @HttpCode(200)
   async confirmSSO_UCMS(@Req() req, @Body() data, @Response() res) {
-    const deviceId = req.cookies?.deviceId;
-    if (deviceId) {
-      data.device_id = deviceId;
-    }
+    // const deviceId = req.cookies?.deviceId;
+    // if (deviceId) {
+    //   data.device_id = deviceId;
+    // }
+    const fingerprint = req?.fp;
+    data.device_id = fingerprint?.id;
 
-    const response = await this.authService.confirmSSO_UCMS(data);
-    const dataRes = ResponseUtil.sendSuccessResponse(response);
-    return res.status(200).json(dataRes);
+    const result = await this.authService.confirmSSO_UCMS(data);
+    if (result.status_code === 200) {
+      const { device_id: deviceId } = result.data;
+      res.cookie('deviceId', deviceId, {
+        httpOnly: true,
+        sameSite: 'Strict',
+      });
+    }
+    return res.send(result);
   }
 
   @ApiTags('Auth Redirect UCMS')
@@ -326,7 +338,7 @@ export class AuthController {
     const fingerprint = req?.fp;
     const ipAddress = req.connection.remoteAddress;
     const ua = headers['user-agent'];
-    const deviceId = fingerprint?.id;
+    const deviceId = req.cookies?.deviceId;
     const os = fingerprint?.userAgent?.os?.family;
     const browser = fingerprint?.userAgent?.browser?.family;
     const metaData = { ipAddress, ua, deviceId, os, browser };
@@ -357,9 +369,9 @@ export class AuthController {
     @Res() res,
   ) {
     const token = req.headers.authorization.split(' ')[1];
-    const device_id = request.cookies?.deviceId;
-    const fingerprint = req?.fp;
-    const deviceId = fingerprint?.id;
+    const deviceId = request.cookies?.deviceId;
+    // const fingerprint = req?.fp;
+    // const deviceId = fingerprint?.id;
     const decodedToken = await this.authService.verifyToken(token, deviceId);
 
     // const deviceId = request.cookies?.deviceId;
@@ -390,8 +402,9 @@ export class AuthController {
   @Post('sso-ucms/refresh-token')
   @HttpCode(200)
   async reAuthSSO(@Req() req, @Response() res) {
-    const fingerprint = req?.fp;
-    const deviceId = fingerprint?.id;
+    // const fingerprint = req?.fp;
+    // const deviceId = fingerprint?.id;
+    const deviceId = req.cookies.deviceId;
     const refreshToken = req.cookies?.sso_ucms_refresh_token;
     const result = await this.deviceSessionService.reAuth(
       deviceId,

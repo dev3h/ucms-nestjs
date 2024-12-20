@@ -29,7 +29,6 @@ import { Action } from '@/modules/action/entities/action.entity';
 import { Module as ModuleSubsystem } from '@/modules/module/entities/module.entity';
 import { DeviceSessionModule } from '@/modules/device-session/device-session.module';
 import { RedisService } from '@/modules/redis/redis.service';
-import { SSO_UCMS_AuthController } from './sso.controller';
 
 @Module({
   imports: [
@@ -67,7 +66,7 @@ import { SSO_UCMS_AuthController } from './sso.controller';
     JwtUserStrategy,
     RedisService,
   ],
-  controllers: [AuthController, SSO_UCMS_AuthController],
+  controllers: [AuthController],
   exports: [AuthService, JwtUserStrategy],
 })
 export class AuthModule implements NestModule {
