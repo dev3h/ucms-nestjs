@@ -122,8 +122,13 @@ export class AuthController {
     const result = await this.authService.adminLogin(data, metaData);
 
     if (result.status_code === 200) {
-      const { refresh_token, expired_at } = result;
+      const { refresh_token, expired_at, uid } = result;
       res.cookie('admin_ucms_refresh_token', refresh_token, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+      res.cookie('uid', uid, {
         httpOnly: true,
         expires: new Date(expired_at),
         sameSite: 'Strict',
@@ -150,8 +155,13 @@ export class AuthController {
       refreshToken,
     );
     if (result.status_code === 200) {
-      const { refresh_token, expired_at } = result;
+      const { refresh_token, expired_at, uid } = result;
       res.cookie('admin_ucms_refresh_token', refresh_token, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+      res.cookie('uid', uid, {
         httpOnly: true,
         expires: new Date(expired_at),
         sameSite: 'Strict',
@@ -186,7 +196,12 @@ export class AuthController {
     const token = req.headers.authorization?.split(' ')?.[1];
     const fingerprint = req?.fp;
     const deviceId = fingerprint?.id;
-    const payload = await this.authService.verifyToken(token, deviceId);
+    const uid = req.cookies?.uid;
+    const payload = await this.authService.verifyToken({
+      token,
+      deviceId,
+      uid,
+    });
     return this.userService.findOne(payload?.id);
   }
 
@@ -196,7 +211,12 @@ export class AuthController {
     const token = req.headers.authorization.split(' ')?.[1];
     const fingerprint = req?.fp;
     const deviceId = fingerprint?.id;
-    const decodedToken = await this.authService.verifyToken(token, deviceId);
+    const uid = req.cookies?.uid;
+    const decodedToken = await this.authService.verifyToken({
+      token,
+      deviceId,
+      uid,
+    });
     // if (decodedToken.status_code !== 200) {
     //   return res.status(decodedToken.status_code).json(decodedToken);
     // }
@@ -344,8 +364,13 @@ export class AuthController {
     const metaData = { ipAddress, ua, deviceId, os, browser };
     const result = await this.authService.getSSO_Token_UCMS(data, metaData);
     if (result.status_code === 200) {
-      const { refresh_token, expired_at } = result;
+      const { refresh_token, expired_at, uuid } = result;
       res.cookie('sso_ucms_refresh_token', refresh_token, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+      res.cookie('uuid', uuid, {
         httpOnly: true,
         expires: new Date(expired_at),
         sameSite: 'Strict',
@@ -370,9 +395,16 @@ export class AuthController {
   ) {
     const token = req.headers.authorization.split(' ')[1];
     const deviceId = request.cookies?.deviceId;
+    const uid = req.cookies?.uuid;
     // const fingerprint = req?.fp;
     // const deviceId = fingerprint?.id;
-    const decodedToken = await this.authService.verifyToken(token, deviceId);
+    const sessionType = 2;
+    const decodedToken = await this.authService.verifyToken({
+      token,
+      deviceId,
+      sessionType,
+      uid,
+    });
 
     // const deviceId = request.cookies?.deviceId;
     // if (deviceId) {
@@ -411,8 +443,13 @@ export class AuthController {
       refreshToken,
     );
     if (result.status_code === 200) {
-      const { refresh_token, expired_at } = result;
+      const { refresh_token, expired_at, uid } = result;
       res.cookie('sso_ucms_refresh_token', refresh_token, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+      res.cookie('uuid', uid, {
         httpOnly: true,
         expires: new Date(expired_at),
         sameSite: 'Strict',

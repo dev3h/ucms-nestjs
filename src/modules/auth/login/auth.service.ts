@@ -78,7 +78,7 @@ export class AuthService {
 
   // Tạo admin token
   async createAdminToken(admin: any) {
-    const payload = { email: admin.email, id: admin.id, role: 'admin' };
+    const payload = { email: admin.email, id: admin.id };
     const expiresIn = this.configService.get<string>(
       'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
       '10m',
@@ -136,8 +136,9 @@ export class AuthService {
   }
 
   // Xác thực token từ Redis, kiểm tra nếu bị blacklist
-  async verifyToken(token: string, deviceId: string) {
+  async verifyToken(data) {
     try {
+      const { token, deviceId, sessionType = 1, uid = null } = data;
       const isBlacklisted = await this.redisService?.isTokenBlacklisted(token);
       if (isBlacklisted) {
         return ResponseUtil.sendErrorResponse(
@@ -146,9 +147,16 @@ export class AuthService {
           }),
         );
       }
-
+      let userId = null;
+      if (uid) {
+        userId = Buffer.from(uid, 'base64').toString('utf-8');
+      }
       const deviceSession = await this.deviceSessionRepository.findOne({
-        where: { device_id: deviceId },
+        where: {
+          device_id: deviceId,
+          session_type: sessionType,
+          user: { id: Number(userId) },
+        },
       });
       if (!deviceSession) {
         throw new JsonWebTokenError(
@@ -336,10 +344,12 @@ export class AuthService {
       admin.id,
       metaData,
     );
+    const uid = Buffer.from(admin.id.toString()).toString('base64');
     const dataRes = {
-      access_token: deviceSession.token,
+      access_token: `${deviceSession.token}`,
       refresh_token: deviceSession.refreshToken,
       expired_at: deviceSession.expiredAt,
+      uid,
     };
 
     return ResponseUtil.sendSuccessResponse({ ...dataRes });
@@ -782,10 +792,12 @@ export class AuthService {
         metaData,
         system,
       );
+      const uuid = Buffer.from(user.id.toString()).toString('base64');
       const dataRes = {
         access_token: deviceSession.token,
         refresh_token: deviceSession.refreshToken,
         expired_at: deviceSession.expiredAt,
+        uuid,
       };
       // await this.userLoginHistoryService.recordLogin({
       //   id: user.id,

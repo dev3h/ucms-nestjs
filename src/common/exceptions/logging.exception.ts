@@ -63,8 +63,8 @@ export class LoggingExceptionFilter implements ExceptionFilter {
         ? exception.getResponse()
         : {
             status_code: status,
-            message: 'Internal Server Error',
-            errors: ['Internal Server Error'],
+            message: 'Đã xảy ra lỗi vui lòng thử lại sau',
+            errors: [(exception as Error).stack],
           },
     );
   }

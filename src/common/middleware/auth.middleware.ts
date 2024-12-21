@@ -28,8 +28,14 @@ export class AuthMiddleware implements NestMiddleware {
         throw new UnauthorizedException('Device ID is missing');
       }
 
+      const uid = req?.cookies?.uid;
+
       // Xác minh token
-      const payload = await this.authService.verifyToken(token, deviceId);
+      const payload = await this.authService.verifyToken({
+        token,
+        deviceId,
+        uid,
+      });
       if (!payload) {
         throw new UnauthorizedException('Invalid token');
       }

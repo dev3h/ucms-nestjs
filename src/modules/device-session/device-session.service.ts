@@ -35,7 +35,7 @@ export class DeviceSessionService {
     @Inject(CACHE_MANAGER)
     private cacheManager: Cache,
     @InjectRepository(DeviceSession)
-    private repository: Repository<DeviceSession>,
+    private deviceSessionRepository: Repository<DeviceSession>,
     @Inject(forwardRef(() => AuthService))
     private authService: AuthService,
   ) {}
@@ -45,7 +45,7 @@ export class DeviceSessionService {
   }
 
   async logout(userId: number, deviceId: string) {
-    const deviceSession: any = await this.repository
+    const deviceSession: any = await this.deviceSessionRepository
       .createQueryBuilder('deviceSession')
       .leftJoinAndSelect('deviceSession.user', 'user')
       .select(['deviceSession', 'user.id'])
@@ -61,7 +61,7 @@ export class DeviceSessionService {
     );
 
     await this.cacheManager.set(keyCache, null);
-    await this.repository.delete(deviceSession?.id);
+    await this.deviceSessionRepository.delete(deviceSession?.id);
     return ResponseUtil.sendSuccessResponse(
       null,
       this.i18n.t('message.logout-successfully', {
@@ -71,7 +71,7 @@ export class DeviceSessionService {
   }
 
   async reAuth(deviceId: string, _refreshToken: string) {
-    const deviceSession: any = await this.repository
+    const deviceSession: any = await this.deviceSessionRepository
       .createQueryBuilder('deviceSession')
       .select('deviceSession', 'user.id')
       .leftJoinAndSelect('deviceSession.user', 'user')
@@ -102,7 +102,11 @@ export class DeviceSessionService {
       addDay(7),
     ];
 
-    await this.repository.update(deviceSession.id, {
+    const uid = Buffer.from(deviceSession.user.id.toString()).toString(
+      'base64',
+    );
+
+    await this.deviceSessionRepository.update(deviceSession.id, {
       secret_key: secretKey,
       refresh_token: refreshToken,
       expired_at: expiredAt,
@@ -111,6 +115,7 @@ export class DeviceSessionService {
       access_token: token,
       refresh_token: refreshToken,
       expired_at: expiredAt,
+      uid,
     };
 
     return ResponseUtil.sendSuccessResponse({ ...dataRes });
@@ -122,7 +127,7 @@ export class DeviceSessionService {
     system = null,
   ): Promise<LoginRespionse> {
     const { deviceId } = metaData;
-    const currentDevice = await this.repository.findOne({
+    const currentDevice = await this.deviceSessionRepository.findOne({
       where: { device_id: deviceId },
     });
 
@@ -140,28 +145,32 @@ export class DeviceSessionService {
 
     const deviceName = metaData.deviceId;
     let deviceSession;
-    if (currentDevice) {
+    if (currentDevice && currentDevice.user === userId) {
       deviceSession = currentDevice;
     } else {
       deviceSession = new DeviceSession();
     }
-    deviceSession.user = userId;
-    deviceSession.secret_key = secretKey;
-    deviceSession.refresh_token = refreshToken;
-    deviceSession.expired_at = expiredAt;
-    deviceSession.device_id = deviceId;
-    deviceSession.ip_address = metaData.ipAddress;
-    deviceSession.ua = metaData.ua;
-    deviceSession.name = deviceName;
-    deviceSession.os = metaData.os;
-    deviceSession.browser = metaData.browser;
+
     const device = this.detectOSFamily(metaData.os);
-    deviceSession.device_type = device;
-    if (system) {
-      deviceSession.session_type = 2;
-    }
+    const sessionData = {
+      user: userId,
+      secret_key: secretKey,
+      refresh_token: refreshToken,
+      expired_at: expiredAt,
+      device_id: deviceId,
+      ip_address: metaData.ipAddress,
+      ua: metaData.ua,
+      name: deviceName,
+      os: metaData.os,
+      browser: metaData.browser,
+      device_type: device,
+      session_type: system ? 2 : undefined,
+    };
+
+    Object.assign(deviceSession, sessionData);
+
     // update or create device session
-    await this.repository.save(deviceSession);
+    await this.deviceSessionRepository.save(deviceSession);
     return { token, refreshToken, expiredAt, deviceId: deviceName };
   }
 
@@ -177,7 +186,7 @@ export class DeviceSessionService {
   }
 
   async getDeviceSessions(userId) {
-    return this.repository.find({
+    return this.deviceSessionRepository.find({
       where: {
         user: userId,
       },
