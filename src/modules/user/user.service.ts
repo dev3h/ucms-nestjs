@@ -158,7 +158,6 @@ export class UserService {
       const limit = parseInt(request.query.limit as string, 10) || 10;
       const baseUrl = `${request.protocol}://${request.get('host')}${request.baseUrl}`;
       const paginationResult = await paginate(query, page, limit, baseUrl);
-
       const formattedData = UserDto.mapFromEntities(paginationResult.data);
       return ResponseUtil.sendSuccessResponse({
         data: formattedData,

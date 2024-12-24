@@ -15,10 +15,7 @@ export class CreateUserDto {
     description: 'Email address of the user',
     example: 'reachme@amitavroy.com',
   })
-  @IsUnique(
-    { tableName: 'users', column: 'email' },
-    { message: 'Email must be unique' },
-  )
+  @IsUnique({ tableName: 'users', column: 'email' })
   @Matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
   @IsEmail(
     {},
@@ -28,6 +25,17 @@ export class CreateUserDto {
     message: (args) => I18nContext.current().t('validation.isNotEmpty'),
   })
   readonly email: string;
+
+  @ApiProperty({
+    description: 'Phone number',
+    example: '0123456789',
+  })
+  @IsUnique({ tableName: 'users', column: 'phone_number' })
+  @Matches(/^[0-9]{10,11}$/)
+  @IsNotEmpty({
+    message: (args) => I18nContext.current().t('validation.isNotEmpty'),
+  })
+  readonly phone_number: string;
 
   @ApiProperty({ description: 'Password', example: '123456' })
   @PasswordStrength()

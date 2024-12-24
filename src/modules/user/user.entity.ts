@@ -53,6 +53,10 @@ export class User extends BaseEntity {
   @Exclude()
   password: string;
 
+  @ApiProperty({ description: 'Phone number' })
+  @Column()
+  phone_number: string;
+
   @ApiProperty({ description: 'check user change password first time' })
   @Column({ default: false })
   is_change_password_first: boolean;

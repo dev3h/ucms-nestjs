@@ -1,6 +1,5 @@
 import { Seeder } from 'typeorm-extension';
 import { DataSource } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { Role } from '@/modules/role/entities/role.entity';
 import { Permission } from '@/modules/permission/entities/permission.entity';
 import { User } from '@/modules/user/user.entity';
@@ -18,6 +17,7 @@ export class UserSeeder implements Seeder {
         is_change_password_first: true,
         role: 'master_admin',
         type: 1,
+        phone_number: '0332345678',
       },
       {
         name: 'cuongdd',
@@ -26,6 +26,7 @@ export class UserSeeder implements Seeder {
         is_change_password_first: false,
         role: 'user',
         type: 2,
+        phone_number: '0345673206',
       },
     ];
 

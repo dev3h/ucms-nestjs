@@ -12,6 +12,7 @@ export class UserDetailDto {
   type: number;
   type_name: string;
   two_factor_enable: boolean;
+  phone_number: string;
 
   constructor(user: any) {
     this.id = user.id;
@@ -23,6 +24,7 @@ export class UserDetailDto {
     this.type = user.type;
     this.type_name = UserTypeEnum[user.type];
     this.two_factor_enable = user.two_factor_enable;
+    this.phone_number = user.phone_number;
   }
 
   static mapFromEntities(entities: any[]): UserDetailDto[] {
