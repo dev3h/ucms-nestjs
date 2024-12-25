@@ -27,4 +27,14 @@ export class MailProcessor {
     await this.mailService.sendResetPasswordMail(dataSend);
     this.logger.log(`Completed job ${job.id}`);
   }
+
+  @Process('sendSSOResetPasswordMail')
+  async handleSendSSOResetPasswordMail(job: Job) {
+    this.logger.log(
+      `Processing job ${job.id} with data: ${JSON.stringify(job.data)}`,
+    );
+    const dataSend = job.data;
+    await this.mailService.sendSSOResetPasswordMail(dataSend);
+    this.logger.log(`Completed job ${job.id}`);
+  }
 }

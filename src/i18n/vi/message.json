@@ -40,5 +40,7 @@
     "Only-delete-disabled-client-secret": "Chỉ xóa được client secret đã vô hiệu hóa",
     "Send-reset-password-successfully": "Gửi email đặt lại mật khẩu thành công",
     "logout-successfully": "Đăng xuất thành công",
-    "Account-not-valid": "Tài khoản không hợp lệ"
+    "Account-not-valid": "Tài khoản không hợp lệ",
+    "phone.invalid": "Số điện thoại không hợp lệ",
+    "invalid-otp-code": "Mã OTP không hợp lệ"
 }

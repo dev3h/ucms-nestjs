@@ -17,6 +17,7 @@ import { DataSource, Repository } from 'typeorm';
 import { SystemToken } from '@/modules/system-token/entities/system-token.entity';
 import { User } from '@/modules/user/user.entity';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import TokenPayload from '../tokenPayload.interface';
 import { RedisService } from '@/modules/redis/redis.service';
 import { SystemService } from '../../system/system.service';

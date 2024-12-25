@@ -24,6 +24,7 @@ import { UpdatePasswordDto } from '../dto/update-password.dto';
 import { DeviceSessionService } from '@/modules/device-session/device-session.service';
 import ReAuthDto from '../dto/re-auth.dto';
 import { UserService } from '@/modules/user/user.service';
+import { SSOResetPasswordDto } from '../dto/sso-reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
