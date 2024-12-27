@@ -597,7 +597,10 @@ export class AuthService {
   async checkDeviceLoginHistories(data) {
     try {
       const deviceSession = await this.deviceSessionRepository.findOne({
-        where: { device_id: data?.device_id, user: { email: data?.email } },
+        where: {
+          device_id: data?.device_id,
+          user: { email: data?.email, type: UserTypeEnum.USER },
+        },
       });
       // const deviceLoginHistories =
       //   await this.deviceLoginHistoryRepository.findOne({
@@ -611,7 +614,7 @@ export class AuthService {
       }
       // await this.verifyRefreshToken(data?.refresh_token);
       const user = await this.userRepository.findOne({
-        where: { email: data?.email },
+        where: { email: data?.email, type: UserTypeEnum.USER },
       });
       const authTempCode = await this.createAuthTempCode(user);
       return ResponseUtil.sendSuccessResponse({ data: authTempCode });

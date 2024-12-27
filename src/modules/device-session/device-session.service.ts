@@ -123,35 +123,26 @@ export class DeviceSessionService {
 
   async handleDeviceSession(
     userId,
-    metaData,
-    system = null,
+    metaData: any,
+    system: any = null,
   ): Promise<LoginRespionse> {
     const { deviceId } = metaData;
-    const currentDevice = await this.deviceSessionRepository.findOne({
-      where: { device_id: deviceId },
+
+    // Check for existing device session by userId and deviceId
+    let deviceSession = await this.deviceSessionRepository.findOne({
+      where: { user: { id: userId }, device_id: deviceId },
     });
 
+    // Generate session details
     const expiredAt = addDay(EXP_SESSION);
     const secretKey = this.generateSecretKey();
-
-    const payload = {
-      id: userId,
-      deviceId,
-    };
+    const payload = { id: userId, deviceId };
     const [token, refreshToken] = [
       JwtStrategy.generate(payload, secretKey),
       crypto.randomBytes(64).toString('hex'),
     ];
 
-    const deviceName = metaData.deviceId;
-    let deviceSession;
-    if (currentDevice && currentDevice.user === userId) {
-      deviceSession = currentDevice;
-    } else {
-      deviceSession = new DeviceSession();
-    }
-
-    const device = this.detectOSFamily(metaData.os);
+    // Detect device type and prepare session data
     const sessionData = {
       user: userId,
       secret_key: secretKey,
@@ -160,18 +151,25 @@ export class DeviceSessionService {
       device_id: deviceId,
       ip_address: metaData.ipAddress,
       ua: metaData.ua,
-      name: deviceName,
+      name: metaData.deviceId, // This could be a name or ID
       os: metaData.os,
       browser: metaData.browser,
-      device_type: device,
+      device_type: this.detectOSFamily(metaData.os),
       session_type: system ? 2 : undefined,
     };
 
+    // Create a new session if not found
+    if (!deviceSession) {
+      deviceSession = new DeviceSession();
+    }
+
+    // Update session data
     Object.assign(deviceSession, sessionData);
 
-    // update or create device session
+    // Save session to the database
     await this.deviceSessionRepository.save(deviceSession);
-    return { token, refreshToken, expiredAt, deviceId: deviceName };
+
+    return { token, refreshToken, expiredAt, deviceId: sessionData.name };
   }
 
   public detectOSFamily(osFamily: string): number {
