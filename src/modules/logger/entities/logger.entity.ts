@@ -5,8 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { User } from '@/modules/user/user.entity';
 
 @Entity({ name: 'logs' })
 export class Log {
@@ -26,8 +29,9 @@ export class Log {
   @CreateDateColumn()
   timestamp: Date;
 
-  @Column({ type: 'bigint', nullable: true })
-  user_id: number;
+  @ManyToOne(() => User, (user) => user.logs, { nullable: true })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   module: string;
@@ -40,6 +44,9 @@ export class Log {
 
   @Column({ type: 'varchar', length: 45, nullable: true })
   ip_address: string;
+
+  @Column({ type: 'json', nullable: true })
+  geo_location: object;
 
   @Column({ type: 'text', nullable: true })
   user_agent: string;

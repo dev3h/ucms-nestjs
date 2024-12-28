@@ -20,6 +20,7 @@ import { SystemToken } from '../system-token/entities/system-token.entity';
 import { UserHasPermission } from './user-has-permission.entity';
 import { UserLoginHistory } from '../user-login-history/user-login-history.entity';
 import { DeviceSession } from '../device-session/entities/device-session.entity';
+import { Log } from '../logger/entities/logger.entity';
 
 @Entity({ name: 'users' })
 export class User extends BaseEntity {
@@ -157,6 +158,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => UserLoginHistory, (loginHistory) => loginHistory.user)
   loginHistory: UserLoginHistory[];
+
+  @OneToMany(() => Log, (log) => log.user)
+  logs: Log[];
 
   @OneToMany(() => DeviceSession, (deviceSessions) => deviceSessions.user)
   deviceSessions: DeviceSession[];

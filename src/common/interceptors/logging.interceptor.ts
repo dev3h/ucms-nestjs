@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
+import * as geoip from 'geoip-lite';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -15,12 +16,30 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
+    function maskSensitiveData(body) {
+      return Object.keys(body).reduce((acc, key) => {
+        if (key.toLowerCase().includes('password')) {
+          acc[key] = '***';
+        } else {
+          acc[key] = body[key];
+        }
+        return acc;
+      }, {});
+    }
+    const ip =
+      request.headers['x-forwarded-for'] || request.connection.remoteAddress;
+    const geo = geoip.lookup(ip as string);
     const logData = {
       module: request.route?.path || 'Unknown module',
       function_name: request.method,
       ip_address: request.ip,
       user_agent: request.headers['user-agent'],
+      user: request?.user?.data,
       status_code: 200,
+      geo_location: geo || { location: 'Unknown location' },
+      additional_data: request?.body
+        ? { body: maskSensitiveData(request.body) }
+        : {},
     };
 
     const now = Date.now();

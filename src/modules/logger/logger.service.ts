@@ -9,8 +9,8 @@ import { ResponseUtil } from '@/utils/response-util';
 import { I18nService } from 'nestjs-i18n';
 import { LogFilter } from './filters/log.filter';
 import { LogDto } from './dto/log.dto';
-import { Utils } from '@/utils/utils';
 import { format } from 'date-fns';
+import { User } from '../user/user.entity';
 
 @Injectable()
 export class LoggerService {
@@ -18,13 +18,15 @@ export class LoggerService {
     private readonly i18n: I18nService,
     @InjectRepository(Log)
     private readonly logRepository: Repository<Log>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   private async log(
     level: LogLevelEnum,
     message: string,
     context: Partial<{
-      userId: number;
+      user;
       module: string;
       functionName: string;
       statusCode: number;
@@ -34,11 +36,20 @@ export class LoggerService {
       additionalData: object;
     }> = {},
   ): Promise<void> {
+    const { user, ...restContext } = context;
+    let userContext = null;
+    if (user) {
+      userContext = await this.userRepository.findOne({
+        where: { id: user.id, email: user?.email },
+      });
+      context = { ...restContext };
+    }
     const data = {
       level,
       message,
       timestamp: new Date(),
-      ...context,
+      user: userContext?.id ? userContext : null,
+      ...restContext,
     };
     const logEntry = this.logRepository.create(data);
     await this.logRepository.save(logEntry);

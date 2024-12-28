@@ -2,6 +2,7 @@ import { Utils } from '@/utils/utils';
 import { getLogLevelName } from '../enums/log-level.enum';
 
 export class LogDto {
+  id: number;
   level: string;
   created_at: string;
   message: string;
@@ -12,10 +13,12 @@ export class LogDto {
   module: string;
   function_name: string;
   additional_data: any;
+  geo_location: any;
 
   constructor(log: any) {
+    this.id = log?.id;
     this.level = getLogLevelName(log?.level);
-    this.created_at = Utils.formatDate(log?.created_at);
+    this.created_at = Utils.formatDateTime(log?.timestamp);
     this.message = log?.message;
     this.status_code = log?.status_code;
     this.ip_address = log?.ip_address;
@@ -24,6 +27,7 @@ export class LogDto {
     this.module = log?.module;
     this.function_name = log?.function_name;
     this.additional_data = log?.additional_data;
+    this.geo_location = log?.geo_location;
   }
 
   static mapFromEntities(entities: any[]): LogDto[] {

@@ -8,6 +8,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import * as geoip from 'geoip-lite';
 
 @Injectable()
 @Catch()
@@ -21,12 +22,15 @@ export class LoggingExceptionFilter implements ExceptionFilter {
     const status =
       exception instanceof HttpException ? exception.getStatus() : 500;
 
+    const ip = request?.ip;
+    const geo = geoip.lookup(ip);
     const logContext = {
       ip_address: request.ip,
       user_agent: request.get('user-agent') || '',
       module: host.getType() || 'HTTP',
       function_name: 'ExceptionFilter',
       status_code: status,
+      geo_location: geo || { location: 'Unknown location' },
       additional_data: { path: request.url, method: request.method },
     };
 
