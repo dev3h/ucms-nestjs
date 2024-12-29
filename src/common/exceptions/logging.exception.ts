@@ -15,14 +15,29 @@ import * as geoip from 'geoip-lite';
 export class LoggingExceptionFilter implements ExceptionFilter {
   constructor(private readonly loggerService: LoggerService) {}
 
-  catch(exception: unknown, host: ArgumentsHost) {
+  async getClientIp(): Promise<string> {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      return data.ip || 'Unknown IP';
+    } catch (error) {
+      console.error('Failed to fetch public IP:', error.message);
+      return 'Unknown IP';
+    }
+  }
+
+  async catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest<Request>();
     const response = ctx.getResponse<Response>();
     const status =
       exception instanceof HttpException ? exception.getStatus() : 500;
 
-    const ip = request?.ip;
+    const localIp =
+      request.headers['x-forwarded-for'] || request.connection.remoteAddress;
+
+    const publicIp = await this.getClientIp();
+    const ip = publicIp || localIp;
     const geo = geoip.lookup(ip);
     const logContext = {
       ip_address: request.ip,

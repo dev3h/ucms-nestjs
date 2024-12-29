@@ -156,6 +156,11 @@ export class LoggerService {
           );
         }
         break;
+      case 'current':
+        query = query.where(
+          'log.timestamp >= DATE_SUB(NOW(), INTERVAL 3 HOUR)',
+        );
+        break;
       default:
         throw new Error('Invalid range provided.');
     }
@@ -176,6 +181,11 @@ export class LoggerService {
         .select('log.level, COUNT(*) as count')
         .addSelect('DATE_FORMAT(log.timestamp, "%a") as dateGroup')
         .groupBy('log.level, DATE_FORMAT(log.timestamp, "%a")');
+    } else if (range === 'current') {
+      query = query
+        .select('log.level, COUNT(*) as count')
+        .addSelect('DATE_FORMAT(log.timestamp, "%H:%i") as dateGroup')
+        .groupBy('log.level, DATE_FORMAT(log.timestamp, "%H:%i")');
     } else {
       query = query
         .select('log.level, COUNT(*) as count')
@@ -208,14 +218,45 @@ export class LoggerService {
       return acc;
     }, {});
 
-    // Populate chart data
-    for (const [dateGroup, levels] of Object.entries(groupedByDate)) {
-      formattedData.xAxis.push(dateGroup);
-      formattedData.series.debug.push(levels[LogLevelEnum.DEBUG] || 0);
-      formattedData.series.info.push(levels[LogLevelEnum.INFO] || 0);
-      formattedData.series.warning.push(levels[LogLevelEnum.WARNING] || 0);
-      formattedData.series.error.push(levels[LogLevelEnum.ERROR] || 0);
-      formattedData.series.critical.push(levels[LogLevelEnum.CRITICAL] || 0);
+    if (range === 'current') {
+      const now = new Date();
+      const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const timeSlots = [];
+
+      for (
+        let time = threeHoursAgo;
+        time <= now;
+        time.setMinutes(time.getMinutes() + 15)
+      ) {
+        const timeSlot = time.toTimeString().split(' ')[0].substring(0, 5); // Format as "HH:mm"
+        timeSlots.push(timeSlot);
+        formattedData.xAxis.push(timeSlot);
+        formattedData.series.debug.push(
+          groupedByDate[timeSlot]?.[LogLevelEnum.DEBUG] || 0,
+        );
+        formattedData.series.info.push(
+          groupedByDate[timeSlot]?.[LogLevelEnum.INFO] || 0,
+        );
+        formattedData.series.warning.push(
+          groupedByDate[timeSlot]?.[LogLevelEnum.WARNING] || 0,
+        );
+        formattedData.series.error.push(
+          groupedByDate[timeSlot]?.[LogLevelEnum.ERROR] || 0,
+        );
+        formattedData.series.critical.push(
+          groupedByDate[timeSlot]?.[LogLevelEnum.CRITICAL] || 0,
+        );
+      }
+    } else {
+      // Populate chart data
+      for (const [dateGroup, levels] of Object.entries(groupedByDate)) {
+        formattedData.xAxis.push(dateGroup);
+        formattedData.series.debug.push(levels[LogLevelEnum.DEBUG] || 0);
+        formattedData.series.info.push(levels[LogLevelEnum.INFO] || 0);
+        formattedData.series.warning.push(levels[LogLevelEnum.WARNING] || 0);
+        formattedData.series.error.push(levels[LogLevelEnum.ERROR] || 0);
+        formattedData.series.critical.push(levels[LogLevelEnum.CRITICAL] || 0);
+      }
     }
 
     return formattedData;
