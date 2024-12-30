@@ -320,6 +320,13 @@ export class AuthService {
         'NOT_ADMIN_ACCOUNT',
       );
     }
+    if (admin.two_factor_enable) {
+      const tempToken = await this.createTempCodeNoExpired(admin);
+      return ResponseUtil.sendSuccessResponse({
+        tempToken,
+        requireTwoFactor: true,
+      });
+    }
 
     const passwordExpiryMonths = parseInt(
       this.configService.get<string>('PASSWORD_EXPIRY_MONTHS', '3'),
@@ -356,6 +363,47 @@ export class AuthService {
     return ResponseUtil.sendSuccessResponse({ ...dataRes });
   }
 
+  async adminLoginAfterVerifyTwoFactor(admin, metaData) {
+    if (admin.two_factor_enable) {
+      const tempToken = await this.createAuthTempCode(admin);
+      return ResponseUtil.sendSuccessResponse({
+        tempToken,
+        requireTwoFactor: true,
+      });
+    }
+
+    const passwordExpiryMonths = parseInt(
+      this.configService.get<string>('PASSWORD_EXPIRY_MONTHS', '3'),
+      10,
+    );
+    const passwordExpiryDate = new Date(admin.password_updated_at);
+    passwordExpiryDate.setMonth(
+      passwordExpiryDate.getMonth() + passwordExpiryMonths,
+    );
+
+    if (new Date() > passwordExpiryDate) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('auth.password-expired'),
+        'PASSWORD_EXPIRED',
+      );
+    }
+
+    await this.updateLastLoginAtAndResetBlock(admin.id);
+    const deviceSession = await this.deviceSessionService.handleDeviceSession(
+      admin.id,
+      metaData,
+    );
+    const uid = Buffer.from(admin.id.toString()).toString('base64');
+    const dataRes = {
+      access_token: `${deviceSession.token}`,
+      refresh_token: deviceSession.refreshToken,
+      expired_at: deviceSession.expiredAt,
+      uid,
+    };
+
+    return ResponseUtil.sendSuccessResponse({ ...dataRes });
+  }
+
   async generateToken(user: any) {
     const payload = { username: user.email, sub: user.id };
     return {
@@ -365,7 +413,12 @@ export class AuthService {
 
   async createAuthTempCode(user: User): Promise<string> {
     const payload = { id: user?.id, email: user?.email };
-    const authTempCode = this.jwtService.sign(payload, { expiresIn: '10m' }); // Mã xác thực tạm thời có thời hạn 3 phút
+    const authTempCode = this.jwtService.sign(payload, { expiresIn: '10m' });
+    return authTempCode;
+  }
+  async createTempCodeNoExpired(user: User): Promise<string> {
+    const payload = { id: user?.id };
+    const authTempCode = this.jwtService.sign(payload);
     return authTempCode;
   }
 
@@ -374,7 +427,26 @@ export class AuthService {
       const decoded = this.jwtService.verify(authTempCode);
       return decoded;
     } catch (error) {
-      throw new Error('Invalid or expired auth code');
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Invalid-auth-temp-code', {
+          lang: 'vi',
+        }),
+        'INVALID_AUTH_TEMP_CODE',
+      );
+    }
+  }
+
+  async verifyTempCodeNoExpired(authTempCode: string): Promise<any> {
+    try {
+      const decoded = this.jwtService.verify(authTempCode);
+      return decoded;
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Invalid-auth-temp-code', {
+          lang: 'vi',
+        }),
+        'INVALID_AUTH_TEMP_CODE',
+      );
     }
   }
 

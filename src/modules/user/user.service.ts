@@ -746,10 +746,10 @@ export class UserService {
           }),
         );
       }
-      if (!userData?.two_factor_enable) {
-        userData.two_factor_secret = null;
-        userData.two_factor_confirmed_at = null;
-      }
+      // if (!userData?.two_factor_enable) {
+      //   userData.two_factor_secret = null;
+      //   userData.two_factor_confirmed_at = null;
+      // }
       await this.userRepository.update(id, userData);
       return ResponseUtil.sendSuccessResponse(
         null,

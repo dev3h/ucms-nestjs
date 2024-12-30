@@ -123,6 +123,9 @@ export class AuthController {
     const result = await this.authService.adminLogin(data, metaData);
 
     if (result.status_code === 200) {
+      if (result?.requireTwoFactor) {
+        return res.send(result);
+      }
       const { refresh_token, expired_at, uid } = result;
       res.cookie('admin_ucms_refresh_token', refresh_token, {
         httpOnly: true,

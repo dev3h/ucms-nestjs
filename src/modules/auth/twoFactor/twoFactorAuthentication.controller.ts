@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   HttpCode,
   Request,
+  Headers,
 } from '@nestjs/common';
 import { TwoFactorAuthenticationService } from './twoFactorAuthentication.service';
 import { Response } from 'express';
@@ -35,6 +36,7 @@ export class TwoFactorAuthenticationController {
     private readonly userService: UserService,
     private readonly authenticationService: AuthService,
     private readonly i18n: I18nService,
+    private authService: AuthService,
   ) {}
 
   @ApiBearerAuth()
@@ -146,7 +148,7 @@ export class TwoFactorAuthenticationController {
     return ResponseUtil.sendSuccessResponse({ data });
   }
 
-  @Post('challenge')
+  @Post('sso/challenge')
   @HttpCode(200)
   // @UseGuards(JwtAuthenticationGuard)
   async challenge(@Body() data, @Res() res) {
@@ -162,5 +164,58 @@ export class TwoFactorAuthenticationController {
     const code = await this.authenticationService.createAuthTempCode(user);
     const dataRes = ResponseUtil.sendSuccessResponse({ data: code });
     return res.status(200).json(dataRes);
+  }
+
+  @Post('challenge')
+  @HttpCode(200)
+  async twoFactorChallenge(
+    @Req() req,
+    @Body() data,
+    @Res() res,
+    @Headers() headers: Headers,
+  ) {
+    const dataVerify = await this.authenticationService.verifyTempCodeNoExpired(
+      data?.tempToken,
+    );
+    const admin = await this.userService.getUserById(dataVerify?.id);
+    this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
+      data?.totpCode,
+      admin,
+    );
+    const fingerprint = req?.fp;
+    const ipAddress = req.connection.remoteAddress;
+    const ua = headers['user-agent'];
+    const deviceId = fingerprint?.id;
+    const os = fingerprint?.userAgent?.os?.family;
+    const browser = fingerprint?.userAgent?.browser?.family;
+    const metaData = { ipAddress, ua, deviceId, os, browser };
+    const result = await this.authService.adminLoginAfterVerifyTwoFactor(
+      admin,
+      metaData,
+    );
+
+    if (result.status_code === 200) {
+      if (result?.requireTwoFactor) {
+        return res.send(result);
+      }
+      const { refresh_token, expired_at, uid } = result;
+      res.cookie('admin_ucms_refresh_token', refresh_token, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+      res.cookie('uid', uid, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+      // res.cookie('device_id_session', device_id_session, {
+      //   httpOnly: true,
+      //   expires: new Date(expired_at),
+      //   sameSite: 'Strict',
+      // });
+    }
+
+    return res.send(result);
   }
 }
