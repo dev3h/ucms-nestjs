@@ -44,12 +44,13 @@ export class DeviceSessionService {
     return crypto.randomBytes(length).toString('hex');
   }
 
-  async logout(userId: number, deviceId: string) {
+  async logout(userId: number, deviceId: string, session_type = 1) {
     const deviceSession: any = await this.deviceSessionRepository
       .createQueryBuilder('deviceSession')
       .leftJoinAndSelect('deviceSession.user', 'user')
       .select(['deviceSession', 'user.id'])
       .where('deviceSession.device_id = :deviceId', { deviceId })
+      .andWhere('deviceSession.session_type = :session_type', { session_type })
       .getOne();
 
     if (!deviceSession || deviceSession.user.id !== userId) {

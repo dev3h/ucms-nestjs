@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import { LoggerService } from './modules/logger/logger.service';
 import { LoggingExceptionFilter } from './common/exceptions/logging.exception';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import * as session from 'express-session';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -105,6 +106,13 @@ async function bootstrap() {
     credentials: true,
     exposedHeaders: ['X-Secret-Code'],
   });
+  app.use(
+    session({
+      secret: configService.get('APP_SECRET'),
+      resave: false,
+      saveUninitialized: false,
+    }),
+  );
 
   const swaggerConfig = new DocumentBuilder()
     .addBearerAuth()

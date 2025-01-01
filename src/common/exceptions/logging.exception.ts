@@ -76,15 +76,17 @@ export class LoggingExceptionFilter implements ExceptionFilter {
       this.loggerService.warning('Warning: Unexpected Issue', logContext);
     }
 
-    response.status(status).json(
-      exception instanceof HttpException ||
-        exception instanceof UnprocessableEntityException
-        ? exception.getResponse()
-        : {
-            status_code: status,
-            message: 'Đã xảy ra lỗi vui lòng thử lại sau',
-            errors: [(exception as Error).stack],
-          },
-    );
+    if (!response.headersSent) {
+      response.status(status).json(
+        exception instanceof HttpException ||
+          exception instanceof UnprocessableEntityException
+          ? exception.getResponse()
+          : {
+              status_code: status,
+              message: 'Đã xảy ra lỗi vui lòng thử lại sau',
+              errors: [(exception as Error).stack],
+            },
+      );
+    }
   }
 }

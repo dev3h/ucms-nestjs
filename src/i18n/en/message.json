@@ -43,5 +43,6 @@
   "Account-not-valid": "Account not valid",
   "phone.invalid": "Phone number is invalid",
   "invalid-otp-code": "Invalid OTP code",
-  "invalid-device": "Invalid device"
+  "invalid-device": "Invalid device",
+  "Setup-2fa-successfully": "Setup 2FA successfully"
 }

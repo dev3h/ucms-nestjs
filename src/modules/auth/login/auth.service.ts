@@ -321,9 +321,11 @@ export class AuthService {
       );
     }
     if (admin.two_factor_enable) {
-      const tempToken = await this.createTempCodeNoExpired(admin);
+      const tempToken = `${admin.id}-${crypto.randomBytes(30).toString('hex')}`;
+      const hashedTempToken = await bcrypt.hash(tempToken, 10);
       return ResponseUtil.sendSuccessResponse({
         tempToken,
+        hashedTempToken,
         requireTwoFactor: true,
       });
     }
@@ -364,14 +366,6 @@ export class AuthService {
   }
 
   async adminLoginAfterVerifyTwoFactor(admin, metaData) {
-    if (admin.two_factor_enable) {
-      const tempToken = await this.createAuthTempCode(admin);
-      return ResponseUtil.sendSuccessResponse({
-        tempToken,
-        requireTwoFactor: true,
-      });
-    }
-
     const passwordExpiryMonths = parseInt(
       this.configService.get<string>('PASSWORD_EXPIRY_MONTHS', '3'),
       10,

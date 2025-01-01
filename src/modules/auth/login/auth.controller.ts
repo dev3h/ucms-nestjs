@@ -25,6 +25,7 @@ import { DeviceSessionService } from '@/modules/device-session/device-session.se
 import ReAuthDto from '../dto/re-auth.dto';
 import { UserService } from '@/modules/user/user.service';
 import { SSOResetPasswordDto } from '../dto/sso-reset-password.dto';
+import * as session from 'express-session';
 
 @Controller('auth')
 export class AuthController {
@@ -124,7 +125,9 @@ export class AuthController {
 
     if (result.status_code === 200) {
       if (result?.requireTwoFactor) {
-        return res.send(result);
+        const { hashedTempToken, ...restResult } = result;
+        req.session.hashedTempToken = hashedTempToken;
+        return res.send(restResult);
       }
       const { refresh_token, expired_at, uid } = result;
       res.cookie('admin_ucms_refresh_token', refresh_token, {

@@ -11,9 +11,9 @@ import {
   HttpCode,
   Request,
   Headers,
+  Response,
 } from '@nestjs/common';
 import { TwoFactorAuthenticationService } from './twoFactorAuthentication.service';
-import { Response } from 'express';
 import JwtAuthenticationGuard from '../guard/jwt-authentication.guard';
 import { TwoFactorAuthenticationCodeDto } from './dto/twoFactorAuthenticationCode.dto';
 import { UserService } from '@/modules/user/user.service';
@@ -51,10 +51,10 @@ export class TwoFactorAuthenticationController {
     example: 'http://localhost:3000',
   })
   // @UseGuards(JwtUserGuard)
-  @Post('generate')
+  @Post('sso/generate')
   @HttpCode(200)
   // @UseGuards(JwtUserGuard)
-  async register(@Body() data, @Res() response: Response, @Request() request) {
+  async register(@Body() data, @Res() response, @Request() request) {
     try {
       const user = await this.authenticationService.verifyConsentToken(
         data?.consent_token,
@@ -62,6 +62,43 @@ export class TwoFactorAuthenticationController {
       const dataGenerate =
         await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(
           user,
+        );
+      const secretCode = dataGenerate?.data?.secret;
+      response.setHeader('X-Secret-Code', secretCode);
+
+      return this.twoFactorAuthenticationService.pipeQrCodeStream(
+        response,
+        dataGenerate?.data?.otpauthUrl,
+      );
+    } catch (err) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        err?.message,
+      );
+    }
+  }
+
+  @Post('admin/generate')
+  @HttpCode(200)
+  // @UseGuards(JwtUserGuard)
+  async adminRegisterTwoFactor(@Body() data, @Res() response, @Req() req) {
+    try {
+      const hashToken = req.session.hashedTempToken;
+      const isTokenValid = await bcrypt.compare(data?.tempToken, hashToken);
+      if (!isTokenValid) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.invalid-token', {
+            lang: 'vi',
+          }),
+        );
+      }
+      const [adminId] = data?.tempToken.split('-');
+      const admin = await this.userService.getUserById(adminId);
+      const dataGenerate =
+        await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(
+          admin,
         );
       const secretCode = dataGenerate?.data?.secret;
       response.setHeader('X-Secret-Code', secretCode);
@@ -114,7 +151,7 @@ export class TwoFactorAuthenticationController {
     description: 'Redirect URI khi login thành công',
     example: 'http://localhost:3000',
   })
-  @Post('authenticate')
+  @Post('sso/authenticate')
   @HttpCode(200)
   // @UseGuards(JwtAuthenticationGuard)
   async authenticate(@Body() data, @Req() request: RequestWithUser) {
@@ -147,6 +184,45 @@ export class TwoFactorAuthenticationController {
     delete data?.totpCode;
     return ResponseUtil.sendSuccessResponse({ data });
   }
+  @Post('admin/authenticate')
+  @HttpCode(200)
+  // @UseGuards(JwtAuthenticationGuard)
+  async adminTwoFactorAuthenticate(@Body() data, @Req() req) {
+    const hashToken = req.session.hashedTempToken;
+    const isTokenValid = await bcrypt.compare(data?.tempToken, hashToken);
+    if (!isTokenValid) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.invalid-token', {
+          lang: 'vi',
+        }),
+      );
+    }
+    const [adminId] = data?.tempToken.split('-');
+    const admin = await this.userService.getUserById(adminId);
+    this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
+      data?.totpCode,
+      admin,
+    );
+    admin.two_factor_confirmed_at = new Date();
+    const backupCodes = [];
+    for (let i = 0; i < 10; i++) {
+      const code = crypto.randomBytes(4).toString('hex');
+      backupCodes.push(code);
+    }
+    // combine all codes to one string and encryption
+    const recoveryCode = backupCodes.join(',');
+    const saltRounds = 10;
+    const hashedRecoveryCode = await bcrypt.hash(recoveryCode, saltRounds);
+    admin.two_factor_recovery_code = hashedRecoveryCode;
+    admin.save();
+    delete data?.totpCode;
+    return ResponseUtil.sendSuccessResponse(
+      null,
+      this.i18n.t('message.Setup-2fa-successfully', {
+        lang: 'vi',
+      }),
+    );
+  }
 
   @Post('sso/challenge')
   @HttpCode(200)
@@ -171,51 +247,68 @@ export class TwoFactorAuthenticationController {
   async twoFactorChallenge(
     @Req() req,
     @Body() data,
-    @Res() res,
+    @Response() res,
     @Headers() headers: Headers,
   ) {
-    const dataVerify = await this.authenticationService.verifyTempCodeNoExpired(
-      data?.tempToken,
-    );
-    const admin = await this.userService.getUserById(dataVerify?.id);
-    this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
-      data?.totpCode,
-      admin,
-    );
-    const fingerprint = req?.fp;
-    const ipAddress = req.connection.remoteAddress;
-    const ua = headers['user-agent'];
-    const deviceId = fingerprint?.id;
-    const os = fingerprint?.userAgent?.os?.family;
-    const browser = fingerprint?.userAgent?.browser?.family;
-    const metaData = { ipAddress, ua, deviceId, os, browser };
-    const result = await this.authService.adminLoginAfterVerifyTwoFactor(
-      admin,
-      metaData,
-    );
-
-    if (result.status_code === 200) {
-      if (result?.requireTwoFactor) {
-        return res.send(result);
+    try {
+      // const dataVerify = await this.authenticationService.verifyTempCodeNoExpired(
+      //   data?.tempToken,
+      // );
+      const hashToken = req.session.hashedTempToken;
+      const isTokenValid = await bcrypt.compare(data?.tempToken, hashToken);
+      if (!isTokenValid) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.invalid-token', {
+            lang: 'vi',
+          }),
+        );
       }
-      const { refresh_token, expired_at, uid } = result;
-      res.cookie('admin_ucms_refresh_token', refresh_token, {
-        httpOnly: true,
-        expires: new Date(expired_at),
-        sameSite: 'Strict',
-      });
-      res.cookie('uid', uid, {
-        httpOnly: true,
-        expires: new Date(expired_at),
-        sameSite: 'Strict',
-      });
-      // res.cookie('device_id_session', device_id_session, {
-      //   httpOnly: true,
-      //   expires: new Date(expired_at),
-      //   sameSite: 'Strict',
-      // });
-    }
+      const [adminId] = data?.tempToken.split('-');
+      const admin = await this.userService.getUserById(adminId);
+      this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
+        data?.totpCode,
+        admin,
+      );
+      const fingerprint = req?.fp;
+      const ipAddress = req.connection.remoteAddress;
+      const ua = headers['user-agent'];
+      const deviceId = fingerprint?.id;
+      const os = fingerprint?.userAgent?.os?.family;
+      const browser = fingerprint?.userAgent?.browser?.family;
+      const metaData = { ipAddress, ua, deviceId, os, browser };
+      const result = await this.authService.adminLoginAfterVerifyTwoFactor(
+        admin,
+        metaData,
+      );
 
-    return res.send(result);
+      if (result.status_code === 200) {
+        const { refresh_token, expired_at, uid } = result;
+        res.cookie('admin_ucms_refresh_token', refresh_token, {
+          httpOnly: true,
+          expires: new Date(expired_at),
+          sameSite: 'Strict',
+        });
+        res.cookie('uid', uid, {
+          httpOnly: true,
+          expires: new Date(expired_at),
+          sameSite: 'Strict',
+        });
+        // res.cookie('device_id_session', device_id_session, {
+        //   httpOnly: true,
+        //   expires: new Date(expired_at),
+        //   sameSite: 'Strict',
+        // });
+        return res.status(200).send(result);
+      }
+
+      return res.send(result);
+    } catch (err) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        err?.message,
+      );
+    }
   }
 }

@@ -43,5 +43,6 @@
     "Account-not-valid": "Tài khoản không hợp lệ",
     "phone.invalid": "Số điện thoại không hợp lệ",
     "invalid-otp-code": "Mã OTP không hợp lệ",
-    "invalid-device": "Thiết bị không hợp lệ"
+    "invalid-device": "Thiết bị không hợp lệ",
+    "Setup-2fa-successfully": "Cài đặt 2FA thành công"
 }
