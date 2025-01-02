@@ -40,7 +40,7 @@ export class LoggingExceptionFilter implements ExceptionFilter {
     const ip = publicIp || localIp;
     const geo = geoip.lookup(ip);
     const logContext = {
-      ip_address: request.ip,
+      ip_address: ip,
       user_agent: request.get('user-agent') || '',
       module: host.getType() || 'HTTP',
       function_name: 'ExceptionFilter',

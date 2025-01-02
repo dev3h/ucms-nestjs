@@ -13,6 +13,8 @@ import { LoggerService } from './modules/logger/logger.service';
 import { LoggingExceptionFilter } from './common/exceptions/logging.exception';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import * as session from 'express-session';
+import * as csurf from 'csurf';
+import { NextFunction } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -111,8 +113,20 @@ async function bootstrap() {
       secret: configService.get('APP_SECRET'),
       resave: false,
       saveUninitialized: false,
+      cookie: {
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      },
     }),
   );
+  // function csrfExclude(req, res: Response, next: NextFunction) {
+  //   const csrfExcludedRoutes = ['/api/v1/auth/sso-ucms/get-token']; // Danh sách các route cần bỏ qua CSRF
+  //   if (csrfExcludedRoutes.includes(req.path)) {
+  //     return next();
+  //   }
+  //   return csurf({ cookie: true })(req, res, next);
+  // }
+
+  // app.use(csrfExclude);
 
   const swaggerConfig = new DocumentBuilder()
     .addBearerAuth()

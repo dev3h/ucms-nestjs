@@ -303,12 +303,7 @@ export class TwoFactorAuthenticationController {
 
       return res.send(result);
     } catch (err) {
-      return ResponseUtil.sendErrorResponse(
-        this.i18n.t('message.Something-went-wrong', {
-          lang: 'vi',
-        }),
-        err?.message,
-      );
+      throw err;
     }
   }
 }

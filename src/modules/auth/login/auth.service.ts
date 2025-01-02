@@ -315,10 +315,20 @@ export class AuthService {
   async adminLogin(data, metaData) {
     const admin = await this.validateUserCreds(data.email, data.password);
     if (admin.type !== UserTypeEnum.ADMIN) {
-      return ResponseUtil.sendErrorResponse(
-        this.i18n.t('message.not-admin-account'),
-        'NOT_ADMIN_ACCOUNT',
-      );
+      throw new UnprocessableEntityException({
+        errors: {
+          email: [
+            this.i18n.t('message.Account-not-valid', {
+              lang: 'vi',
+            }),
+          ],
+        },
+        message: this.i18n.t('message.Account-not-valid', {
+          lang: 'vi',
+        }),
+        error: 'Unprocessable Entity',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
     }
     if (admin.two_factor_enable) {
       const tempToken = `${admin.id}-${crypto.randomBytes(30).toString('hex')}`;
@@ -523,12 +533,20 @@ export class AuthService {
       },
     });
     if (!user) {
-      return ResponseUtil.sendErrorResponse(
-        this.i18n.t('message.Account-not-valid', {
+      throw new UnprocessableEntityException({
+        errors: {
+          email: [
+            this.i18n.t('message.Account-not-valid', {
+              lang: 'vi',
+            }),
+          ],
+        },
+        message: this.i18n.t('message.Account-not-valid', {
           lang: 'vi',
         }),
-        'NOT_FOUND',
-      );
+        error: 'Unprocessable Entity',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
     }
     const sessionToken = this.createSession(user);
     return ResponseUtil.sendSuccessResponse({
@@ -1149,7 +1167,6 @@ export class AuthService {
           password_updated_at: new Date(),
         },
       );
-      this.verifySession(query?.session_token);
       const consentToken = this.createConsentToken(user);
 
       await queryRunner.commitTransaction();

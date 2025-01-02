@@ -333,6 +333,32 @@ export class SystemService extends BaseService<System> {
     }
   }
 
+  async getSystemsByClientId(data) {
+    try {
+      const system = await this.systemsRepository.findOne({
+        where: { client_id: data.clientId },
+      });
+
+      if (!system) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+      const sysName = system?.name;
+      return ResponseUtil.sendSuccessResponse({ data: sysName });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
   update(id: number, body) {
     try {
       const system = this.systemsRepository.findOne({

@@ -26,6 +26,7 @@ import ReAuthDto from '../dto/re-auth.dto';
 import { UserService } from '@/modules/user/user.service';
 import { SSOResetPasswordDto } from '../dto/sso-reset-password.dto';
 import * as session from 'express-session';
+import { SystemService } from '@/modules/system/system.service';
 
 @Controller('auth')
 export class AuthController {
@@ -33,6 +34,7 @@ export class AuthController {
     private authService: AuthService,
     private deviceSessionService: DeviceSessionService,
     private readonly userService: UserService,
+    private readonly systemService: SystemService,
   ) {}
 
   // @ApiTags('Auth')
@@ -329,6 +331,13 @@ export class AuthController {
     const response = await this.authService.loginWithUCSM(data, query);
     const dataRes = ResponseUtil.sendSuccessResponse(response);
     return res.status(200).json(dataRes);
+  }
+
+  @ApiTags('Auth Redirect UCMS')
+  @Post('sso-ucms/get-system-name')
+  @HttpCode(200)
+  async getSystemName(@Body() data) {
+    return await this.systemService.getSystemsByClientId(data);
   }
 
   @ApiTags('Auth Redirect UCMS')

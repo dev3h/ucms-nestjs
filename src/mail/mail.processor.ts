@@ -37,4 +37,14 @@ export class MailProcessor {
     await this.mailService.sendSSOResetPasswordMail(dataSend);
     this.logger.log(`Completed job ${job.id}`);
   }
+
+  @Process('sendReset2FAMail')
+  async handleSendReset2FAMail(job: Job) {
+    this.logger.log(
+      `Processing job ${job.id} with data: ${JSON.stringify(job.data)}`,
+    );
+    const dataSend = job.data;
+    await this.mailService.sendReset2FAMail(dataSend);
+    this.logger.log(`Completed job ${job.id}`);
+  }
 }

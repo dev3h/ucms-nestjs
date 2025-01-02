@@ -1,12 +1,11 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Get, Req, Res } from '@nestjs/common';
+import { Request } from 'express';
 
-@Controller()
+@Controller('csrf')
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  @Get('token')
+  getCsrfToken(@Req() request: Request, @Res() response) {
+    const csrfToken = request.csrfToken();
+    return response.json({ csrfToken });
   }
 }

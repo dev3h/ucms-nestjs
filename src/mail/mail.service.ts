@@ -70,6 +70,20 @@ export class MailService {
       return ResponseUtil.sendErrorResponse('Failed to send email', error);
     }
   }
+  async sendReset2FAMail(data: any) {
+    try {
+      await this.mailerService.sendMail({
+        to: data.email,
+        subject: 'Reset 2FA Mail',
+        template: 'reset-2fa-mail',
+        context: data,
+      });
+      this.logger.log(`Email sent to ${data.email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${data.email}`, error.stack);
+      return ResponseUtil.sendErrorResponse('Failed to send email', error);
+    }
+  }
   async addSendMailJob(data) {
     this.logger.log(`Adding job to queue with data: ${JSON.stringify(data)}`);
     await this.mailQueue.add('sendMail', data);
@@ -81,5 +95,9 @@ export class MailService {
   async addSendSSOResetPasswordMailJob(data) {
     this.logger.log(`Adding job to queue with data: ${JSON.stringify(data)}`);
     await this.mailQueue.add('sendSSOResetPasswordMail', data);
+  }
+  async addSendReset2FAMailJob(data) {
+    this.logger.log(`Adding job to queue with data: ${JSON.stringify(data)}`);
+    await this.mailQueue.add('sendReset2FAMail', data);
   }
 }
