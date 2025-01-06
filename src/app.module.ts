@@ -58,6 +58,8 @@ import { RoleController } from './modules/role/role.controller';
 import { UserController } from './modules/user/user.controller';
 import { PermissionController } from './modules/permission/permission.controller';
 import { LoggerModule } from './modules/logger/logger.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { DashboardController } from './modules/dashboard/dashboard.controller';
 
 @Module({
   imports: [
@@ -127,6 +129,7 @@ import { LoggerModule } from './modules/logger/logger.module';
     DeviceLoginHistoryModule,
     DeviceSessionModule,
     LoggerModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
@@ -157,6 +160,7 @@ export class AppModule implements NestModule {
         ActionController,
         RoleController,
         PermissionController,
+        DashboardController,
       );
   }
 }
