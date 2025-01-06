@@ -11,7 +11,12 @@ import {
   Param,
   Headers,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginRequestDto } from '../dto/login.dto';
 import { EmailRequestDto } from '../dto/email.dto';
@@ -199,6 +204,7 @@ export class AuthController {
     return this.authService.updatePassword(data);
   }
 
+  @ApiBearerAuth()
   @ApiTags('Auth')
   @Get('/admin/me')
   async getAdmin(@Req() req) {
@@ -214,6 +220,7 @@ export class AuthController {
     return this.userService.findOne(payload?.id);
   }
 
+  @ApiBearerAuth()
   @ApiTags('Auth')
   @Post('admin/logout')
   async logout(@Req() req, @Response() res) {
@@ -293,12 +300,16 @@ export class AuthController {
     @Query('client_id') clientId: string,
     @Query('redirect_uri') redirectUri: string,
     @Res() res,
+    @Req() req,
   ) {
     const query = {
       client_id: clientId,
       redirect_uri: redirectUri,
     };
     const response = await this.authService.checkEmailExist(data.email, query);
+    const sessionToken = response?.data?.sessionToken;
+    req.session.sessionToken = sessionToken;
+    delete response.data.sessionToken;
     const resData = ResponseUtil.sendSuccessResponse(response);
     return res.status(200).json(resData);
   }
@@ -322,13 +333,18 @@ export class AuthController {
     @Query('redirect_uri') redirectUri: string,
     @Query('session_token') sessionToken: string,
     @Response() res,
+    @Req() req,
   ) {
+    const session_token = req.session?.sessionToken;
     const query = {
       client_id: clientId,
       redirect_uri: redirectUri,
-      session_token: sessionToken,
+      session_token,
     };
     const response = await this.authService.loginWithUCSM(data, query);
+    const consentToken = response?.data?.consentToken;
+    req.session.consentToken = consentToken;
+    delete response.data.consentToken;
     const dataRes = ResponseUtil.sendSuccessResponse(response);
     return res.status(200).json(dataRes);
   }
@@ -350,7 +366,8 @@ export class AuthController {
     // }
     const fingerprint = req?.fp;
     data.device_id = fingerprint?.id;
-
+    const consentToken = req.session?.consentToken;
+    data.consent_token = consentToken;
     const result = await this.authService.confirmSSO_UCMS(data);
     if (result.status_code === 200) {
       const { device_id: deviceId } = result.data;
@@ -401,6 +418,7 @@ export class AuthController {
     return res.send(result);
   }
 
+  @ApiBearerAuth()
   @ApiTags('Auth Redirect UCMS')
   @Post('sso-ucms/me')
   async meSSO_UCMS(

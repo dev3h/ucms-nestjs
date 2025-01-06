@@ -56,17 +56,6 @@ export class UserService {
     private readonly mailService: MailService,
   ) {}
 
-  async doUserRegistration(
-    userRegister: UserRegisterRequestDto,
-  ): Promise<User> {
-    const user = new User();
-    user.name = userRegister.name;
-    user.email = userRegister.email;
-    user.password = userRegister.password;
-
-    return await user.save();
-  }
-
   async getUserByEmail(email: string): Promise<User | undefined> {
     return User.findOne({ where: { email } });
   }
@@ -521,8 +510,13 @@ export class UserService {
           'subsystems.modules.actions',
         ],
       });
+      const filteredSystems = allSystems?.filter((system) =>
+        system?.subsystems?.some((subsystem) =>
+          subsystem?.modules?.some((module) => module?.actions?.length > 0),
+        ),
+      );
 
-      const permissionTree = SystemDetailDto.mapFromEntities(allSystems);
+      const permissionTree = SystemDetailDto.mapFromEntities(filteredSystems);
 
       // 4. Kiểm tra và set grant cho mỗi permission dựa trên direct, ignored, và role permissions
       const rolePermissions = new Set(

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -32,56 +33,51 @@ export class UserController {
     private readonly deviceSessionService: DeviceSessionService,
   ) {}
 
-  @Post('/register')
-  @ApiCreatedResponse({
-    description: 'Created user object as response',
-    type: User,
-  })
-  @ApiBadRequestResponse({ description: 'User cannot register. Try again!' })
-  async doUserRegistration(
-    @Body(SETTINGS.VALIDATION_PIPE)
-    userRegister: UserRegisterRequestDto,
-  ): Promise<User> {
-    return await this.userService.doUserRegistration(userRegister);
-  }
-
+  @ApiBearerAuth()
   @Post()
   @HttpCode(200)
   create(@Body() body: CreateUserDto) {
     return this.userService.store(body);
   }
 
+  @ApiBearerAuth()
   @Get()
   findAll(@Req() request: Request) {
     return this.userService.findAll(request);
   }
 
+  @ApiBearerAuth()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.findOne(+id);
   }
 
+  @ApiBearerAuth()
   @Put(':id')
   @HttpCode(200)
   update(@Param('id') id: string, @Body() body: UpdateUserDto) {
     return this.userService.update(+id, body);
   }
 
+  @ApiBearerAuth()
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
   }
 
+  @ApiBearerAuth()
   @Get(':id/all-permissions')
   getAllPermissions(@Param('id') id: string, @Req() request: Request) {
     return this.userService.getAllPermissionsOfUser(+id, request);
   }
 
+  @ApiBearerAuth()
   @Get(':id/user-permissions')
   getUserPermissions(@Param('id') id: string, @Req() request: Request) {
     return this.userService.getPermissionsOfUser(+id, request);
   }
 
+  @ApiBearerAuth()
   @Get(':id/rest-available-permissions')
   getRestAvailablePermissions(
     @Param('id') id: string,
@@ -89,16 +85,19 @@ export class UserController {
   ) {
     return this.userService.getAvailablePermissionsForUser(+id);
   }
+  @ApiBearerAuth()
   @Get(':id/rest-permissions')
   getRestPermissions(@Param('id') id: string, @Req() request: Request) {
     return this.userService.getPermissionsForUser(+id);
   }
 
+  @ApiBearerAuth()
   @Get(':id/role-permissions')
   async getPermissionsFromUserRoles(@Param('id') id: string) {
     return await this.userService.getPermissionsFromUserRoles(+id);
   }
 
+  @ApiBearerAuth()
   @Post(':id/add-permissions')
   @HttpCode(200)
   async addPermissionsToUser(@Param('id') userId: number, @Body() body) {
@@ -106,6 +105,7 @@ export class UserController {
     return await this.userService.addPermissionsToUser(userId, permissionIds);
   }
 
+  @ApiBearerAuth()
   @Post(':id/ignore-permissions')
   @HttpCode(200)
   async ignorePermissions(@Param('id') userId: number, @Body() body) {
@@ -118,17 +118,20 @@ export class UserController {
     );
   }
 
+  @ApiBearerAuth()
   @Post(':id/update-permission')
   @HttpCode(200)
   async updatePermission(@Param('id') userId: number, @Body() body) {
     return await this.userService.updatePermission(userId, body);
   }
 
+  @ApiBearerAuth()
   @Get(':id/device-session')
   async getDeviceSession(@Param('id') userId: number) {
     return await this.userService.getDeviceSessions(userId);
   }
 
+  @ApiBearerAuth()
   @Post(':id/device-session/:deviceId/logout')
   async logoutDeviceSession(
     @Param('id') userId: number,

@@ -54,11 +54,16 @@ export class TwoFactorAuthenticationController {
   @Post('sso/generate')
   @HttpCode(200)
   // @UseGuards(JwtUserGuard)
-  async register(@Body() data, @Res() response, @Request() request) {
+  async register(
+    @Body() data,
+    @Res() response,
+    @Request() request,
+    @Req() req,
+  ) {
     try {
-      const user = await this.authenticationService.verifyConsentToken(
-        data?.consent_token,
-      );
+      const consentToken = req.session.consentToken;
+      const user =
+        await this.authenticationService.verifyConsentToken(consentToken);
       const dataGenerate =
         await this.twoFactorAuthenticationService.generateTwoFactorAuthenticationSecret(
           user,
@@ -127,20 +132,19 @@ export class TwoFactorAuthenticationController {
     description: 'Redirect URI khi login thành công',
     example: 'http://localhost:3000',
   })
-  @Post('turn-on')
-  @HttpCode(200)
-  @UseGuards(JwtAuthenticationGuard)
-  async turnOnTwoFactorAuthentication(
-    @Req() request: RequestWithUser,
-    @Body() { twoFactorAuthenticationCode }: TwoFactorAuthenticationCodeDto,
-  ) {
-    this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
-      twoFactorAuthenticationCode,
-      request.user,
-    );
-    await this.userService.turnOnTwoFactorAuthentication(request.user.id);
-  }
-
+  // @Post('turn-on')
+  // @HttpCode(200)
+  // @UseGuards(JwtAuthenticationGuard)
+  // async turnOnTwoFactorAuthentication(
+  //   @Req() request: RequestWithUser,
+  //   @Body() { twoFactorAuthenticationCode }: TwoFactorAuthenticationCodeDto,
+  // ) {
+  //   this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
+  //     twoFactorAuthenticationCode,
+  //     request.user,
+  //   );
+  //   await this.userService.turnOnTwoFactorAuthentication(request.user.id);
+  // }
   @ApiQuery({
     name: 'client_id',
     description: 'Client ID của hệ thống',
@@ -154,10 +158,15 @@ export class TwoFactorAuthenticationController {
   @Post('sso/authenticate')
   @HttpCode(200)
   // @UseGuards(JwtAuthenticationGuard)
-  async authenticate(@Body() data, @Req() request: RequestWithUser) {
-    const dataVerify = await this.authenticationService.verifyConsentToken(
-      data?.consent_token,
-    );
+  async authenticate(
+    @Body() data,
+    @Req() request: RequestWithUser,
+    @Req() req,
+  ) {
+    const consentToken = req.session.consentToken;
+
+    const dataVerify =
+      await this.authenticationService.verifyConsentToken(consentToken);
     if (!dataVerify) {
       return ResponseUtil.sendErrorResponse(
         'Invalid consent token',
@@ -227,10 +236,10 @@ export class TwoFactorAuthenticationController {
   @Post('sso/challenge')
   @HttpCode(200)
   // @UseGuards(JwtAuthenticationGuard)
-  async challenge(@Body() data, @Res() res) {
-    const dataVerify = await this.authenticationService.verifyConsentToken(
-      data?.consent_token,
-    );
+  async challenge(@Body() data, @Res() res, @Req() req) {
+    const consentToken = req.session.consentToken;
+    const dataVerify =
+      await this.authenticationService.verifyConsentToken(consentToken);
 
     const user = await this.userService.getUserById(dataVerify?.id);
     this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(

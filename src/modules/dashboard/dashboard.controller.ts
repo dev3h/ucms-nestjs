@@ -10,7 +10,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 
 @ApiTags('Dashboard')
@@ -18,6 +18,7 @@ import { DashboardService } from './dashboard.service';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
+  @ApiBearerAuth()
   @Get('get-statistic')
   getStatisticData(@Req() request: Request) {
     return this.dashboardService.getStatistic(request);

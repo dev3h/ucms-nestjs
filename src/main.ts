@@ -13,8 +13,8 @@ import { LoggerService } from './modules/logger/logger.service';
 import { LoggingExceptionFilter } from './common/exceptions/logging.exception';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import * as session from 'express-session';
-import * as csurf from 'csurf';
-import { NextFunction } from 'express';
+// import * as csurf from 'csurf';
+// import { NextFunction } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -127,6 +127,11 @@ async function bootstrap() {
   // }
 
   // app.use(csrfExclude);
+  // app.use(function (req, res, next) {
+  //   res.cookie('XSRF-TOKEN', req.csrfToken());
+  //   res.locals._csrf = req.csrfToken();
+  //   next();
+  // });
 
   const swaggerConfig = new DocumentBuilder()
     .addBearerAuth()
@@ -145,6 +150,7 @@ async function bootstrap() {
     .addTag('Permission Management', 'Quản lý quyền')
     .addTag('User Management', 'Quản lý người dùng')
     .addTag('Log Management', 'Quản lý log hệ thống')
+    .addTag('Dashboard', 'Dashboard')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);

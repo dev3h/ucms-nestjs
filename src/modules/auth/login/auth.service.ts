@@ -611,7 +611,6 @@ export class AuthService {
       data: {
         consentToken,
         email: dataSession.email,
-        system_name: system?.data?.name,
         ...query,
         two_factor: {
           enable: user.two_factor_enable,

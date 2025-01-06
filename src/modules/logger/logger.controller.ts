@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Delete, Req, Query } from '@nestjs/common';
 import { Request } from 'express';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { LoggerService } from './logger.service';
 
 @ApiTags('Log Management')
@@ -8,16 +8,19 @@ import { LoggerService } from './logger.service';
 export class LogController {
   constructor(private readonly logService: LoggerService) {}
 
+  @ApiBearerAuth()
   @Get()
   findAll(@Req() request: Request) {
     return this.logService.findAll(request);
   }
 
+  @ApiBearerAuth()
   @Get('date-times-logs')
   getDateTimeLogs() {
     return this.logService.getDateTimeLogs();
   }
 
+  @ApiBearerAuth()
   @Get('chart-data')
   @ApiQuery({
     name: 'range',
@@ -34,6 +37,7 @@ export class LogController {
     return this.logService.getChartData(range, startDate, endDate);
   }
 
+  @ApiBearerAuth()
   @Delete(':date')
   async deleteLog(@Param('date') date: string) {
     return this.logService.remove(date);
