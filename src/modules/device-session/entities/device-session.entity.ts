@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
 } from 'typeorm';
+import * as geoip from 'geoip-lite';
 
 @Entity('device_sessions')
 export class DeviceSession {
@@ -85,4 +86,10 @@ export class DeviceSession {
   @ApiProperty({ description: 'When data was deleted' })
   @DeleteDateColumn()
   deleted_at?: Date;
+
+  @ApiProperty({ description: 'Geo Info' })
+  get geo_location() {
+    const geo = geoip.lookup(this.ip_address);
+    return geo || { location: 'Unknown location' };
+  }
 }

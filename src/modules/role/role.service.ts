@@ -3,7 +3,7 @@ import { Request } from 'express';
 import { ResponseUtil } from '@/utils/response-util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Role } from './entities/role.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Permission } from '../permission/entities/permission.entity';
 import { RestPermissionDto } from './dto/rest-permission.dto';
 import { System } from '../system/entities/system.entity';
@@ -13,6 +13,8 @@ import { RoleFilter } from './filters/role.filter';
 import { BaseService } from '@/share/base-service/base.service';
 import { I18nService } from 'nestjs-i18n';
 import { SystemDetailDto } from '../system/dto/system-detail.dto';
+import { User } from '../user/user.entity';
+import { UserDto } from '../user/dto/user.dto';
 
 @Injectable()
 export class RoleService extends BaseService<Role> {
@@ -25,6 +27,8 @@ export class RoleService extends BaseService<Role> {
     @InjectRepository(System)
     private readonly systemRepository: Repository<System>,
     private readonly roleFilter: RoleFilter,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {
     super(roleRepository);
   }
@@ -384,6 +388,101 @@ export class RoleService extends BaseService<Role> {
         );
       }
       return ResponseUtil.sendSuccessResponse({ data: role.users });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getAllUserOfRole(roleId: number, request: Request) {
+    try {
+      const query = this.userRepository
+        .createQueryBuilder('user')
+        .innerJoinAndSelect('user.roles', 'roles')
+        .where('roles.id = :roleId', { roleId });
+
+      const page = parseInt(request.query.page as string, 10) || 1;
+      const limit = parseInt(request.query.limit as string, 10) || 10;
+      const baseUrl = `${request.protocol}://${request.get('host')}${request.baseUrl}`;
+      const paginationResult = await paginate(query, page, limit, baseUrl);
+
+      const formattedData = UserDto.mapFromEntities(paginationResult.data);
+
+      return ResponseUtil.sendSuccessResponse({
+        data: formattedData,
+        meta: paginationResult.meta,
+      });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async getRestUsersOfRole(roleId: number, request: Request) {
+    try {
+      const role = await this.roleRepository.findOne({
+        where: { id: roleId },
+        relations: ['users'],
+      });
+      if (!role) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      const users = await this.userRepository.find();
+      const restUsers = users.filter((user) => {
+        return !role.users.find((u) => u.id === user.id);
+      });
+      const formattedData = UserDto.mapFromEntities(restUsers);
+      return ResponseUtil.sendSuccessResponse({
+        data: formattedData,
+      });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async addUsersToRole(roleId: number, userIds: number[]) {
+    try {
+      const role = await this.roleRepository.findOne({
+        where: { id: roleId },
+        relations: ['users'],
+      });
+      if (!role) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+      const users = await this.userRepository.findBy({
+        id: In(userIds),
+      });
+      role.users = [...role.users, ...users];
+      await this.roleRepository.save(role);
+
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {

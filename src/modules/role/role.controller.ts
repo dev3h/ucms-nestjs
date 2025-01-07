@@ -56,6 +56,23 @@ export class RoleController {
   }
 
   @ApiBearerAuth()
+  @Get(':id/users')
+  getModules(@Param('id') id: string, @Req() request: Request) {
+    return this.roleService.getAllUserOfRole(+id, request);
+  }
+
+  @ApiBearerAuth()
+  @Get(':id/rest-users')
+  getRestUsers(@Param('id') id: string, @Req() request: Request) {
+    return this.roleService.getRestUsersOfRole(+id, request);
+  }
+  @ApiBearerAuth()
+  @Post(':id/add-users')
+  addUsers(@Param('id') id: string, @Body() users) {
+    return this.roleService.addUsersToRole(+id, users);
+  }
+
+  @ApiBearerAuth()
   @Get(':id/role-permissions')
   async getPermissionOfRole(@Param('id') id: string, @Req() request: Request) {
     return this.roleService.getPermissionsOfRole(+id);

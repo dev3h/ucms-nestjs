@@ -173,7 +173,12 @@ export class UserService {
         return ResponseUtil.sendErrorResponse('User not found');
       }
 
-      return ResponseUtil.sendSuccessResponse({ data: user.deviceSessions });
+      return ResponseUtil.sendSuccessResponse({
+        data: user.deviceSessions.map((session) => ({
+          ...session,
+          geo_location: session.geo_location,
+        })),
+      });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {

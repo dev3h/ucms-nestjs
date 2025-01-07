@@ -6,9 +6,10 @@ import { Role } from './entities/role.entity';
 import { Permission } from '../permission/entities/permission.entity';
 import { System } from '../system/entities/system.entity';
 import { RoleFilter } from './filters/role.filter';
+import { User } from '../user/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Role, Permission, System])],
+  imports: [TypeOrmModule.forFeature([Role, Permission, System, User])],
   controllers: [RoleController],
   providers: [
     RoleService,

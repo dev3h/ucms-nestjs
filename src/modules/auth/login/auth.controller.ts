@@ -32,6 +32,7 @@ import { UserService } from '@/modules/user/user.service';
 import { SSOResetPasswordDto } from '../dto/sso-reset-password.dto';
 import * as session from 'express-session';
 import { SystemService } from '@/modules/system/system.service';
+import { UAParser } from 'ua-parser-js';
 
 @Controller('auth')
 export class AuthController {
@@ -123,10 +124,12 @@ export class AuthController {
   ) {
     const fingerprint = req?.fp;
     const ipAddress = req.connection.remoteAddress;
-    const ua = headers['user-agent'];
+    const uaParser = UAParser(headers['user-agent']);
     const deviceId = fingerprint?.id;
-    const os = fingerprint?.userAgent?.os?.family;
-    const browser = fingerprint?.userAgent?.browser?.family;
+    const os = uaParser?.os?.name ?? fingerprint?.userAgent?.os?.family;
+    const browser =
+      uaParser?.browser?.name ?? fingerprint?.userAgent?.browser?.family;
+    const ua = uaParser?.ua ?? headers['user-agent'];
     const metaData = { ipAddress, ua, deviceId, os, browser };
     const result = await this.authService.adminLogin(data, metaData);
 

@@ -20,6 +20,8 @@ import { JwtStrategy } from '../auth/guard/jwt.strategy';
 import { DeviceTypeEnum } from './enums/device-type.enum';
 import { ResponseUtil } from '@/utils/response-util';
 import { I18nService } from 'nestjs-i18n';
+import * as geoip from 'geoip-lite';
+
 const EXP_SESSION = 7; // 1 week
 export interface LoginRespionse {
   token: string;
@@ -122,6 +124,17 @@ export class DeviceSessionService {
     return ResponseUtil.sendSuccessResponse({ ...dataRes });
   }
 
+  async getClientIp() {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      return data.ip || 'Unknown IP';
+    } catch (error) {
+      console.error('Failed to fetch public IP:', error.message);
+      return 'Unknown IP';
+    }
+  }
+
   async handleDeviceSession(
     userId,
     metaData: any,
@@ -143,6 +156,9 @@ export class DeviceSessionService {
       crypto.randomBytes(64).toString('hex'),
     ];
 
+    const publicIp = await this.getClientIp(); // Fetch public IP asynchronously
+    const ip = publicIp || metaData.ipAddress;
+
     // Detect device type and prepare session data
     const sessionData = {
       user: userId,
@@ -150,7 +166,7 @@ export class DeviceSessionService {
       refresh_token: refreshToken,
       expired_at: expiredAt,
       device_id: deviceId,
-      ip_address: metaData.ipAddress,
+      ip_address: ip,
       ua: metaData.ua,
       name: metaData.deviceId, // This could be a name or ID
       os: metaData.os,

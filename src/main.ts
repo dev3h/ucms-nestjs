@@ -13,6 +13,7 @@ import { LoggerService } from './modules/logger/logger.service';
 import { LoggingExceptionFilter } from './common/exceptions/logging.exception';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import * as session from 'express-session';
+import helmet from 'helmet';
 // import * as csurf from 'csurf';
 // import { NextFunction } from 'express';
 
@@ -65,6 +66,7 @@ async function bootstrap() {
     }),
   );
   app.use(cookieParser());
+  app.use(helmet());
   app.setGlobalPrefix('api/v1');
   const configService = app.get(ConfigService);
   const systemRepository = app.get<Repository<System>>(
