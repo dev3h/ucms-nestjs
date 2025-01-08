@@ -139,7 +139,14 @@ export class AuthService {
   // Xác thực token từ Redis, kiểm tra nếu bị blacklist
   async verifyToken(data) {
     try {
-      const { token, deviceId, sessionType = 1, uid = null } = data;
+      const {
+        token,
+        deviceId,
+        sessionType = 1,
+        uid = null,
+        browser = null,
+        os = null,
+      } = data;
       const isBlacklisted = await this.redisService?.isTokenBlacklisted(token);
       if (isBlacklisted) {
         return ResponseUtil.sendErrorResponse(
@@ -157,6 +164,8 @@ export class AuthService {
           device_id: deviceId,
           session_type: sessionType,
           user: { id: Number(userId) },
+          browser,
+          os,
         },
       });
       if (!deviceSession) {
@@ -700,6 +709,17 @@ export class AuthService {
         where: { email: data?.email, type: UserTypeEnum.USER },
       });
       const authTempCode = await this.createAuthTempCode(user);
+      // const url = 'http://localhost:8123/api/auth-code';
+      // await fetch(url, {
+      //   method: 'POST',
+      //   body: JSON.stringify({
+      //     authTempCode,
+      //     client_id: data?.client_id,
+      //     client_secret: data?.client_secret,
+      //     redirect_uri: data?.redirect_uri,
+      //   }),
+      //   headers: { 'Content-Type': 'application/json' },
+      // });
       return ResponseUtil.sendSuccessResponse({ data: authTempCode });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
@@ -728,6 +748,7 @@ export class AuthService {
       const dataVerify = await this.verifyConsentToken(data?.consent_token);
       const user = await this.userService.getUserById(dataVerify?.id);
       const authTempCode = await this.createAuthTempCode(user);
+
       const device = await this.deviceLoginHistoryRepository.findOne({
         where: {
           device_identifier: data?.device_id,
@@ -843,6 +864,11 @@ export class AuthService {
       const user = await this.userRepository.findOne({
         where: { id: dataVerify.id },
       });
+      await this.getPermissionsForSystem(
+        user.id,
+        data.client_id,
+        data.client_secret,
+      );
 
       // const rolePermissions = user.roles.flatMap((role) => role.permissions);
       // const directPermissions = user.userHasPermissions
@@ -968,6 +994,14 @@ export class AuthService {
         code: permission.code,
         description: permission.description,
       }));
+    if (filteredPermissions.length === 0) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.no-permission', {
+          lang: 'vi',
+        }),
+        'NO_PERMISSIONS',
+      );
+    }
 
     const permissionHierarchy = {};
 

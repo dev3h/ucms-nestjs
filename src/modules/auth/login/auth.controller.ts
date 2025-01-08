@@ -210,15 +210,21 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiTags('Auth')
   @Get('/admin/me')
-  async getAdmin(@Req() req) {
-    const token = req.headers.authorization?.split(' ')?.[1];
+  async getAdmin(@Req() req, @Headers() headers: Headers) {
     const fingerprint = req?.fp;
+    const uaParser = UAParser(headers['user-agent']);
+    const browser =
+      uaParser?.browser?.name ?? fingerprint?.userAgent?.browser?.family;
+    const os = uaParser?.os?.name ?? fingerprint?.userAgent?.os?.family;
+    const token = req.headers.authorization?.split(' ')?.[1];
     const deviceId = fingerprint?.id;
     const uid = req.cookies?.uid;
     const payload = await this.authService.verifyToken({
       token,
       deviceId,
       uid,
+      browser,
+      os
     });
     return this.userService.findOne(payload?.id);
   }

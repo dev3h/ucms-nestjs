@@ -141,10 +141,17 @@ export class DeviceSessionService {
     system: any = null,
   ): Promise<LoginRespionse> {
     const { deviceId } = metaData;
+    const deviceType = this.detectOSFamily(metaData.os);
+    const browser = metaData.browser;
 
     // Check for existing device session by userId and deviceId
     let deviceSession = await this.deviceSessionRepository.findOne({
-      where: { user: { id: userId }, device_id: deviceId },
+      where: {
+        user: { id: userId },
+        device_id: deviceId,
+        device_type: deviceType,
+        browser,
+      },
     });
 
     // Generate session details
@@ -170,7 +177,7 @@ export class DeviceSessionService {
       ua: metaData.ua,
       name: metaData.deviceId, // This could be a name or ID
       os: metaData.os,
-      browser: metaData.browser,
+      browser,
       device_type: this.detectOSFamily(metaData.os),
       session_type: system ? 2 : undefined,
     };

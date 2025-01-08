@@ -44,5 +44,7 @@
   "phone.invalid": "Phone number is invalid",
   "invalid-otp-code": "Invalid OTP code",
   "invalid-device": "Invalid device",
-  "Setup-2fa-successfully": "Setup 2FA successfully"
+  "Setup-2fa-successfully": "Setup 2FA successfully",
+  "no-permission": "You do not have permission to access this page",
+  "Invalid-auth-temp-code": "Invalid temporary authentication code"
 }

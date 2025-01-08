@@ -3,10 +3,10 @@ import { UserService } from '@/modules/user/user.service';
 import {
   Injectable,
   NestMiddleware,
-  Req,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import { UAParser } from 'ua-parser-js';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
@@ -15,9 +15,12 @@ export class AuthMiddleware implements NestMiddleware {
     private readonly userService: UserService,
   ) {}
 
-  async use(@Req() req, res: Response, next: NextFunction) {
+  async use(req: Request, res: Response, next: NextFunction) {
     try {
       // Lấy token từ header Authorization
+      const uaParser = new UAParser(req.headers['user-agent']);
+      const browser = uaParser.getBrowser().name;
+      const os = uaParser.getOS().name;
       const token = req.headers.authorization?.split(' ')?.[1];
       if (!token) {
         throw new UnauthorizedException('Token is missing');
@@ -35,6 +38,8 @@ export class AuthMiddleware implements NestMiddleware {
         token,
         deviceId,
         uid,
+        browser,
+        os,
       });
       if (!payload) {
         throw new UnauthorizedException('Invalid token');
