@@ -163,14 +163,21 @@ export class AuthController {
   @ApiTags('Auth')
   @Post('admin/refresh-token')
   @HttpCode(200)
-  async reAuth(@Req() req, @Response() res) {
+  async reAuth(@Req() req, @Response() res, @Headers() headers: Headers) {
     const fingerprint = req?.fp;
     const deviceId = fingerprint?.id;
+    const uaParser = UAParser(headers['user-agent']);
+    const browser =
+      uaParser?.browser?.name ?? fingerprint?.userAgent?.browser?.family;
+    const os = uaParser?.os?.name ?? fingerprint?.userAgent?.os?.family;
     const refreshToken = req.cookies?.admin_ucms_refresh_token;
-    const result = await this.deviceSessionService.reAuth(
+    const payload = {
+      _refreshToken: refreshToken,
       deviceId,
-      refreshToken,
-    );
+      browser,
+      os,
+    };
+    const result = await this.deviceSessionService.reAuth(payload);
     if (result.status_code === 200) {
       const { refresh_token, expired_at, uid } = result;
       res.cookie('admin_ucms_refresh_token', refresh_token, {
@@ -224,7 +231,7 @@ export class AuthController {
       deviceId,
       uid,
       browser,
-      os
+      os,
     });
     return this.userService.findOne(payload?.id);
   }
@@ -277,10 +284,19 @@ export class AuthController {
 
   @ApiTags('Auth Redirect UCMS')
   @Get('get-device-login-histories')
-  async getDeviceLoginHistories(@Req() req) {
+  async getDeviceLoginHistories(@Req() req, @Headers() headers: Headers) {
     const fingerprint = req?.fp;
     const deviceId = fingerprint?.id;
-    return await this.authService.getDeviceLoginHistories(deviceId);
+    const uaParser = UAParser(headers['user-agent']);
+    const browser =
+      uaParser?.browser?.name ?? fingerprint?.userAgent?.browser?.family;
+    const os = uaParser?.os?.name ?? fingerprint?.userAgent?.os?.family;
+    const payload = {
+      deviceId,
+      browser,
+      os,
+    };
+    return await this.authService.getDeviceLoginHistories(payload);
   }
   @ApiTags('Auth Redirect UCMS')
   @Post('check-account-device-history')
@@ -399,10 +415,12 @@ export class AuthController {
   ) {
     const fingerprint = req?.fp;
     const ipAddress = req.connection.remoteAddress;
-    const ua = headers['user-agent'];
-    const deviceId = req.cookies?.deviceId;
-    const os = fingerprint?.userAgent?.os?.family;
-    const browser = fingerprint?.userAgent?.browser?.family;
+    const uaParser = UAParser(headers['user-agent']);
+    const deviceId = req.cookies?.fp;
+    const os = uaParser?.os?.name ?? fingerprint?.userAgent?.os?.family;
+    const browser =
+      uaParser?.browser?.name ?? fingerprint?.userAgent?.browser?.family;
+    const ua = uaParser?.ua ?? headers['user-agent'];
     const metaData = { ipAddress, ua, deviceId, os, browser };
     const result = await this.authService.getSSO_Token_UCMS(data, metaData);
     if (result.status_code === 200) {
@@ -435,10 +453,16 @@ export class AuthController {
     @Body() body,
     @Req() req,
     @Res() res,
+    @Headers() headers: Headers,
   ) {
+    const fingerprint = req?.fp;
     const token = req.headers.authorization.split(' ')[1];
     const deviceId = request.cookies?.deviceId;
     const uid = req.cookies?.uuid;
+    const uaParser = UAParser(headers['user-agent']);
+    const browser =
+      uaParser?.browser?.name ?? fingerprint?.userAgent?.browser?.family;
+    const os = uaParser?.os?.name ?? fingerprint?.userAgent?.os?.family;
     // const fingerprint = req?.fp;
     // const deviceId = fingerprint?.id;
     const sessionType = 2;
@@ -447,6 +471,8 @@ export class AuthController {
       deviceId,
       sessionType,
       uid,
+      browser,
+      os,
     });
 
     // const deviceId = request.cookies?.deviceId;
@@ -476,15 +502,22 @@ export class AuthController {
   @ApiTags('Auth Redirect UCMS')
   @Post('sso-ucms/refresh-token')
   @HttpCode(200)
-  async reAuthSSO(@Req() req, @Response() res) {
-    // const fingerprint = req?.fp;
+  async reAuthSSO(@Req() req, @Response() res, @Headers() headers: Headers) {
+    const fingerprint = req?.fp;
     // const deviceId = fingerprint?.id;
     const deviceId = req.cookies.deviceId;
+    const uaParser = UAParser(headers['user-agent']);
+    const browser =
+      uaParser?.browser?.name ?? fingerprint?.userAgent?.browser?.family;
+    const os = uaParser?.os?.name ?? fingerprint?.userAgent?.os?.family;
     const refreshToken = req.cookies?.sso_ucms_refresh_token;
-    const result = await this.deviceSessionService.reAuth(
+    const payload = {
+      _refreshToken: refreshToken,
       deviceId,
-      refreshToken,
-    );
+      browser,
+      os,
+    };
+    const result = await this.deviceSessionService.reAuth(payload);
     if (result.status_code === 200) {
       const { refresh_token, expired_at, uid } = result;
       res.cookie('sso_ucms_refresh_token', refresh_token, {

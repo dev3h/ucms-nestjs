@@ -657,10 +657,11 @@ export class AuthService {
       );
     }
   }
-  async getDeviceLoginHistories(deviceId) {
+  async getDeviceLoginHistories(body) {
     try {
+      const { deviceId, browser, os } = body;
       const deviceSessions = await this.deviceSessionRepository.find({
-        where: { device_id: deviceId },
+        where: { device_id: deviceId, browser, os, session_type: 2 },
         relations: ['user'],
       });
       const filteredSessions = deviceSessions.filter(

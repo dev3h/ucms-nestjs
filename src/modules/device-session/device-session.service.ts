@@ -73,13 +73,16 @@ export class DeviceSessionService {
     );
   }
 
-  async reAuth(deviceId: string, _refreshToken: string) {
+  async reAuth(body) {
+    const { _refreshToken, deviceId, browser, os } = body;
     const deviceSession: any = await this.deviceSessionRepository
       .createQueryBuilder('deviceSession')
       .select('deviceSession', 'user.id')
       .leftJoinAndSelect('deviceSession.user', 'user')
       .where('deviceSession.refresh_token = :_refreshToken', { _refreshToken })
       .andWhere('deviceSession.device_id = :deviceId', { deviceId })
+      .andWhere('deviceSession.browser = :browser', { browser })
+      .andWhere('deviceSession.os = :os', { os })
       .getOne();
 
     if (
