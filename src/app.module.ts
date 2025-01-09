@@ -60,6 +60,7 @@ import { PermissionController } from './modules/permission/permission.controller
 import { LoggerModule } from './modules/logger/logger.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
+import { JobModule } from './job/job.module';
 
 @Module({
   imports: [
@@ -130,6 +131,7 @@ import { DashboardController } from './modules/dashboard/dashboard.controller';
     DeviceSessionModule,
     LoggerModule,
     DashboardModule,
+    JobModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,4 +1,4 @@
-import { Module, Scope } from '@nestjs/common';
+import { forwardRef, Module, Scope } from '@nestjs/common';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -14,10 +14,12 @@ import { Subsystem } from '../subsystem/entities/subsystem.entity';
 import { Action } from '../action/entities/action.entity';
 import { Module as ModuleEntity } from '../module/entities/module.entity';
 import { DeviceSessionModule } from '../device-session/device-session.module';
+import { JobModule } from '@/job/job.module';
 
 @Module({
   imports: [
     MailModule,
+    forwardRef(() => JobModule),
     DeviceSessionModule,
     TypeOrmModule.forFeature([
       User,

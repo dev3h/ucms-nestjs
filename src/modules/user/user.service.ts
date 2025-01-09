@@ -29,6 +29,7 @@ import { Module } from '../module/entities/module.entity';
 import { Action } from '../action/entities/action.entity';
 import { UserDetailDto } from './dto/user-detail.dto';
 import { SystemDetailDto } from '../system/dto/system-detail.dto';
+import { JobService } from '../../job/job.service';
 
 dotenv.config();
 
@@ -55,6 +56,7 @@ export class UserService {
     @InjectRepository(Action)
     private readonly actionRepository: Repository<Action>,
     private readonly mailService: MailService,
+    // private readonly jobService: JobService,
   ) {}
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -988,6 +990,14 @@ export class UserService {
   }
 
   async createMulti(data) {
+    if (data.length <= 100) {
+      return this.createDirectly(data);
+    } else {
+      return this.enqueueJob(data);
+    }
+  }
+
+  async createDirectly(data) {
     const queryRunner =
       this.userRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
@@ -1065,6 +1075,24 @@ export class UserService {
       );
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  private async enqueueJob(data) {
+    try {
+      // Sử dụng một job queue (như Bull hoặc BeeQueue) để xử lý dữ liệu
+      // await this.jobService.addHandleImportUsersJob(data);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Job-enqueued', { lang: 'vi' }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
     }
   }
 }
