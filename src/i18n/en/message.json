@@ -46,5 +46,7 @@
   "invalid-device": "Invalid device",
   "Setup-2fa-successfully": "Setup 2FA successfully",
   "no-permission": "You do not have permission to access this page",
-  "Invalid-auth-temp-code": "Invalid temporary authentication code"
+  "Invalid-auth-temp-code": "Invalid temporary authentication code",
+  "invalid-file-type-csv": "Invalid file type, please select CSV file",
+  "file-not-found": "File not found"
 }

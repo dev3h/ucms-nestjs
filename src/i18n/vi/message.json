@@ -46,5 +46,7 @@
   "invalid-device": "Thiết bị không hợp lệ",
   "Setup-2fa-successfully": "Cài đặt 2FA thành công",
   "no-permission": "Bạn không có quyền truy cập trang này",
-  "Invalid-auth-temp-code": "Mã xác thực tạm thời không hợp lệ"
+  "Invalid-auth-temp-code": "Mã xác thực tạm thời không hợp lệ",
+  "invalid-file-type-csv": "Loại tệp không hợp lệ, vui lòng chọn tệp CSV",
+  "file-not-found": "Không tìm thấy tệp"
 }

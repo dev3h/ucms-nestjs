@@ -10,5 +10,6 @@
   "arrayMaxSize": "{column} cannot have more than {max} items",
   "arrayUnique": "{column} cannot have duplicate items",
   "invalidFormat": "{column} is invalid format",
-  "weak": "Weak password. Please enter a stronger password"
+  "weak": "Weak password. Please enter a stronger password",
+  "Missing-required-headers": "Missing required headers: {headers}"
 }

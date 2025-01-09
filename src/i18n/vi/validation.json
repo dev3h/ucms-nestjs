@@ -13,5 +13,6 @@
   "arrayUnique": "{column} không được trùng lặp",
   "invalidFormat": "{column} không hợp lệ",
   "weak": "Mật khẩu yếu. Vui lòng nhập mật khẩu mạnh hơn",
-  "phone": "Số điện thoại phải là số và phải có từ 10 đến 11 số"
+  "phone": "Số điện thoại phải là số và phải có từ 10 đến 11 số",
+  "Missing-required-headers": "Thiếu các tiêu đề bắt buộc: {headers}"
 }

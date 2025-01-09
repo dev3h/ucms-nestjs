@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Req,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -24,6 +25,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Request } from 'express';
 import { DeviceSessionService } from '../device-session/device-session.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('User Management')
 @Controller('user')
@@ -132,11 +134,26 @@ export class UserController {
   }
 
   @ApiBearerAuth()
+  @Post('import-csv')
+  @UseInterceptors(FileInterceptor('file'))
+  @HttpCode(200)
+  async importCsv(@Req() request: Request) {
+    return await this.userService.importCsv(request);
+  }
+
+  @ApiBearerAuth()
   @Post(':id/device-session/:deviceId/logout')
   async logoutDeviceSession(
     @Param('id') userId: number,
     @Param('deviceId') deviceId: string,
   ) {
     return this.deviceSessionService.logout(+userId, deviceId);
+  }
+
+  @ApiBearerAuth()
+  @Post('create-multi')
+  @HttpCode(200)
+  createMulti(@Body() body) {
+    return this.userService.createMulti(body);
   }
 }

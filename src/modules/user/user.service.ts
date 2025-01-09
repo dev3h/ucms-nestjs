@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { UserRegisterRequestDto } from './dto/user-register.req.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Request } from 'express';
 import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
+import * as csvParser from 'csv-parser';
+import { Readable } from 'stream';
 
 import { User } from './user.entity';
 import { UserFilter } from './filters/user.filter';
@@ -902,6 +903,168 @@ export class UserService {
           lang: 'vi',
         }),
       );
+    }
+  }
+
+  async importCsv(body) {
+    const file = body?.file;
+    if (!file) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.file-not-found', { lang: 'vi' }),
+        'FILE_NOT_FOUND',
+      );
+    }
+    if (file.mimetype !== 'text/csv') {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.invalid-file-type-csv', { lang: 'vi' }),
+        'INVALID_FILE_TYPE',
+      );
+    }
+    const stream = Readable.from(file.buffer.toString());
+    const results = [];
+
+    try {
+      await new Promise((resolve, reject) => {
+        let headersChecked = false;
+        stream
+          .pipe(csvParser({ headers: true }))
+          .on('data', (data) => {
+            if (!headersChecked) {
+              const requiredHeaders = [
+                'name',
+                'email',
+                'phone_number',
+                'password',
+                'role_id',
+                'type',
+                'two_factor_enable',
+              ];
+              const fileHeaders = Object.values(data);
+              const missingHeaders = requiredHeaders.filter(
+                (header) => !fileHeaders.includes(header),
+              );
+              if (missingHeaders.length > 0) {
+                reject(
+                  new Error(
+                    `Thiếu các tiêu đề bắt buộc: ${missingHeaders.join(', ')}`,
+                  ),
+                );
+                return;
+              }
+              headersChecked = true;
+            }
+            results.push(data);
+          })
+          .on('end', resolve)
+          .on('error', reject);
+      });
+
+      const formattedData = this.formatData(results);
+      return ResponseUtil.sendSuccessResponse(
+        { data: formattedData },
+        'Imported successfully',
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        error.message ||
+          this.i18n.t('message.Something-went-wrong', {
+            lang: 'vi',
+          }),
+        'INVALID_HEADERS',
+      );
+    }
+  }
+
+  formatData(dataCsv) {
+    const header = Object.values(dataCsv[0]);
+    const data = dataCsv.slice(1);
+    return data.map((item) => {
+      const obj = {};
+      header.forEach((key: any, index) => {
+        obj[key] = (item as any)[`_${index}`];
+      });
+      return obj;
+    });
+  }
+
+  async createMulti(data) {
+    const queryRunner =
+      this.userRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    const result = [];
+    try {
+      for (const item of data) {
+        const { role_id, ...userData } = item;
+        try {
+          const existingUser = await this.userRepository.findOne({
+            where: { email: userData?.email },
+          });
+          if (existingUser) {
+            result.push({
+              ...item,
+              importMessage: 'Email đã tồn tại',
+              importStatus: 'failure',
+            });
+            continue;
+          }
+
+          const account = await this.userRepository.save(
+            this.userRepository.create(userData),
+          );
+          const singleAccount = Array.isArray(account) ? account[0] : account;
+          const role = await this.roleRepository.findOne({
+            where: { id: role_id },
+          });
+          if (role) {
+            singleAccount.roles = [role];
+            await this.userRepository.save(account);
+
+            const permissions = await this.permissionRepository.find({
+              where: { roles: { id: role.id } },
+            });
+
+            const userHasPermissions = permissions.map((permission) => {
+              const userPermission = new UserHasPermission();
+              userPermission.user = Array.isArray(account)
+                ? account[0]
+                : account;
+              userPermission.permission = permission;
+              return userPermission;
+            });
+
+            await this.userPermissionRepository.save(userHasPermissions);
+          }
+          result.push({
+            ...item,
+            importMessage: 'Created successfully',
+            importStatus: 'success',
+          });
+        } catch (itemError) {
+          result.push({
+            ...item,
+            importMessage: itemError.message,
+            importStatus: 'failure',
+          });
+        }
+      }
+      await queryRunner.commitTransaction();
+      return ResponseUtil.sendSuccessResponse(
+        { data: result },
+        this.i18n.t('message.Created-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    } finally {
+      await queryRunner.release();
     }
   }
 }

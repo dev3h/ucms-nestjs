@@ -416,7 +416,7 @@ export class AuthController {
     const fingerprint = req?.fp;
     const ipAddress = req.connection.remoteAddress;
     const uaParser = UAParser(headers['user-agent']);
-    const deviceId = req.cookies?.fp;
+    const deviceId = req.cookies?.deviceId ?? req.cookies?.fp;
     const os = uaParser?.os?.name ?? fingerprint?.userAgent?.os?.family;
     const browser =
       uaParser?.browser?.name ?? fingerprint?.userAgent?.browser?.family;
@@ -435,11 +435,13 @@ export class AuthController {
         expires: new Date(expired_at),
         sameSite: 'Strict',
       });
-      // res.cookie('device_id_session', device_id_session, {
-      //   httpOnly: true,
-      //   expires: new Date(expired_at),
-      //   sameSite: 'Strict',
-      // });
+      if (deviceId) {
+        res.cookie('deviceId', deviceId, {
+          httpOnly: true,
+          expires: new Date(expired_at),
+          sameSite: 'Strict',
+        });
+      }
     }
 
     return res.send(result);
