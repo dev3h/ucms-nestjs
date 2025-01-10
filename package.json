@@ -31,6 +31,9 @@
     "db:refresh": "npm run typeorm schema:drop && npm run migration:run && npm run seed:run"
   },
   "dependencies": {
+    "@bull-board/api": "^6.6.1",
+    "@bull-board/express": "^6.6.1",
+    "@bull-board/nestjs": "^6.6.1",
     "@faker-js/faker": "^8.4.1",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/bull": "^10.2.1",

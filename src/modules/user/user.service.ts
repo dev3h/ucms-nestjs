@@ -1051,6 +1051,21 @@ export class UserService {
 
             await this.userPermissionRepository.save(userHasPermissions);
           }
+          const dataSend = {
+            name: singleAccount?.name,
+            email: singleAccount?.email,
+            created_at: Utils.formatDate(
+              singleAccount?.created_at?.toISOString(),
+            ),
+            password: item?.password,
+          };
+          if (singleAccount.type === UserTypeEnum.ADMIN) {
+            const loginUrl = `${process.env.FRONTEND_URL}/admin/login`;
+            dataSend['loginUrl'] = loginUrl;
+            await this.mailService.addSendMailJob(dataSend);
+          } else {
+            await this.mailService.addSendMailJob(dataSend);
+          }
           result.push({
             ...item,
             importMessage: 'Created successfully',

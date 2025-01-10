@@ -167,6 +167,11 @@ async function bootstrap() {
   // app.use(new LoggingMiddleware(loggerService).use);
   app.useGlobalFilters(new LoggingExceptionFilter(loggerService));
   app.useGlobalInterceptors(new LoggingInterceptor(loggerService));
+
+  const appModule = app.get(AppModule); // Lấy instance của AppModule
+  if (typeof appModule.configureApp === 'function') {
+    appModule.configureApp(app); // Gọi configureApp để thiết lập Bull Board
+  }
   await app.listen(port);
 }
 bootstrap();

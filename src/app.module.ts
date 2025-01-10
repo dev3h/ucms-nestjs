@@ -1,13 +1,17 @@
 import {
+  INestApplication,
   MiddlewareConsumer,
   Module,
   NestModule,
+  OnModuleInit,
+  Optional,
   RequestMethod,
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { BullModule } from '@nestjs/bull';
+import { BullModule, InjectQueue } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
+import { Queue } from 'bull';
 import * as path from 'path';
 import {
   AcceptLanguageResolver,
@@ -61,6 +65,7 @@ import { LoggerModule } from './modules/logger/logger.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { JobModule } from './job/job.module';
+import { setupBullBoard } from './bull-board.setup';
 
 @Module({
   imports: [
@@ -105,7 +110,7 @@ import { JobModule } from './job/job.module';
       }),
       inject: [ConfigService],
     }),
-
+    BullModule.registerQueue({ name: 'mail' }, { name: 'job-custom' }),
     // setting Schedule
     ScheduleModule.forRoot(),
     DatabaseConfigModule,
@@ -124,6 +129,7 @@ import { JobModule } from './job/job.module';
     ResetPasswordModule,
     SystemTokenModule,
     TwoFactorAuthenticationModule,
+    JobModule,
     MailModule,
     UserLoginHistoryModule,
     SystemClientSecretModule,
@@ -131,7 +137,6 @@ import { JobModule } from './job/job.module';
     DeviceSessionModule,
     LoggerModule,
     DashboardModule,
-    JobModule,
   ],
   controllers: [AppController],
   providers: [
@@ -143,9 +148,17 @@ import { JobModule } from './job/job.module';
     IsUniqueConstraint,
     IsExistsConstraint,
   ],
-  exports: [],
+  exports: [BullModule],
 })
-export class AppModule implements NestModule {
+export class AppModule implements NestModule, OnModuleInit {
+  constructor(
+    @Optional() @InjectQueue('mail') private readonly mailQueue?: Queue,
+    @Optional() @InjectQueue('job-custom') private readonly jobQueue?: Queue,
+  ) {}
+  async onModuleInit() {
+    console.log('Mail queue ready:', !!this.mailQueue);
+    console.log('Job queue ready:', !!this.jobQueue);
+  }
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LogsMiddleware).forRoutes('*');
     consumer.apply(LanguageCheckMiddleware).forRoutes('*');
@@ -154,7 +167,7 @@ export class AppModule implements NestModule {
       .forRoutes({ path: '/', method: RequestMethod.ALL });
     consumer
       .apply(AuthMiddleware)
-      .exclude()
+      .exclude({ path: '/admin/queues', method: RequestMethod.ALL })
       .forRoutes(
         SystemController,
         SubsystemController,
@@ -164,5 +177,8 @@ export class AppModule implements NestModule {
         PermissionController,
         DashboardController,
       );
+  }
+  configureApp(app: INestApplication) {
+    setupBullBoard(app, [this.jobQueue, this.mailQueue]);
   }
 }

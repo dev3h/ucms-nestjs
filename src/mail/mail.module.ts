@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { join } from 'path';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { MailService } from './mail.service';
-import { BullModule } from '@nestjs/bull';
+import { BullModule, InjectQueue } from '@nestjs/bull';
 import { MailProcessor } from './mail.processor';
+import { Queue } from 'bull';
 
 @Module({
   imports: [
@@ -33,6 +34,12 @@ import { MailProcessor } from './mail.processor';
     }),
   ],
   providers: [MailService, MailProcessor],
-  exports: [MailService],
+  exports: [MailService, BullModule],
 })
-export class MailModule {}
+export class MailModule implements OnModuleInit {
+  constructor(@InjectQueue('mail') private readonly mailQueue: Queue) {}
+
+  onModuleInit() {
+    console.log('Mail queue initialized:', !!this.mailQueue);
+  }
+}
