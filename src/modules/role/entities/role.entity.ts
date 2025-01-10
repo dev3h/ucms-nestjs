@@ -10,10 +10,11 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   JoinTable,
+  BaseEntity,
 } from 'typeorm';
 
 @Entity('roles')
-export class Role {
+export class Role extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

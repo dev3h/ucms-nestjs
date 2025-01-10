@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
 import { Request } from 'express';
 import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
@@ -56,7 +56,9 @@ export class UserService {
     @InjectRepository(Action)
     private readonly actionRepository: Repository<Action>,
     private readonly mailService: MailService,
-    // private readonly jobService: JobService,
+    @Inject(forwardRef(() => JobService))
+    private readonly jobService: JobService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -998,8 +1000,12 @@ export class UserService {
   }
 
   async createDirectly(data) {
-    const queryRunner =
-      this.userRepository.manager.connection.createQueryRunner();
+    let repository = this.userRepository;
+
+    if (!repository) {
+      repository = User.getRepository();
+    }
+    const queryRunner = repository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     const result = [];
@@ -1081,9 +1087,9 @@ export class UserService {
   private async enqueueJob(data) {
     try {
       // Sử dụng một job queue (như Bull hoặc BeeQueue) để xử lý dữ liệu
-      // await this.jobService.addHandleImportUsersJob(data);
+      await this.jobService.addHandleImportUsersJob(data);
       return ResponseUtil.sendSuccessResponse(
-        null,
+        { data: null },
         this.i18n.t('message.Job-enqueued', { lang: 'vi' }),
       );
     } catch (error) {

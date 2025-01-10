@@ -159,7 +159,11 @@ export class AuthService {
       if (uid) {
         userId = Buffer.from(uid, 'base64').toString('utf-8');
       }
-      const deviceSession = await this.deviceSessionRepository.findOne({
+      let repository = this.deviceSessionRepository;
+      if (!repository) {
+        repository = DeviceSession.getRepository();
+      }
+      const deviceSession = await repository.findOne({
         where: {
           device_id: deviceId,
           session_type: sessionType,

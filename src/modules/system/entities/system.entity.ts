@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   Unique,
+  BaseEntity,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Subsystem } from '../../subsystem/entities/subsystem.entity';
@@ -15,7 +16,7 @@ import { SystemClientSecret } from '@/modules/system-client-secret/entities/syst
 
 @Entity({ name: 'systems' })
 // @Unique(['name', 'code', 'client_id', 'client_secret'])
-export class System {
+export class System extends BaseEntity {
   @ApiProperty({ description: 'Primary key as System ID', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;

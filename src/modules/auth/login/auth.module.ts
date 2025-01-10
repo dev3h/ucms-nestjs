@@ -29,6 +29,7 @@ import { Action } from '@/modules/action/entities/action.entity';
 import { Module as ModuleSubsystem } from '@/modules/module/entities/module.entity';
 import { DeviceSessionModule } from '@/modules/device-session/device-session.module';
 import { RedisService } from '@/modules/redis/redis.service';
+import { DeviceSession } from '@/modules/device-session/entities/device-session.entity';
 
 @Module({
   imports: [
@@ -56,7 +57,7 @@ import { RedisService } from '@/modules/redis/redis.service';
       SystemToken,
       User,
       SystemClientSecret,
-      DeviceLoginHistoryModule,
+      DeviceSession,
     ]),
   ],
   providers: [

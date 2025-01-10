@@ -3,16 +3,14 @@ import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { JobService } from './job.service';
 
-@Processor('job')
+@Processor('job-custom')
 export class JobProcessor {
   private readonly logger = new Logger(JobProcessor.name);
   constructor(private readonly jobService: JobService) {}
 
-  @Process('importUsers')
+  @Process('handleImportUsers')
   async importUsers(job: Job) {
-    this.logger.log(
-      `Processing job ${job.id} with data: ${JSON.stringify(job.data)}`,
-    );
+    this.logger.log(`Processing job ${job.id}}`);
     const dataSend = job.data;
     await this.jobService.handleImportUsers(dataSend);
     this.logger.log(`Completed job ${job.id}`);

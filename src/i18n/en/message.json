@@ -48,5 +48,6 @@
   "no-permission": "You do not have permission to access this page",
   "Invalid-auth-temp-code": "Invalid temporary authentication code",
   "invalid-file-type-csv": "Invalid file type, please select CSV file",
-  "file-not-found": "File not found"
+  "file-not-found": "File not found",
+  "Job-enqueued": "Job enqueued"
 }

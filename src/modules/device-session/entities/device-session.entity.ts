@@ -10,11 +10,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  BaseEntity,
 } from 'typeorm';
 import * as geoip from 'geoip-lite';
 
 @Entity('device_sessions')
-export class DeviceSession {
+export class DeviceSession extends BaseEntity {
   @ApiProperty({ description: 'Primary key', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;

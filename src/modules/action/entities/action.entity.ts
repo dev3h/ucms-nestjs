@@ -6,12 +6,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  BaseEntity,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Module } from '../../module/entities/module.entity';
 
 @Entity({ name: 'actions' })
-export class Action {
+export class Action extends BaseEntity {
   @ApiProperty({ description: 'Primary key as Action ID', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;

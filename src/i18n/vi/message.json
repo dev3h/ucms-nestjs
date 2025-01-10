@@ -48,5 +48,6 @@
   "no-permission": "Bạn không có quyền truy cập trang này",
   "Invalid-auth-temp-code": "Mã xác thực tạm thời không hợp lệ",
   "invalid-file-type-csv": "Loại tệp không hợp lệ, vui lòng chọn tệp CSV",
-  "file-not-found": "Không tìm thấy tệp"
+  "file-not-found": "Không tìm thấy tệp",
+  "Job-enqueued": "Công việc đã được đưa vào hàng đợi"
 }

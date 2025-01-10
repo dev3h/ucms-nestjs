@@ -14,6 +14,7 @@ import { LoggingExceptionFilter } from './common/exceptions/logging.exception';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import * as session from 'express-session';
 import helmet from 'helmet';
+import * as bodyParser from 'body-parser';
 // import * as csurf from 'csurf';
 // import { NextFunction } from 'express';
 
@@ -65,6 +66,8 @@ async function bootstrap() {
       },
     }),
   );
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
   app.use(cookieParser());
   app.use(helmet());
   app.setGlobalPrefix('api/v1');

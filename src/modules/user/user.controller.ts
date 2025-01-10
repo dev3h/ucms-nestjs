@@ -133,13 +133,13 @@ export class UserController {
     return await this.userService.getDeviceSessions(userId);
   }
 
-  @ApiBearerAuth()
-  @Post('import-csv')
-  @UseInterceptors(FileInterceptor('file'))
-  @HttpCode(200)
-  async importCsv(@Req() request: Request) {
-    return await this.userService.importCsv(request);
-  }
+  // @ApiBearerAuth()
+  // @Post('import-csv')
+  // @UseInterceptors(FileInterceptor('file'))
+  // @HttpCode(200)
+  // async importCsv(@Req() request: Request) {
+  //   return await this.userService.importCsv(request);
+  // }
 
   @ApiBearerAuth()
   @Post(':id/device-session/:deviceId/logout')
@@ -153,7 +153,7 @@ export class UserController {
   @ApiBearerAuth()
   @Post('create-multi')
   @HttpCode(200)
-  createMulti(@Body() body) {
-    return this.userService.createMulti(body);
+  async createMulti(@Body() body) {
+    return await this.userService.createMulti(body);
   }
 }

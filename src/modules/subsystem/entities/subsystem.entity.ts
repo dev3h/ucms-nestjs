@@ -9,13 +9,14 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   JoinColumn,
+  BaseEntity,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { System } from '../../system/entities/system.entity';
 import { Module } from '../../module/entities/module.entity';
 
 @Entity({ name: 'subsystems' })
-export class Subsystem {
+export class Subsystem extends BaseEntity {
   @ApiProperty({ description: 'Primary key as Subsystem ID', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;

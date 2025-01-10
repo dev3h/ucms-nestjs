@@ -7,12 +7,13 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
+  BaseEntity,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { System } from '@/modules/system/entities/system.entity';
 
 @Entity({ name: 'system_client_secrets' })
-export class SystemClientSecret {
+export class SystemClientSecret extends BaseEntity {
   @ApiProperty({ description: 'Primary key', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;

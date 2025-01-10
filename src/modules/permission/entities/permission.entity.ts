@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  BaseEntity,
 } from 'typeorm';
 
 import { Role } from '@/modules/role/entities/role.entity';
@@ -15,7 +16,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { UserHasPermission } from '@/modules/user/user-has-permission.entity';
 
 @Entity('permissions')
-export class Permission {
+export class Permission extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

@@ -7,12 +7,14 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
+  BaseEntity,
+  Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '@/modules/user/user.entity';
 
 @Entity({ name: 'logs' })
-export class Log {
+export class Log extends BaseEntity {
   @ApiProperty({ description: 'Primary key', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;

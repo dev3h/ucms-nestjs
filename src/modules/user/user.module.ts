@@ -19,7 +19,7 @@ import { JobModule } from '@/job/job.module';
 @Module({
   imports: [
     MailModule,
-    forwardRef(() => JobModule),
+    JobModule,
     DeviceSessionModule,
     TypeOrmModule.forFeature([
       User,
