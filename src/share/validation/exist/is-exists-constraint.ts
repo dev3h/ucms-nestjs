@@ -33,6 +33,7 @@ export class IsExistsConstraint implements ValidatorConstraintInterface {
     const { column }: IsExistsConstraintInput =
       validationArguments?.constraints[0];
     const i18n = I18nContext.current();
-    return i18n.t('validation.exists', { args: { column } });
+    const capitalizeColumn = column.charAt(0).toUpperCase() + column.slice(1);
+    return i18n.t('validation.exists', { args: { column: capitalizeColumn } });
   }
 }
