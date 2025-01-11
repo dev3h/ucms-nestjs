@@ -40,17 +40,25 @@ export class UpdatePasswordDto {
     example: 'a12345678X',
   })
   @PasswordStrength()
-  @Matches(/^[0-9a-zA-Z!"#$%&'()-^\\@\[;:\],.\/=~|`{+*}<>?_]+$/)
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+    {
+      message: (args) =>
+        I18nContext.current().t('validation.password-complexity', {
+          args: { column: 'Mật khẩu mới' },
+        }),
+    },
+  )
   @MinLength(8, {
     message: (args) =>
       I18nContext.current().t('validation.minLength', {
-        args: { column: 'Password', min: 8 },
+        args: { column: 'Mật khẩu mới', min: 8 },
       }),
   })
   @MaxLength(20, {
     message: (args) =>
       I18nContext.current().t('validation.maxLength', {
-        args: { column: 'Password', max: 20 },
+        args: { column: 'Mật khẩu mới', max: 20 },
       }),
   })
   @IsString({
@@ -65,17 +73,25 @@ export class UpdatePasswordDto {
     description: 'Password in plain text',
     example: 'a12345678X',
   })
-  @Matches(/^[0-9a-zA-Z!"#$%&'()-^\\@\[;:\],.\/=~|`{+*}<>?_]+$/)
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+    {
+      message: (args) =>
+        I18nContext.current().t('validation.password-complexity', {
+          args: { column: 'Mật khẩu xác nhận' },
+        }),
+    },
+  )
   @MinLength(8, {
     message: (args) =>
       I18nContext.current().t('validation.minLength', {
-        args: { column: 'Password', min: 8 },
+        args: { column: 'Mật khẩu xác nhận', min: 8 },
       }),
   })
   @MaxLength(20, {
     message: (args) =>
       I18nContext.current().t('validation.maxLength', {
-        args: { column: 'Password', max: 20 },
+        args: { column: 'Mật khẩu xác nhận', max: 20 },
       }),
   })
   @IsString({

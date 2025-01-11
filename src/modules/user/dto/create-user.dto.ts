@@ -1,6 +1,13 @@
 import { IsUnique } from '@/share/validation/unique/is-unique';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, Length, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  Length,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { I18nContext } from 'nestjs-i18n';
 import { PasswordStrength } from '@/share/validation/strength/password-strength';
 
@@ -31,19 +38,35 @@ export class CreateUserDto {
     example: '0123456789',
   })
   @IsUnique({ tableName: 'users', column: 'phone_number' })
-  @Matches(/^[0-9]{10,11}$/)
-  @IsNotEmpty({
-    message: (args) => I18nContext.current().t('validation.isNotEmpty'),
+  @Matches(/^[0-9]{10,11}$/, {
+    message: (args) =>
+      I18nContext.current().t('validation.invalid-PhoneNumber', {
+        args: { column: 'Phone number' },
+      }),
   })
   readonly phone_number: string;
 
   @ApiProperty({ description: 'Password', example: '123456' })
   @PasswordStrength()
-  @Matches(/^[0-9a-zA-Z!"#$%&'()-^\\@\[;:\],.\/=~|`{+*}<>?_]+$/)
-  @Length(8, 16, {
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+    {
+      message: (args) =>
+        I18nContext.current().t('validation.password-complexity', {
+          args: { column: 'Mật khẩu' },
+        }),
+    },
+  )
+  @MinLength(8, {
     message: (args) =>
-      I18nContext.current().t('validation.length', {
-        args: { min: 8, max: 16 },
+      I18nContext.current().t('validation.minLength', {
+        args: { column: 'Mật khẩu', min: 8 },
+      }),
+  })
+  @MaxLength(20, {
+    message: (args) =>
+      I18nContext.current().t('validation.maxLength', {
+        args: { column: 'Mật khẩu', max: 20 },
       }),
   })
   @IsNotEmpty({

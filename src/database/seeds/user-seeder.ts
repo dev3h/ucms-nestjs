@@ -13,7 +13,7 @@ export class UserSeeder implements Seeder {
       {
         name: 'nam nd',
         email: 'namnd@yopmail.com',
-        password: 'a12345678X',
+        password: 'Namn@20020',
         is_change_password_first: true,
         role: 'master_admin',
         type: 1,
@@ -22,7 +22,7 @@ export class UserSeeder implements Seeder {
       {
         name: 'cuongdd',
         email: 'cuongdd@yopmail.com',
-        password: 'a12345678X',
+        password: 'Namn@20020',
         is_change_password_first: false,
         role: 'user',
         type: 2,
