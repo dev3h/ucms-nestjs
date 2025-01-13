@@ -49,5 +49,6 @@
   "Invalid-auth-temp-code": "Invalid temporary authentication code",
   "invalid-file-type-csv": "Invalid file type, please select CSV file",
   "file-not-found": "File not found",
-  "Job-enqueued": "Job enqueued"
+  "Job-enqueued": "Job enqueued",
+  "Not-enable-2fa": "Not enable 2FA"
 }

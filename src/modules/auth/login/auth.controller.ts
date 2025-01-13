@@ -159,6 +159,41 @@ export class AuthController {
 
     return res.send(result);
   }
+  @Post('admin/check-account')
+  @HttpCode(200)
+  async verifyAccount(
+    @Req() req,
+    @Response() res,
+    @Body() data: LoginRequestDto,
+  ) {
+    const result = await this.authService.adminCheckAccount(data);
+
+    if (result.status_code === 200) {
+      if (result?.requireTwoFactor) {
+        const { hashedTempToken, ...restResult } = result;
+        req.session.hashedTempToken = hashedTempToken;
+        return res.send(restResult);
+      }
+      const { refresh_token, expired_at, uid } = result;
+      res.cookie('admin_ucms_refresh_token', refresh_token, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+      res.cookie('uid', uid, {
+        httpOnly: true,
+        expires: new Date(expired_at),
+        sameSite: 'Strict',
+      });
+      // res.cookie('device_id_session', device_id_session, {
+      //   httpOnly: true,
+      //   expires: new Date(expired_at),
+      //   sameSite: 'Strict',
+      // });
+    }
+
+    return res.send(result);
+  }
 
   @ApiTags('Auth')
   @Post('admin/refresh-token')

@@ -116,6 +116,18 @@ export class UserService {
         const loginUrl = `${process.env.FRONTEND_URL}/admin/login`;
         dataSend['loginUrl'] = loginUrl;
         await this.mailService.addSendMailJob(dataSend);
+        if (
+          singleAccount.two_factor_enable &&
+          !singleAccount.two_factor_confirmed_at
+        ) {
+          const twoFactorAuthSetupUrl = `${process.env.FRONTEND_URL}/admin/login/verify-account`;
+          const data = {
+            email: singleAccount?.email,
+            name: singleAccount?.name,
+            twoFactorAuthSetupUrl,
+          };
+          await this.mailService.addSendReset2FAMailJob(data);
+        }
       } else {
         await this.mailService.addSendMailJob(dataSend);
       }
@@ -742,7 +754,7 @@ export class UserService {
   async update(id: number, body) {
     try {
       const { role_id, ...userData } = body;
-      const user = this.userRepository.findOne({ where: { id } });
+      const user = await this.userRepository.findOne({ where: { id } });
       if (!user) {
         return ResponseUtil.sendErrorResponse(
           this.i18n.t('message.Data-not-found', {
@@ -755,6 +767,20 @@ export class UserService {
       //   userData.two_factor_confirmed_at = null;
       // }
       await this.userRepository.update(id, userData);
+
+      const account = await this.userRepository.findOne({ where: { id } });
+      if (
+        account.two_factor_enable &&
+        account.two_factor_enable !== user.two_factor_enable
+      ) {
+        const twoFactorAuthSetupUrl = `${process.env.FRONTEND_URL}/admin/login/verify-account`;
+        const data = {
+          email: user?.email,
+          name: user?.name,
+          twoFactorAuthSetupUrl,
+        };
+        await this.mailService.addSendReset2FAMailJob(data);
+      }
       return ResponseUtil.sendSuccessResponse(
         null,
         this.i18n.t('message.Updated-successfully', {

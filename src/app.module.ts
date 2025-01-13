@@ -59,7 +59,6 @@ import { SubsystemController } from './modules/subsystem/subsystem.controller';
 import { ModuleController } from './modules/module/module.controller';
 import { ActionController } from './modules/action/action.controller';
 import { RoleController } from './modules/role/role.controller';
-import { UserController } from './modules/user/user.controller';
 import { PermissionController } from './modules/permission/permission.controller';
 import { LoggerModule } from './modules/logger/logger.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
@@ -76,7 +75,7 @@ import { setupBullBoard } from './bull-board.setup';
       useFactory: (config: ConfigService) => [
         {
           ttl: config.get('THROTTLE_TTL', 1000),
-          limit: config.get('THROTTLE_LIMIT', 10),
+          limit: config.get('THROTTLE_LIMIT', 100),
         },
       ],
     }),

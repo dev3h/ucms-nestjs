@@ -324,6 +324,44 @@ export class AuthService {
 
     return user;
   }
+  async validateCreds(email: string, password: string): Promise<any> {
+    const user = await this.userService.getUserByEmail(email);
+    if (!user) {
+      throw new UnprocessableEntityException({
+        errors: {
+          email: [
+            this.i18n.t('message.email.not-found', {
+              lang: 'vi',
+            }),
+          ],
+        },
+        message: this.i18n.t('message.email.not-found', {
+          lang: 'vi',
+        }),
+        error: 'Unprocessable Entity',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
+    }
+
+    if (!(await bcrypt.compare(password, user.password))) {
+      throw new UnprocessableEntityException({
+        errors: {
+          password: [
+            this.i18n.t('auth.password', {
+              lang: 'vi',
+            }),
+          ],
+        },
+        message: this.i18n.t('auth.password', {
+          lang: 'vi',
+        }),
+        error: 'Unprocessable Entity',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
+    }
+
+    return user;
+  }
 
   async adminLogin(data, metaData) {
     const admin = await this.validateUserCreds(data.email, data.password);
@@ -386,6 +424,42 @@ export class AuthService {
     };
 
     return ResponseUtil.sendSuccessResponse({ ...dataRes });
+  }
+
+  async adminCheckAccount(data) {
+    const admin = await this.validateCreds(data.email, data.password);
+    if (admin.type !== UserTypeEnum.ADMIN) {
+      throw new UnprocessableEntityException({
+        errors: {
+          email: [
+            this.i18n.t('message.Account-not-valid', {
+              lang: 'vi',
+            }),
+          ],
+        },
+        message: this.i18n.t('message.Account-not-valid', {
+          lang: 'vi',
+        }),
+        error: 'Unprocessable Entity',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
+    }
+    if (admin.two_factor_enable) {
+      const tempToken = `${admin.id}-${crypto.randomBytes(30).toString('hex')}`;
+      const hashedTempToken = await bcrypt.hash(tempToken, 10);
+      return ResponseUtil.sendSuccessResponse({
+        tempToken,
+        hashedTempToken,
+        requireTwoFactor: true,
+      });
+    } else {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Not-enable-2fa', {
+          lang: 'vi',
+        }),
+        'NOT_ENABLE_2FA',
+      );
+    }
   }
 
   async adminLoginAfterVerifyTwoFactor(admin, metaData) {
