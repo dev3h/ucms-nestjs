@@ -427,7 +427,7 @@ export class SystemService extends BaseService<System> {
     try {
       const query = this.subsystemRepository
         .createQueryBuilder('subsystem')
-        .innerJoinAndSelect('subsystem.modules', 'modules')
+        .leftJoinAndSelect('subsystem.modules', 'modules')
         .where('subsystem.system_id = :systemId', { systemId });
 
       const page = parseInt(request.query.page as string, 10) || 1;

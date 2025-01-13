@@ -41,18 +41,18 @@ export class CreateSystemDto {
         args: { column: 'Mã', min: 3 },
       }),
   })
-  @MaxLength(10, {
+  @MaxLength(50, {
     message: (args) =>
       I18nContext.current().t('validation.maxLength', {
-        args: { column: 'Mã', max: 10 },
+        args: { column: 'Mã', max: 50 },
       }),
   })
-  @Matches(/^[A-Z]{2}[0-9]+$/, {
-    message: (args) =>
-      I18nContext.current().t('validation.invalidFormat', {
-        args: { column: 'Mã' },
-      }),
-  })
+  // @Matches(/^[A-Z]{2}[0-9]+$/, {
+  //   message: (args) =>
+  //     I18nContext.current().t('validation.invalidFormat', {
+  //       args: { column: 'Mã' },
+  //     }),
+  // })
   @IsNotEmpty({
     message: (args) => I18nContext.current().t('validation.isNotEmpty'),
   })
