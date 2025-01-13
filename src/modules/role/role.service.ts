@@ -306,7 +306,21 @@ export class RoleService extends BaseService<Role> {
           'subsystems.modules.actions',
         ],
       });
-      const permissionTree = SystemDetailDto.mapFromEntities(allSystems);
+
+      // Filter systems to include only those with complete subsystems, modules, and actions
+      const filteredSystems = allSystems.filter(
+        (system) =>
+          system.subsystems.length > 0 && // Kiểm tra subsystem không rỗng
+          system.subsystems.every(
+            (subsystem) =>
+              subsystem.modules.length > 0 && // Kiểm tra module không rỗng
+              subsystem.modules.every(
+                (module) => module.actions.length > 0, // Kiểm tra action không rỗng
+              ),
+          ),
+      );
+
+      const permissionTree = SystemDetailDto.mapFromEntities(filteredSystems);
       return ResponseUtil.sendSuccessResponse({ data: permissionTree });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(

@@ -13,6 +13,18 @@ import { PasswordStrength } from '@/share/validation/strength/password-strength'
 
 export class CreateUserDto {
   @ApiProperty({ description: 'Name', example: 'Anka' })
+  @MinLength(2, {
+    message: (args) =>
+      I18nContext.current().t('validation.minLength', {
+        args: { column: 'Tên', min: 2 },
+      }),
+  })
+  @MaxLength(100, {
+    message: (args) =>
+      I18nContext.current().t('validation.maxLength', {
+        args: { column: 'Tên', max: 100 },
+      }),
+  })
   @IsNotEmpty({
     message: (args) => I18nContext.current().t('validation.isNotEmpty'),
   })
