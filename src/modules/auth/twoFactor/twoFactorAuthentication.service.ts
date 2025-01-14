@@ -11,6 +11,7 @@ import { User } from '@/modules/user/user.entity';
 import { ResponseUtil } from '@/utils/response-util';
 import { UserService } from '@/modules/user/user.service';
 import { I18nService } from 'nestjs-i18n';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class TwoFactorAuthenticationService {
@@ -78,6 +79,36 @@ export class TwoFactorAuthenticationService {
     }
 
     return isCodeValid;
+  }
+
+  public async isValidRecoveryCode(recoveryCode: string, user: User) {
+    // Kiểm tra mã khôi phục có hợp lệ không
+    const recoveryCodes = user.two_factor_recovery_code.split(',');
+    let isRecoveryCodeValid = false;
+    for (const code of recoveryCodes) {
+      if (await bcrypt.compare(recoveryCode, code)) {
+        isRecoveryCodeValid = true;
+        break;
+      }
+    }
+    if (!isRecoveryCodeValid) {
+      throw new UnprocessableEntityException({
+        errors: {
+          recoveryCode: [
+            this.i18n.t('validation.recoveryCode', {
+              lang: 'vi',
+            }),
+          ],
+        },
+        message: this.i18n.t('validation.recoveryCode', {
+          lang: 'vi',
+        }),
+        error: 'Unprocessable Entity',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
+    }
+
+    return isRecoveryCodeValid;
   }
 
   public async pipeQrCodeStream(stream: Response, otpauthUrl: string) {

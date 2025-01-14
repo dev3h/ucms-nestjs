@@ -336,10 +336,21 @@ export class AuthController {
   @ApiTags('Auth Redirect UCMS')
   @Post('check-account-device-history')
   @HttpCode(200)
-  async checkDeviceLoginHistories(@Req() req, @Body() body: any) {
+  async checkDeviceLoginHistories(
+    @Req() req,
+    @Response() res,
+    @Body() body: any,
+  ) {
     const fingerprint = req?.fp;
     body.device_id = fingerprint?.id;
-    return await this.authService.checkDeviceLoginHistories(body);
+    const response = await this.authService.checkDeviceLoginHistories(body);
+    const consentToken = response?.data?.consentToken;
+    if (consentToken) {
+      req.session.consentToken = consentToken;
+      delete response.data.consentToken;
+    }
+    const dataRes = ResponseUtil.sendSuccessResponse(response);
+    return res.status(200).json(dataRes);
   }
 
   @ApiTags('Auth Redirect UCMS')
@@ -391,7 +402,6 @@ export class AuthController {
     @Body() data: LoginRequestDto,
     @Query('client_id') clientId: string,
     @Query('redirect_uri') redirectUri: string,
-    @Query('session_token') sessionToken: string,
     @Response() res,
     @Req() req,
   ) {
@@ -525,12 +535,21 @@ export class AuthController {
       body.client_id,
       body.client_secret,
     );
-
+    const user = await this.userService.findOne(decodedToken.id);
+    let userData = {};
+    if (user?.status_code === 200) {
+      userData = {
+        name: user?.data?.name,
+        email: user?.data?.email,
+        two_factor_enable: user?.data?.two_factor_enable,
+      };
+    }
     const dataRes = ResponseUtil.sendSuccessResponse({
       data: {
         ...decodedToken,
         access_token: token,
         permissions,
+        user: userData,
       },
     });
     return res.status(200).json(dataRes);

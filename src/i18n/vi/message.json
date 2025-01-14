@@ -50,5 +50,7 @@
   "invalid-file-type-csv": "Loại tệp không hợp lệ, vui lòng chọn tệp CSV",
   "file-not-found": "Không tìm thấy tệp",
   "Job-enqueued": "Công việc đã được đưa vào hàng đợi",
-  "Not-enable-2fa": "Không kích hoạt 2FA"
+  "Not-enable-2fa": "Không kích hoạt 2FA",
+  "Permission-not-found": "Không tìm thấy quyền",
+  "Account-suspended": "Tài khoản đã bị đình chỉ"
 }

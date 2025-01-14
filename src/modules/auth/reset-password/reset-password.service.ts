@@ -13,6 +13,7 @@ import { Repository } from 'typeorm';
 import { MailService } from '@/mail/mail.service';
 import { ResponseUtil } from '@/utils/response-util';
 import { UserTypeEnum } from '@/modules/user/enums/user-type.enum';
+import { UserStatusEnum } from '@/modules/user/enums/user-status.enum';
 
 @Injectable()
 export class ResetPasswordService {
@@ -27,7 +28,11 @@ export class ResetPasswordService {
 
   async sendMailResetPassword(body: any): Promise<any> {
     const user = await this.userRepository.findOne({
-      where: { email: body.email, type: UserTypeEnum.ADMIN },
+      where: {
+        email: body.email,
+        type: UserTypeEnum.ADMIN,
+        status: UserStatusEnum.ACTIVE,
+      },
     });
     if (!user) {
       return ResponseUtil.sendErrorResponse(
@@ -75,6 +80,7 @@ export class ResetPasswordService {
         phone_number: data.phone_number,
         email: data.email,
         type: UserTypeEnum.USER,
+        status: UserStatusEnum.ACTIVE,
       },
     });
 

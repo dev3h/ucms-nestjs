@@ -26,6 +26,7 @@ import { JwtUserGuard } from '../guard/jwt-user.guard';
 import { I18nService } from 'nestjs-i18n';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import e from 'express';
 
 @ApiTags('MFA')
 @Controller('2fa')
@@ -184,13 +185,14 @@ export class TwoFactorAuthenticationController {
       const code = crypto.randomBytes(4).toString('hex');
       backupCodes.push(code);
     }
-    // combine all codes to one string and encryption
-    const recoveryCode = backupCodes.join(',');
     const saltRounds = 10;
-    const hashedRecoveryCode = await bcrypt.hash(recoveryCode, saltRounds);
-    user.two_factor_recovery_code = hashedRecoveryCode;
-    user.save();
+    const hashedBackupCodes = await Promise.all(
+      backupCodes.map((code) => bcrypt.hash(code, saltRounds)),
+    );
+    user.two_factor_recovery_code = hashedBackupCodes.join(',');
+    await user.save();
     delete data?.totpCode;
+    data.recoveryCodes = backupCodes;
     return ResponseUtil.sendSuccessResponse({ data });
   }
   @Post('admin/authenticate')
@@ -218,15 +220,17 @@ export class TwoFactorAuthenticationController {
       const code = crypto.randomBytes(4).toString('hex');
       backupCodes.push(code);
     }
-    // combine all codes to one string and encryption
-    const recoveryCode = backupCodes.join(',');
     const saltRounds = 10;
-    const hashedRecoveryCode = await bcrypt.hash(recoveryCode, saltRounds);
-    admin.two_factor_recovery_code = hashedRecoveryCode;
-    admin.save();
+    const hashedBackupCodes = await Promise.all(
+      backupCodes.map((code) => bcrypt.hash(code, saltRounds)),
+    );
+    admin.two_factor_recovery_code = hashedBackupCodes.join(',');
+    await admin.save();
     delete data?.totpCode;
     return ResponseUtil.sendSuccessResponse(
-      null,
+      {
+        data: { recoveryCodes: backupCodes },
+      },
       this.i18n.t('message.Setup-2fa-successfully', {
         lang: 'vi',
       }),
@@ -238,14 +242,30 @@ export class TwoFactorAuthenticationController {
   // @UseGuards(JwtAuthenticationGuard)
   async challenge(@Body() data, @Res() res, @Req() req) {
     const consentToken = req.session.consentToken;
+    if (!consentToken) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.invalid-token', {
+          lang: 'vi',
+        }),
+        'INVALID_CONSENT_TOKEN',
+      );
+    }
     const dataVerify =
       await this.authenticationService.verifyConsentToken(consentToken);
 
     const user = await this.userService.getUserById(dataVerify?.id);
-    this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
-      data?.totpCode,
-      user,
-    );
+    if (data?.totpCode) {
+      this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
+        data?.totpCode,
+        user,
+      );
+    } else {
+      await this.twoFactorAuthenticationService.isValidRecoveryCode(
+        data?.recoveryCode,
+        user,
+      );
+    }
+
     const code = await this.authenticationService.createAuthTempCode(user);
     const dataRes = ResponseUtil.sendSuccessResponse({ data: code });
     return res.status(200).json(dataRes);
@@ -264,6 +284,14 @@ export class TwoFactorAuthenticationController {
       //   data?.tempToken,
       // );
       const hashToken = req.session.hashedTempToken;
+      if (!hashToken) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.invalid-token', {
+            lang: 'vi',
+          }),
+          'INVALID_CONSENT_TOKEN',
+        );
+      }
       const isTokenValid = await bcrypt.compare(data?.tempToken, hashToken);
       if (!isTokenValid) {
         return ResponseUtil.sendErrorResponse(
@@ -274,10 +302,17 @@ export class TwoFactorAuthenticationController {
       }
       const [adminId] = data?.tempToken.split('-');
       const admin = await this.userService.getUserById(adminId);
-      this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
-        data?.totpCode,
-        admin,
-      );
+      if (data?.totpCode) {
+        this.twoFactorAuthenticationService.isTwoFactorAuthenticationCodeValid(
+          data?.totpCode,
+          admin,
+        );
+      } else {
+        this.twoFactorAuthenticationService.isValidRecoveryCode(
+          data?.recoveryCode,
+          admin,
+        );
+      }
       const fingerprint = req?.fp;
       const ipAddress = req.connection.remoteAddress;
       const ua = headers['user-agent'];

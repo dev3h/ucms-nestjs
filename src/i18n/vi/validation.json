@@ -16,5 +16,6 @@
   "phone": "Số điện thoại phải là số và phải có từ 10 đến 11 số",
   "Missing-required-headers": "Thiếu các tiêu đề bắt buộc: {headers}",
   "password-complexity": "{column}  phải bao gồm cả chữ hoa và chữ thường và ký tự đặc biệt",
-  "invalid-PhoneNumber": "Số điện thoại phải có từ 10 đến 11 số"
+  "invalid-PhoneNumber": "Số điện thoại phải có từ 10 đến 11 số",
+  "recoveryCode": "Mã khôi phục không hợp lệ"
 }

@@ -27,7 +27,10 @@ export class RolePermissionSeeder implements Seeder {
 
     // Tạo và lưu các quyền vào cơ sở dữ liệu
     const permissions = [
-      { description: 'Thêm mới sinh viên', code: 'qlsv-hs_sv-them_moi' },
+      {
+        description: 'Thêm mới sinh viên',
+        code: 'qlsv-hs_sv-tim_kiem_sv-them_moi',
+      },
       {
         description: 'Sửa hồ sơ sinh viên',
         code: 'qlsv-hs_sv-cap_nhat_hs_sv-sua',
@@ -86,7 +89,7 @@ export class RolePermissionSeeder implements Seeder {
     });
     if (studentAffairsRole) {
       const studentPermissions = [
-        'qlsv-hs_sv-them_moi',
+        'qlsv-hs_sv-tim_kiem_sv-them_moi',
         'qlsv-hs_sv-cap_nhat_hs_sv-sua',
         'qlsv-dk_hoc-dk_mon_hoc-dang_ky_mon_hoc',
       ];

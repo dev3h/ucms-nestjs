@@ -866,7 +866,9 @@ export class UserService {
     });
 
     if (!user) {
-      return ResponseUtil.sendErrorResponse('User not found');
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Data-not-found'),
+      );
     }
     const permissionAction = [];
     if (body?.length > 0) {
@@ -885,7 +887,7 @@ export class UserService {
             where: { code: action.permission_code },
           });
           if (!permission) {
-            return ResponseUtil.sendErrorResponse('Permission not found');
+            continue;
           }
           const userPermission = await this.userPermissionRepository.findOne({
             where: { user: { id: userId }, permission: { id: permission.id } },

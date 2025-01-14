@@ -36,6 +36,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { JwtStrategy } from '../guard/jwt.strategy';
 import { Cache } from 'cache-manager';
 import { DeviceSessionDto } from '../dto/device-session.dto';
+import { UserStatusEnum } from '@/modules/user/enums/user-status.enum';
 
 export interface JwtPayload {
   id: string;
@@ -167,7 +168,7 @@ export class AuthService {
         where: {
           device_id: deviceId,
           session_type: sessionType,
-          user: { id: Number(userId) },
+          user: { id: Number(userId), status: UserStatusEnum.ACTIVE },
           browser,
           os,
         },
@@ -389,6 +390,14 @@ export class AuthService {
         hashedTempToken,
         requireTwoFactor: true,
       });
+    }
+    if (admin.status === UserStatusEnum.SUSPENDED) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Account-suspended', {
+          lang: 'vi',
+        }),
+        'ACCOUNT_SUSPENDED',
+      );
     }
 
     const passwordExpiryMonths = parseInt(
@@ -617,6 +626,7 @@ export class AuthService {
       where: {
         email,
         type: UserTypeEnum.USER,
+        status: UserStatusEnum.ACTIVE,
       },
     });
     if (!user) {
@@ -658,6 +668,7 @@ export class AuthService {
       where: {
         email: dataSession.email,
         type: UserTypeEnum.USER,
+        status: UserStatusEnum.ACTIVE,
       },
     });
     if (!isValidEmail) {
@@ -770,7 +781,11 @@ export class AuthService {
       const deviceSession = await this.deviceSessionRepository.findOne({
         where: {
           device_id: data?.device_id,
-          user: { email: data?.email, type: UserTypeEnum.USER },
+          user: {
+            email: data?.email,
+            type: UserTypeEnum.USER,
+            status: UserStatusEnum.ACTIVE,
+          },
         },
       });
       // const deviceLoginHistories =
@@ -781,12 +796,31 @@ export class AuthService {
       //     },
       //   });
       if (!deviceSession) {
-        return ResponseUtil.sendErrorResponse('NOT_FOUND', 'NOT_FOUND');
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
       }
       // await this.verifyRefreshToken(data?.refresh_token);
       const user = await this.userRepository.findOne({
         where: { email: data?.email, type: UserTypeEnum.USER },
       });
+      if (user?.two_factor_enable && user?.two_factor_confirmed_at) {
+        const consentToken = this.createConsentToken(user);
+        return ResponseUtil.sendSuccessResponse({
+          data: {
+            consentToken,
+            email: data.email,
+            two_factor: {
+              enable: user.two_factor_enable,
+              is_secret_token: user.two_factor_secret ? true : false,
+              is_confirmed: user.two_factor_confirmed_at ? true : false,
+            },
+          },
+        });
+      }
       const authTempCode = await this.createAuthTempCode(user);
       // const url = 'http://localhost:8123/api/auth-code';
       // await fetch(url, {
@@ -799,7 +833,7 @@ export class AuthService {
       //   }),
       //   headers: { 'Content-Type': 'application/json' },
       // });
-      return ResponseUtil.sendSuccessResponse({ data: authTempCode });
+      return ResponseUtil.sendSuccessResponse({ data: { authTempCode } });
     } catch (error) {
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {
@@ -832,7 +866,11 @@ export class AuthService {
         where: {
           device_identifier: data?.device_id,
           account_identifier: user?.email,
-          user: { id: user?.id },
+          user: {
+            id: user?.id,
+            type: UserTypeEnum.USER,
+            status: UserStatusEnum.ACTIVE,
+          },
         },
       });
       if (device) {
@@ -941,7 +979,11 @@ export class AuthService {
       //   .where('user.id = :userId', { userId: dataVerify.id })
       //   .getOne();
       const user = await this.userRepository.findOne({
-        where: { id: dataVerify.id },
+        where: {
+          id: dataVerify.id,
+          type: UserTypeEnum.USER,
+          status: UserStatusEnum.ACTIVE,
+        },
       });
       await this.getPermissionsForSystem(
         user.id,
@@ -1176,6 +1218,7 @@ export class AuthService {
     const user = await this.userRepository.findOne({
       where: {
         email: body?.email,
+        status: UserStatusEnum.ACTIVE,
       },
     });
     if (!user) {

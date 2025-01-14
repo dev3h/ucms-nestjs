@@ -13,5 +13,6 @@
   "weak": "Weak password. Please enter a stronger password",
   "Missing-required-headers": "Missing required headers: {headers}",
   "password-complexity": "{column}  must include uppercase, lowercase and special characters",
-  "invalid-PhoneNumber": "Phone number must have from 10 to 11 digits"
+  "invalid-PhoneNumber": "Phone number must have from 10 to 11 digits",
+  "recoveryCode": "Invalid recovery code"
 }
