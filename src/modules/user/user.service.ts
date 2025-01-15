@@ -797,6 +797,36 @@ export class UserService {
     }
   }
 
+  async reset2FA(id: number) {
+    try {
+      const user = await this.userRepository.findOne({ where: { id } });
+      if (!user) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      user.two_factor_secret = null;
+      user.two_factor_recovery_code = null;
+      user.two_factor_confirmed_at = null;
+      await this.userRepository.save(user);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Updated-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
   async remove(id: number) {
     try {
       const user = await this.userRepository.findOne({ where: { id } });

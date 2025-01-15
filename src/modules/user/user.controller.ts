@@ -68,6 +68,13 @@ export class UserController {
   }
 
   @ApiBearerAuth()
+  @Post(':id/reset-2fa')
+  @HttpCode(200)
+  reset2FA(@Param('id') id: string) {
+    return this.userService.reset2FA(+id);
+  }
+
+  @ApiBearerAuth()
   @Get(':id/all-permissions')
   getAllPermissions(@Param('id') id: string, @Req() request: Request) {
     return this.userService.getAllPermissionsOfUser(+id, request);

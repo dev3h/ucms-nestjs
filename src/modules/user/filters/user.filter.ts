@@ -11,7 +11,9 @@ export class UserFilter {
     const { search, created_at, type, role_id } = this.request.query;
 
     if (search) {
-      query.andWhere('user.name LIKE :search', { search: `%${search}%` });
+      query.andWhere('(user.name LIKE :search OR user.email LIKE :search)', {
+        search: `%${search}%`,
+      });
     }
 
     if (created_at) {
