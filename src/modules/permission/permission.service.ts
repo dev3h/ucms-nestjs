@@ -9,6 +9,7 @@ import { ResponseUtil } from '@/utils/response-util';
 import { PermissionFilter } from './filters/permission.filter';
 import { BaseService } from '@/share/base-service/base.service';
 import { I18nService } from 'nestjs-i18n';
+import { System } from '../system/entities/system.entity';
 
 @Injectable()
 export class PermissionService extends BaseService<Permission> {
@@ -16,6 +17,8 @@ export class PermissionService extends BaseService<Permission> {
     private readonly i18n: I18nService,
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
+    @InjectRepository(System)
+    private readonly systemRepository: Repository<System>,
     private readonly permissionFilter: PermissionFilter,
   ) {
     super(permissionRepository);
@@ -148,6 +151,67 @@ export class PermissionService extends BaseService<Permission> {
         }),
         error.message,
       );
+    }
+  }
+
+  async asyncPermission() {
+    const allSystems = await this.systemRepository.find({
+      relations: [
+        'subsystems',
+        'subsystems.modules',
+        'subsystems.modules.actions',
+      ],
+    });
+    const filteredSystems = allSystems
+      ?.map((system) => {
+        const validSubsystems = system?.subsystems?.map((subsystem) => {
+          // Lọc ra các modules có actions không rỗng
+          const validModules = subsystem?.modules?.filter(
+            (module) =>
+              Array.isArray(module?.actions) && module.actions.length > 0,
+          );
+
+          // Nếu có modules hợp lệ thì giữ lại subsystem
+          return validModules?.length > 0
+            ? { ...subsystem, modules: validModules }
+            : null;
+        });
+
+        // Lọc ra các subsystems hợp lệ
+        const filteredSubsystems = validSubsystems?.filter(
+          (subsystem) => subsystem,
+        );
+
+        // Nếu system có subsystems hợp lệ thì giữ lại system
+        return filteredSubsystems?.length > 0
+          ? { ...system, subsystems: filteredSubsystems }
+          : null;
+      })
+      ?.filter((system) => system);
+
+    // create permission
+    const permissions = [];
+    const existingPermissions = await this.permissionRepository.find();
+
+    filteredSystems.forEach((system) => {
+      system?.subsystems?.forEach((subsystem) => {
+        subsystem?.modules?.forEach((module) => {
+          module?.actions?.forEach((action) => {
+            const permissionCode = `${system.code}-${subsystem.code}-${module.code}-${action.code}`;
+            if (!existingPermissions.some((p) => p.code === permissionCode)) {
+              permissions.push({
+                code: permissionCode,
+                name: action.name,
+              });
+            }
+          });
+        });
+      });
+    });
+
+    // Save to database
+    if (permissions.length > 0) {
+      await this.permissionRepository.save(permissions);
     }
   }
 }

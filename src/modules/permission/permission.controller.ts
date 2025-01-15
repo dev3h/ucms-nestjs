@@ -51,4 +51,10 @@ export class PermissionController {
   remove(@Param('id') id: string) {
     return this.permissionService.remove(+id);
   }
+
+  @ApiBearerAuth()
+  @Post('async')
+  asyncPermission() {
+    return this.permissionService.asyncPermission();
+  }
 }

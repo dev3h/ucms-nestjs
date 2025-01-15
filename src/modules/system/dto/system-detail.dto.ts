@@ -9,6 +9,7 @@ export class ActionDto {
   permission_code: string; // Add permission_code property
   status: number;
   is_direct: boolean;
+  is_exist: boolean;
 
   constructor(
     action: any,
@@ -24,6 +25,7 @@ export class ActionDto {
     this.permission_code = `${systemCode}-${subsystemCode}-${moduleCode}-${action?.code}`;
     this.status = null;
     this.is_direct = false;
+    this.is_exist = false;
   }
 
   static mapFromEntities(

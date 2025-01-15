@@ -532,11 +532,32 @@ export class UserService {
           'subsystems.modules.actions',
         ],
       });
-      const filteredSystems = allSystems?.filter((system) =>
-        system?.subsystems?.some((subsystem) =>
-          subsystem?.modules?.some((module) => module?.actions?.length > 0),
-        ),
-      );
+      const filteredSystems = allSystems
+        ?.map((system) => {
+          const validSubsystems = system?.subsystems?.map((subsystem) => {
+            // Lọc ra các modules có actions không rỗng
+            const validModules = subsystem?.modules?.filter(
+              (module) =>
+                Array.isArray(module?.actions) && module.actions.length > 0,
+            );
+
+            // Nếu có modules hợp lệ thì giữ lại subsystem
+            return validModules?.length > 0
+              ? { ...subsystem, modules: validModules }
+              : null;
+          });
+
+          // Lọc ra các subsystems hợp lệ
+          const filteredSubsystems = validSubsystems?.filter(
+            (subsystem) => subsystem,
+          );
+
+          // Nếu system có subsystems hợp lệ thì giữ lại system
+          return filteredSubsystems?.length > 0
+            ? { ...system, subsystems: filteredSubsystems }
+            : null;
+        })
+        ?.filter((system) => system); // Loại bỏ các systems không có subsystems hợp lệ
 
       const permissionTree = SystemDetailDto.mapFromEntities(filteredSystems);
 
@@ -551,7 +572,9 @@ export class UserService {
             for (const action of module.actions) {
               // Tạo actionCode bằng cách nối các code từ system, subsystem, module và action
               const actionCode = `${system.code}-${subsystem.code}-${module.code}-${action.code}`;
-
+              const isExist = await this.permissionRepository.findOne({
+                where: { code: actionCode },
+              });
               // Tìm trong UserHasPermission bằng actionCode
               const userPermission =
                 await this.userPermissionRepository.findOne({
@@ -562,6 +585,7 @@ export class UserService {
                 });
               action.is_direct = userPermission?.is_direct;
               action.status = userPermission?.status;
+              action.is_exist = !!isExist;
 
               if (ignoredPermissionCodes.has(actionCode)) {
                 // Nếu permission bị ignore thì grant = false
