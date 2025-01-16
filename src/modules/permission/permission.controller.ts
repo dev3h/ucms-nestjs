@@ -57,4 +57,10 @@ export class PermissionController {
   asyncPermission() {
     return this.permissionService.asyncPermission();
   }
+
+  @ApiBearerAuth()
+  @Get(':id/code-info')
+  getCodeInfo(@Param('id') id: string) {
+    return this.permissionService.getCodeInfo(+id);
+  }
 }

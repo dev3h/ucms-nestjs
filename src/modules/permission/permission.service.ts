@@ -96,6 +96,55 @@ export class PermissionService extends BaseService<Permission> {
     }
   }
 
+  async getCodeInfo(id: number) {
+    try {
+      const permission = await this.permissionRepository.findOne({
+        where: { id },
+      });
+      if (!permission) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+        );
+      }
+      const codeInfo = permission.code.split('-');
+      const system = await this.systemRepository.findOne({
+        where: { code: codeInfo[0] },
+        relations: [
+          'subsystems',
+          'subsystems.modules',
+          'subsystems.modules.actions',
+        ],
+      });
+      const subsystem = system.subsystems.find(
+        (subsystem) => subsystem.code === codeInfo[1],
+      );
+      const module = subsystem.modules.find(
+        (module) => module.code === codeInfo[2],
+      );
+      const action = module.actions.find(
+        (action) => action.code === codeInfo[3],
+      );
+
+      return ResponseUtil.sendSuccessResponse({
+        data: {
+          system: system?.name,
+          subsystem: subsystem?.name,
+          module: module?.name,
+          action: action?.name,
+        },
+      });
+    } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
   update(id: number, body) {
     try {
       const permission = this.permissionRepository.findOne({
