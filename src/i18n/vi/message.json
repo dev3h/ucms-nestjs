@@ -52,5 +52,6 @@
   "Job-enqueued": "Công việc đã được đưa vào hàng đợi",
   "Not-enable-2fa": "Không kích hoạt 2FA",
   "Permission-not-found": "Không tìm thấy quyền",
-  "Account-suspended": "Tài khoản đã bị đình chỉ"
+  "Account-suspended": "Tài khoản đã bị đình chỉ",
+  "Cannot-detach-item-has-child": "Không thể tách vì mục này có mục con"
 }

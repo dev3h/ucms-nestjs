@@ -52,5 +52,6 @@
   "Job-enqueued": "Job enqueued",
   "Not-enable-2fa": "Not enable 2FA",
   "Permission-not-found": "Permission not found",
-  "Account-suspended": "Account is suspended"
+  "Account-suspended": "Account is suspended",
+  "Cannot-detach-item-has-child": "Cannot detach because this item has child"
 }

@@ -1,18 +1,19 @@
 import { Seeder } from 'typeorm-extension';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { Role } from '@/modules/role/entities/role.entity';
 import { Permission } from '@/modules/permission/entities/permission.entity';
+import { System } from '@/modules/system/entities/system.entity';
 
 export class RolePermissionSeeder implements Seeder {
   async run(dataSource: DataSource): Promise<void> {
     const roleRepository = dataSource.getRepository(Role);
     const permissionRepository = dataSource.getRepository(Permission);
+    const systemRepository = dataSource.getRepository(System);
 
     // Tạo các vai trò bằng tiếng Việt
     const roles = [
       { name: 'Quản trị viên cao cấp', code: 'SUPER_ADMIN' },
       { name: 'Quản trị viên', code: 'ADMIN' },
-      { name: 'Quản lý sinh viên', code: 'STUDENT_AFFAIRS' },
       { name: 'Giảng viên', code: 'TEACHER' },
       { name: 'Cán bộ tài chính', code: 'FINANCE_OFFICER' },
       { name: 'Cán bộ ký túc xá', code: 'DORMITORY_STAFF' },
@@ -37,7 +38,7 @@ export class RolePermissionSeeder implements Seeder {
       },
       {
         description: 'Đăng ký môn học',
-        code: 'qlsv-dk_hoc-dk_mon_hoc-dang_ky_mon_hoc',
+        code: 'qlsv-dk_hoc-dk_mon_hoc-qlsv-dk_hoc-dk_mon_hoc-dang_ky_mon_hoc',
       },
       {
         description: 'Xem danh sách học bổng',
@@ -71,6 +72,65 @@ export class RolePermissionSeeder implements Seeder {
       await permissionRepository.save(permission);
     }
 
+    const allSystems = await systemRepository.find({
+      relations: [
+        'subsystems',
+        'subsystems.modules',
+        'subsystems.modules.actions',
+      ],
+    });
+    const filteredSystems = allSystems
+      ?.map((system) => {
+        const validSubsystems = system?.subsystems?.map((subsystem) => {
+          // Lọc ra các modules có actions không rỗng
+          const validModules = subsystem?.modules?.filter(
+            (module) =>
+              Array.isArray(module?.actions) && module.actions.length > 0,
+          );
+
+          // Nếu có modules hợp lệ thì giữ lại subsystem
+          return validModules?.length > 0
+            ? { ...subsystem, modules: validModules }
+            : null;
+        });
+
+        // Lọc ra các subsystems hợp lệ
+        const filteredSubsystems = validSubsystems?.filter(
+          (subsystem) => subsystem,
+        );
+
+        // Nếu system có subsystems hợp lệ thì giữ lại system
+        return filteredSubsystems?.length > 0
+          ? { ...system, subsystems: filteredSubsystems }
+          : null;
+      })
+      ?.filter((system) => system);
+
+    // async permission
+    const perms = [];
+    const existingPermissions = await permissionRepository.find();
+
+    filteredSystems.forEach((system) => {
+      system?.subsystems?.forEach((subsystem) => {
+        subsystem?.modules?.forEach((module) => {
+          module?.actions?.forEach((action) => {
+            const permissionCode = `${system.code}-${subsystem.code}-${module.code}-${action.code}`;
+            if (!existingPermissions.some((p) => p.code === permissionCode)) {
+              perms.push({
+                code: permissionCode,
+                description: action.name,
+              });
+            }
+          });
+        });
+      });
+    });
+
+    // Save to database
+    if (perms.length > 0) {
+      await permissionRepository.save(perms);
+    }
+
     // Gán quyền cho các vai trò
     const superAdminRole = await roleRepository.findOne({
       where: { name: 'Quản trị viên cao cấp' },
@@ -82,20 +142,26 @@ export class RolePermissionSeeder implements Seeder {
       await roleRepository.save(superAdminRole);
     }
 
-    // Gán quyền cho vai trò Quản lý sinh viên
-    const studentAffairsRole = await roleRepository.findOne({
-      where: { name: 'Quản lý sinh viên' },
+    // Gán quyền cho vai trò Quản trị viên
+    const adminRole = await roleRepository.findOne({
+      where: { name: 'Quản trị viên' },
       relations: ['permissions'],
     });
-    if (studentAffairsRole) {
-      const studentPermissions = [
+    if (adminRole) {
+      const adminPermissions = [
         'qlsv-hs_sv-tim_kiem_sv-them_moi',
         'qlsv-hs_sv-cap_nhat_hs_sv-sua',
-        'qlsv-dk_hoc-dk_mon_hoc-dang_ky_mon_hoc',
+        'qltv-muon_tra_sach-ql_tai_lieu_muon-xuat_du_lieu',
+        'qlns-hd_ld-tao_hd_ld-xoa',
+        'qlcsvc-trang_tb-ql_ds_tb-in_bao_cao',
       ];
-      studentAffairsRole.permissions =
-        await permissionRepository.findByIds(studentPermissions);
-      await roleRepository.save(studentAffairsRole);
+      const permissions = await permissionRepository.find({
+        where: {
+          code: In(adminPermissions),
+        },
+      });
+      adminRole.permissions = permissions;
+      await roleRepository.save(adminRole);
     }
 
     // Gán quyền cho vai trò Giảng viên
@@ -105,11 +171,15 @@ export class RolePermissionSeeder implements Seeder {
     });
     if (teacherRole) {
       const teacherPermissions = [
-        'qlsv-dk_hoc-dk_mon_hoc-dang_ky_mon_hoc',
+        'qlsv-dk_hoc-dk_mon_hoc-qlsv-dk_hoc-dk_mon_hoc-dang_ky_mon_hoc',
         'qlsv-hoc_bong-ds_hoc_bong-xem_chi_tiet',
       ];
-      teacherRole.permissions =
-        await permissionRepository.findByIds(teacherPermissions);
+      const permissions = await permissionRepository.find({
+        where: {
+          code: In(teacherPermissions),
+        },
+      });
+      teacherRole.permissions = permissions;
       await roleRepository.save(teacherRole);
     }
 
@@ -122,8 +192,12 @@ export class RolePermissionSeeder implements Seeder {
       const financePermissions = [
         'qltc-thu_hoc_phi-ghi_nhan_thu_hp-in_bao_cao',
       ];
-      financeOfficerRole.permissions =
-        await permissionRepository.findByIds(financePermissions);
+      const permissions = await permissionRepository.find({
+        where: {
+          code: In(financePermissions),
+        },
+      });
+      financeOfficerRole.permissions = permissions;
       await roleRepository.save(financeOfficerRole);
     }
 
@@ -134,8 +208,12 @@ export class RolePermissionSeeder implements Seeder {
     });
     if (dormitoryStaffRole) {
       const dormitoryPermissions = ['qlktx-phong_trong-kiem_tra_phong-sua'];
-      dormitoryStaffRole.permissions =
-        await permissionRepository.findByIds(dormitoryPermissions);
+      const permissions = await permissionRepository.find({
+        where: {
+          code: In(dormitoryPermissions),
+        },
+      });
+      dormitoryStaffRole.permissions = permissions;
       await roleRepository.save(dormitoryStaffRole);
     }
 
@@ -145,9 +223,15 @@ export class RolePermissionSeeder implements Seeder {
       relations: ['permissions'],
     });
     if (studentRole) {
-      const studentPermissions = ['qlsv-dk_hoc-dk_mon_hoc-dang_ky_mon_hoc'];
-      studentRole.permissions =
-        await permissionRepository.findByIds(studentPermissions);
+      const studentPermissions = [
+        'qlsv-dk_hoc-dk_mon_hoc-qlsv-dk_hoc-dk_mon_hoc-dang_ky_mon_hoc',
+      ];
+      const permissions = await permissionRepository.find({
+        where: {
+          code: In(studentPermissions),
+        },
+      });
+      studentRole.permissions = permissions;
       await roleRepository.save(studentRole);
     }
   }

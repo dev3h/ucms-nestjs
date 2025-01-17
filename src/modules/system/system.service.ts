@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { UpdateSystemDto } from './dto/update-system.dto';
 import { System } from './entities/system.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -21,9 +20,9 @@ export class SystemService extends BaseService<System> {
   constructor(
     private readonly i18n: I18nService,
     @InjectRepository(System)
-    private systemsRepository: Repository<System>,
+    private readonly systemsRepository: Repository<System>,
     @InjectRepository(Subsystem)
-    private subsystemRepository: Repository<Subsystem>,
+    private readonly subsystemRepository: Repository<Subsystem>,
     @InjectRepository(SystemClientSecret)
     private readonly clientSecretRepository: Repository<SystemClientSecret>,
     private readonly systemFilter: SystemFilter,
@@ -359,9 +358,9 @@ export class SystemService extends BaseService<System> {
     }
   }
 
-  update(id: number, body) {
+  async update(id: number, body) {
     try {
-      const system = this.systemsRepository.findOne({
+      const system = await this.systemsRepository.findOne({
         where: { id },
       });
       if (!system) {
@@ -393,7 +392,7 @@ export class SystemService extends BaseService<System> {
 
   async remove(id: number) {
     try {
-      const system = this.systemsRepository.findOne({
+      const system = await this.systemsRepository.findOne({
         where: { id },
       });
       if (!system) {
@@ -442,6 +441,62 @@ export class SystemService extends BaseService<System> {
         meta: paginationResult.meta,
       });
     } catch (error) {
+      return ResponseUtil.sendErrorResponse(
+        this.i18n.t('message.Something-went-wrong', {
+          lang: 'vi',
+        }),
+        error.message,
+      );
+    }
+  }
+
+  async removeSubsystemFromSystem(systemId: number, subsystemId: number) {
+    try {
+      const system = await this.systemsRepository.findOne({
+        where: { id: systemId },
+        relations: ['subsystems'],
+      });
+      if (!system) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+
+      const subsystem = await this.subsystemRepository.findOne({
+        where: { id: subsystemId },
+        relations: ['modules'],
+      });
+      if (!subsystem) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Data-not-found', {
+            lang: 'vi',
+          }),
+          'NOT_FOUND',
+        );
+      }
+      if (subsystem.modules.length > 0) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Cannot-detach-item-has-child', {
+            lang: 'vi',
+          }),
+          'NOT_ALLOWED',
+        );
+      }
+      system.subsystems = system.subsystems.filter(
+        (subsystem) => subsystem.id !== subsystemId,
+      );
+      await this.systemsRepository.save(system);
+      return ResponseUtil.sendSuccessResponse(
+        null,
+        this.i18n.t('message.Deleted-successfully', {
+          lang: 'vi',
+        }),
+      );
+    } catch (error) {
+      throw error;
       return ResponseUtil.sendErrorResponse(
         this.i18n.t('message.Something-went-wrong', {
           lang: 'vi',

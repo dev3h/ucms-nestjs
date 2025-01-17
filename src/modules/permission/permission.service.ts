@@ -250,7 +250,7 @@ export class PermissionService extends BaseService<Permission> {
             if (!existingPermissions.some((p) => p.code === permissionCode)) {
               permissions.push({
                 code: permissionCode,
-                name: action.name,
+                description: action.name,
               });
             }
           });

@@ -18,11 +18,11 @@ export class SubsystemService extends BaseService<Subsystem> {
   constructor(
     private readonly i18n: I18nService,
     @InjectRepository(Subsystem)
-    private subsystemRepository: Repository<Subsystem>,
+    private readonly subsystemRepository: Repository<Subsystem>,
     @InjectRepository(Module)
-    private moduleRepository: Repository<Module>,
+    private readonly moduleRepository: Repository<Module>,
     @InjectRepository(System)
-    private systemRepository: Repository<System>,
+    private readonly systemRepository: Repository<System>,
     private readonly subsystemFilter: SubSystemFilter,
   ) {
     super(subsystemRepository);
@@ -299,6 +299,7 @@ export class SubsystemService extends BaseService<Subsystem> {
       }
       const module = await this.moduleRepository.findOne({
         where: { id: moduleId },
+        relations: ['actions'],
       });
       if (!module) {
         return ResponseUtil.sendErrorResponse(
@@ -308,21 +309,30 @@ export class SubsystemService extends BaseService<Subsystem> {
           'NOT_FOUND',
         );
       }
+      if (module.actions.length > 0) {
+        return ResponseUtil.sendErrorResponse(
+          this.i18n.t('message.Cannot-detach-item-has-child', {
+            lang: 'vi',
+          }),
+          'NOT_ALLOWED',
+        );
+      }
       subsystem.modules = subsystem.modules.filter((m) => m.id !== moduleId);
       await this.subsystemRepository.save(subsystem);
       return ResponseUtil.sendSuccessResponse(
         null,
-        this.i18n.t('message.Updated-successfully', {
+        this.i18n.t('message.Deleted-successfully', {
           lang: 'vi',
         }),
       );
     } catch (error) {
-      return ResponseUtil.sendErrorResponse(
-        this.i18n.t('message.Something-went-wrong', {
-          lang: 'vi',
-        }),
-        error.message,
-      );
+      throw error;
+      // return ResponseUtil.sendErrorResponse(
+      //   this.i18n.t('message.Something-went-wrong', {
+      //     lang: 'vi',
+      //   }),
+      //   error.message,
+      // );
     }
   }
 }

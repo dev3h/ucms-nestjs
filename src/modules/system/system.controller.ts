@@ -85,6 +85,15 @@ export class SystemController {
   }
 
   @ApiBearerAuth()
+  @Delete(':id/remove-subsystem/:subsystemId')
+  removeModule(
+    @Param('id') id: string,
+    @Param('subsystemId') subsystemId: string,
+  ) {
+    return this.systemService.removeSubsystemFromSystem(+id, +subsystemId);
+  }
+
+  @ApiBearerAuth()
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.systemService.remove(+id);
