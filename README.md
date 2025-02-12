@@ -1,38 +1,28 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
-
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+<p align="center">A centralized user management system for universities built with <a href="http://nodejs.org" target="_blank">Node.js</a> and <a href="http://nestjs.com" target="_blank">NestJS</a>.</p>
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This project is a centralized user management system for universities, developed using the NestJS framework. It aims to provide efficient and scalable server-side applications for managing user data. The system includes features such as user authentication, authorization, role-based access control, and integration with university databases.
+
+## Features
+
+- **User Authentication and Authorization**: Secure login and access control mechanisms.
+- **Role-Based Access Control**: Assign roles to users and manage permissions.
+- **User Profile Management**: Create, update, and manage user profiles.
+- **Integration with University Databases**: Seamless integration with existing university databases.
+- **RESTful API for User Operations**: Perform CRUD operations on user data through a RESTful API.
 
 ## Installation
+
+To install the necessary dependencies, run the following command:
 
 ```bash
 $ npm install
 ```
 
-## Running the app
+## Running the App
+
+To start the application, use the following commands:
 
 ```bash
 # development
@@ -45,29 +35,46 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
-## Test
+## Testing
+
+To run tests, use the following commands:
 
 ```bash
 # unit tests
 $ npm run test
 
-# e2e tests
+# end-to-end (e2e) tests
 $ npm run test:e2e
 
 # test coverage
 $ npm run test:cov
 ```
 
+## Demo
+
+### Screenshots
+
+![Login Page](path/to/login-page-screenshot.png)
+*Login Page*
+
+![User Dashboard](path/to/user-dashboard-screenshot.png)
+*User Dashboard*
+
+### Video
+
+Watch the demo video to see the application in action:
+
+[![Watch the video](path/to/video-thumbnail.png)](https://youtu.be/RZugcrbZJOc)
+
 ## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+This project is an MIT-licensed open source project. Contributions and support from the community are welcome. If you'd like to contribute, please [read more here](https://docs.nestjs.com/support).
 
-## Stay in touch
+## Stay in Touch
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- **Author**: [Dev3h](https://yourwebsite.com)
+- **Website**: [https://yourprojectwebsite.com](https://yourprojectwebsite.com/)
 
 ## License
 
-Nest is [MIT licensed](LICENSE).
+This project is [MIT licensed](LICENSE).

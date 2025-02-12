@@ -25,7 +25,6 @@ import { AppService } from './app.service';
 
 import { AuthModule } from './modules/auth/login/auth.module';
 import { UserModule } from './modules/user/user.module';
-import { ApiTokenCheckMiddleware } from './common/middleware/api-token-check.middleware';
 import { SystemModule } from './modules/system/system.module';
 import { SubsystemModule } from './modules/subsystem/subsystem.module';
 import { ModuleModule } from './modules/module/module.module';
@@ -34,7 +33,6 @@ import { RoleModule } from './modules/role/role.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { PasswordResetTokenModule } from './modules/password-reset-token/password-reset-token.module';
 import LogsMiddleware from './utils/logs.middleware';
-// import { SeederService } from './database/seeder.service';
 import { SeederModule } from './database/seeder.module';
 import { DatabaseConfigModule } from './database/database-config.module';
 import { ResetPasswordModule } from './modules/auth/reset-password/reset-password.module';
@@ -64,7 +62,8 @@ import { LoggerModule } from './modules/logger/logger.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { JobModule } from './job/job.module';
-import { setupBullBoard } from './bull-board.setup';
+import { setupBullBoard } from './config/bull-board.config';
+import { FileUploadModule } from './file-upload/file-upload.module';
 
 @Module({
   imports: [
@@ -136,6 +135,7 @@ import { setupBullBoard } from './bull-board.setup';
     DeviceSessionModule,
     LoggerModule,
     DashboardModule,
+    FileUploadModule,
   ],
   controllers: [AppController],
   providers: [
@@ -161,9 +161,6 @@ export class AppModule implements NestModule, OnModuleInit {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LogsMiddleware).forRoutes('*');
     consumer.apply(LanguageCheckMiddleware).forRoutes('*');
-    consumer
-      .apply(ApiTokenCheckMiddleware)
-      .forRoutes({ path: '/', method: RequestMethod.ALL });
     consumer
       .apply(AuthMiddleware)
       .exclude({ path: '/admin/queues', method: RequestMethod.ALL })
