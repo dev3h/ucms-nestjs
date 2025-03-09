@@ -17,7 +17,8 @@ export class FileUploadService {
         },
       }),
       limits: {
-        fileSize: 5 * 1024 * 1024, // Giới hạn file tối đa 5MB
+        // fileSize: 5 * 1024 * 1024, // Giới hạn file tối đa 5MB
+        fileSize: 1 * 1024,
       },
       fileFilter: (req, file, callback) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {

@@ -10,34 +10,33 @@ import {
   Req,
   UseInterceptors,
 } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiTags,
-} from '@nestjs/swagger';
-import { SETTINGS } from 'src/app.utils';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { UserRegisterRequestDto } from './dto/user-register.req.dto';
-import { User } from './user.entity';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Request } from 'express';
 import { DeviceSessionService } from '../device-session/device-session.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadService } from '@/file-upload/file-upload.service';
 
 @ApiTags('User Management')
 @Controller('user')
 export class UserController {
   constructor(
-    private userService: UserService,
+    private readonly userService: UserService,
     private readonly deviceSessionService: DeviceSessionService,
   ) {}
 
   @ApiBearerAuth()
   @Post()
   @HttpCode(200)
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: new FileUploadService().getMulterOptions('./uploads/avatars')
+        .storage,
+    }),
+  )
   create(@Body() body: CreateUserDto) {
     return this.userService.store(body);
   }
